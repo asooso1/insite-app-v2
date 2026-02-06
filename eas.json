@@ -4,10 +4,16 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "node": "20.18.0",
+      "bun": "1.1.38"
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "credentialsSource": "local",
       "env": {
         "APP_VARIANT": "development"
       },
@@ -19,6 +25,7 @@
       }
     },
     "development-simulator": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
@@ -30,8 +37,10 @@
       }
     },
     "staging": {
+      "extends": "base",
       "distribution": "internal",
       "channel": "staging",
+      "credentialsSource": "local",
       "env": {
         "APP_VARIANT": "staging"
       },
@@ -40,22 +49,11 @@
       }
     },
     "production": {
+      "extends": "base",
       "distribution": "store",
       "channel": "production",
+      "credentialsSource": "local",
       "autoIncrement": true
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "",
-        "ascAppId": "",
-        "appleTeamId": ""
-      },
-      "android": {
-        "serviceAccountKeyPath": "",
-        "track": "internal"
-      }
     }
   }
 }

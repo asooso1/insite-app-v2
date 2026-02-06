@@ -3,7 +3,6 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/auth.store';
-import { APP_NAME } from '@/constants/config';
 
 export default function HomeScreen() {
   const router = useRouter();
