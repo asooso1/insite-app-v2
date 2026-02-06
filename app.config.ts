@@ -24,7 +24,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/icon.png',
   scheme: 'insite',
   userInterfaceStyle: 'automatic',
-  newArchEnabled: true,
+  newArchEnabled: false,
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
@@ -36,6 +36,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     infoPlist: {
       NFCReaderUsageDescription: '순찰 체크포인트 및 설비 태그 스캔을 위해 NFC가 필요합니다.',
       NSCameraUsageDescription: '작업 결과 사진 촬영을 위해 카메라 접근이 필요합니다.',
+      ITSAppUsesNonExemptEncryption: false,
     },
   },
   android: {
@@ -58,6 +59,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    'expo-dev-client',
     'expo-secure-store',
     [
       'expo-camera',
@@ -81,11 +83,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       origin: false,
     },
     eas: {
-      projectId: process.env.EAS_PROJECT_ID,
+      projectId: '4d96230f-5a0f-448d-a2a2-fc180c2cfaf6',
     },
   },
   updates: {
-    url: `https://u.expo.dev/${process.env.EAS_PROJECT_ID}`,
+    url: 'https://u.expo.dev/4d96230f-5a0f-448d-a2a2-fc180c2cfaf6',
   },
   runtimeVersion: {
     policy: 'appVersion',
