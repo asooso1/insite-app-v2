@@ -1,0 +1,297 @@
+openapi: 3.0.3
+info:
+  title: Insite App API
+  description: HDC 인사이트 시설관리 모바일 앱 API
+  version: 2.0.0
+servers:
+  - url: http://121.133.17.22:8083
+    description: Development Server
+  - url: https://stage.hdc-insite.com:8083
+    description: Staging Server
+  - url: https://www.hdc-insite.com:8083
+    description: Production Server
+
+tags:
+  - name: account
+    description: 계정 관리
+  - name: devices
+    description: 기기 관리
+
+paths:
+  /m/api/account/login:
+    post:
+      tags:
+        - account
+      summary: 일반 로그인
+      description: 사용자 ID와 비밀번호로 로그인
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/account/temporary:
+    post:
+      tags:
+        - account
+      summary: 게스트 로그인
+      description: 휴대폰 번호와 빌딩 ID로 임시 계정 로그인
+      operationId: guestLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestLoginRequest'
+      responses:
+        '200':
+          description: 게스트 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/account/logout:
+    post:
+      tags:
+        - account
+      summary: 로그아웃
+      description: 현재 세션 종료 및 FCM 토큰 제거
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 로그아웃 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/devices/disconnect:
+    post:
+      tags:
+        - devices
+      summary: 기기 해제
+      description: 등록된 기기 연결 해제
+      operationId: disconnectDevice
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 기기 해제 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/devices/registration/events:
+    get:
+      tags:
+        - devices
+      summary: 기기 등록 이벤트 스트림
+      description: SSE를 통한 실시간 기기 등록 이벤트 수신
+      operationId: getRegistrationEvents
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: SSE 스트림 연결 성공
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - userId
+        - passwd
+      properties:
+        userId:
+          type: string
+          description: 사용자 ID
+          example: test@hdc.com
+        passwd:
+          type: string
+          description: 비밀번호
+          example: password123
+        fcmToken:
+          type: string
+          description: FCM 푸시 토큰 (선택)
+          example: fcm_token_example
+
+    GuestLoginRequest:
+      type: object
+      required:
+        - mobile
+        - buildingId
+      properties:
+        mobile:
+          type: string
+          description: 휴대폰 번호
+          example: '01012345678'
+        buildingId:
+          type: string
+          description: 빌딩 ID
+          example: BLDG001
+        fcmToken:
+          type: string
+          description: FCM 푸시 토큰 (선택)
+          example: fcm_token_example
+
+    LoginResponse:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          enum:
+            - success
+            - fail
+            - MOBILE_DUPLICATE
+          description: 응답 코드
+          example: success
+        message:
+          type: string
+          description: 응답 메시지
+          example: 로그인 성공
+        authToken:
+          type: string
+          description: 인증 토큰 (JWT)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        data:
+          $ref: '#/components/schemas/UserInfo'
+
+    UserInfo:
+      type: object
+      required:
+        - id
+        - userId
+        - name
+        - role
+      properties:
+        id:
+          type: string
+          description: 사용자 고유 ID
+          example: USER001
+        userId:
+          type: string
+          description: 사용자 로그인 ID
+          example: test@hdc.com
+        name:
+          type: string
+          description: 사용자 이름
+          example: 홍길동
+        email:
+          type: string
+          description: 이메일 주소
+          example: test@hdc.com
+        role:
+          type: string
+          description: 사용자 역할
+          example: MANAGER
+        siteId:
+          type: string
+          description: 소속 사이트 ID
+          example: SITE001
+        siteName:
+          type: string
+          description: 소속 사이트 이름
+          example: HDC현대산업개발
+        buildingId:
+          type: string
+          description: 소속 빌딩 ID
+          example: BLDG001
+        buildingName:
+          type: string
+          description: 소속 빌딩 이름
+          example: 아이파크몰
+        mobile:
+          type: string
+          description: 휴대폰 번호
+          example: '01012345678'
+
+    SuccessResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: success
+        message:
+          type: string
+          example: 성공
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: error
+        message:
+          type: string
+          example: 오류가 발생했습니다
+        details:
+          type: object
+          additionalProperties: true
+          description: 추가 오류 정보

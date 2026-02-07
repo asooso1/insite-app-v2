@@ -86,3 +86,20 @@ export const getErrorMessage = (error: unknown): string => {
   }
   return 'An unknown error occurred';
 };
+
+// Orval custom instance (mutator)
+export const customInstance = <T>(
+  config: InternalAxiosRequestConfig | { url: string; method: string; headers?: Record<string, string>; data?: unknown; signal?: AbortSignal }
+): Promise<T> => {
+  const source = axios.CancelToken.source();
+  const promise = apiClient({ ...config, cancelToken: source.token } as InternalAxiosRequestConfig).then(
+    ({ data }) => data
+  );
+
+  // @ts-expect-error - cancel is added to promise
+  promise.cancel = () => {
+    source.cancel('Query was cancelled');
+  };
+
+  return promise;
+};
