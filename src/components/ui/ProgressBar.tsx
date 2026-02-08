@@ -2,17 +2,12 @@
  * ProgressBar 컴포넌트
  *
  * 2026 Modern UI - 그라디언트 프로그레스 바
- * 애니메이션 효과와 그라디언트 채우기
+ * 그라디언트 채우기
  */
-import React, { useEffect } from 'react';
-import { StyleSheet, ViewStyle, Platform } from 'react-native';
+import React from 'react';
+import { StyleSheet, ViewStyle, Platform, View } from 'react-native';
 import { YStack } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import { gradients } from '@/theme/tokens';
 
 interface ProgressBarProps {
@@ -42,22 +37,10 @@ export function ProgressBar({
   progress,
   height = 8,
   variant = 'primary',
-  animated = true,
   glow = false,
   rounded = true,
 }: ProgressBarProps) {
-  const animatedProgress = useSharedValue(0);
-
-  useEffect(() => {
-    if (animated) {
-      animatedProgress.value = withSpring(Math.min(100, Math.max(0, progress)), {
-        damping: 15,
-        stiffness: 80,
-      });
-    } else {
-      animatedProgress.value = Math.min(100, Math.max(0, progress));
-    }
-  }, [progress, animated]);
+  const clampedProgress = Math.min(100, Math.max(0, progress));
 
   const getGradientColors = (): readonly [string, string] => {
     switch (variant) {
@@ -72,10 +55,6 @@ export function ProgressBar({
         return gradients.primary;
     }
   };
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: `${animatedProgress.value}%`,
-  }));
 
   const getGlowStyle = (): ViewStyle => {
     if (!glow) return {};
@@ -99,15 +78,15 @@ export function ProgressBar({
       borderRadius={rounded ? height / 2 : 2}
       overflow="hidden"
     >
-      <Animated.View
+      <View
         style={[
           styles.progressFill,
           {
             height,
             borderRadius: rounded ? height / 2 : 2,
+            width: `${clampedProgress}%`,
           },
           getGlowStyle(),
-          animatedStyle,
         ]}
       >
         <LinearGradient
@@ -116,7 +95,7 @@ export function ProgressBar({
           end={{ x: 1, y: 0.5 }}
           style={StyleSheet.absoluteFillObject}
         />
-      </Animated.View>
+      </View>
     </YStack>
   );
 }

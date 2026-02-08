@@ -4,16 +4,10 @@
  * 2026 Modern UI - 수평 막대 차트
  * 그라디언트 채우기, 라벨, 퍼센트
  */
-import React, { useEffect } from 'react';
+import React from 'react';
 import { XStack, YStack, Text } from 'tamagui';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
 
 interface BarItem {
   /** 라벨 */
@@ -99,41 +93,14 @@ function BarItem({
   item,
   defaultGradient,
   barHeight,
-  delay,
 }: BarItemProps) {
   const percentage = item.max > 0 ? Math.round((item.value / item.max) * 100) : 0;
-  const widthAnim = useSharedValue(0);
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      widthAnim.value = withTiming(percentage, {
-        duration: 800,
-        easing: Easing.out(Easing.cubic),
-      });
-      opacity.value = withTiming(1, { duration: 400 });
-    }, delay);
-
-    return () => clearTimeout(timeout);
-  }, [percentage, delay, widthAnim, opacity]);
-
-  const barAnimStyle = useAnimatedStyle(() => {
-    return {
-      width: `${widthAnim.value}%`,
-    };
-  });
-
-  const containerAnimStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
 
   const gradient = item.gradient || defaultGradient;
   const isComplete = percentage === 100;
 
   return (
-    <Animated.View style={containerAnimStyle}>
+    <View>
       <XStack alignItems="center" gap="$3">
         {/* 라벨 */}
         <Text
@@ -154,7 +121,7 @@ function BarItem({
             borderRadius="$2"
             overflow="hidden"
           >
-            <Animated.View style={[styles.barFill, barAnimStyle]}>
+            <View style={[styles.barFill, { width: `${percentage}%` }]}>
               <LinearGradient
                 colors={isComplete ? ['#00C853', '#69F0AE'] : gradient}
                 start={{ x: 0, y: 0 }}
@@ -177,7 +144,7 @@ function BarItem({
                   {percentage}%
                 </Text>
               )}
-            </Animated.View>
+            </View>
           </YStack>
         </YStack>
 
@@ -210,7 +177,7 @@ function BarItem({
           </YStack>
         )}
       </XStack>
-    </Animated.View>
+    </View>
   );
 }
 

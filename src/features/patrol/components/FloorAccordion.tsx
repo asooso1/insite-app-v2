@@ -6,16 +6,8 @@
  */
 import React, { useState, useCallback } from 'react';
 import { XStack, YStack, Text } from 'tamagui';
-import { Pressable, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { Pressable, StyleSheet, LayoutAnimation, Platform, UIManager, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
 import { CheckpointItem } from './CheckpointItem';
 import type { FloorDTO, CheckpointDTO } from '../types/patrol.types';
 
@@ -31,8 +23,6 @@ interface FloorAccordionProps {
   defaultExpanded?: boolean;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 /**
  * 층별 아코디언 섹션
  */
@@ -42,8 +32,7 @@ export function FloorAccordion({
   defaultExpanded = false,
 }: FloorAccordionProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const rotation = useSharedValue(defaultExpanded ? 1 : 0);
-  const scale = useSharedValue(1);
+  const [isPressed, setIsPressed] = useState(false);
 
   // 총 체크포인트 수와 완료된 체크포인트 수 계산
   const totalCheckpoints = floor.zones.reduce(
@@ -59,34 +48,15 @@ export function FloorAccordion({
   const handleToggle = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(!expanded);
-    rotation.value = withSpring(expanded ? 0 : 1, { damping: 15 });
-  }, [expanded, rotation]);
+  }, [expanded]);
 
   const handlePressIn = () => {
-    scale.value = withTiming(0.98, { duration: 100 });
+    setIsPressed(true);
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15 });
+    setIsPressed(false);
   };
-
-  const arrowStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(
-      rotation.value,
-      [0, 1],
-      [0, 90],
-      Extrapolation.CLAMP
-    );
-    return {
-      transform: [{ rotate: `${rotate}deg` }],
-    };
-  });
-
-  const headerStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
 
   // 상태에 따른 그라디언트
   const progressGradient =
@@ -99,11 +69,11 @@ export function FloorAccordion({
   return (
     <YStack marginBottom="$2">
       {/* 층 헤더 */}
-      <AnimatedPressable
+      <Pressable
         onPress={handleToggle}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={[styles.headerContainer, headerStyle]}
+        style={[styles.headerContainer, { transform: [{ scale: isPressed ? 0.98 : 1 }] }]}
       >
         <YStack
           backgroundColor={expanded ? '$gray50' : '$white'}
@@ -116,7 +86,7 @@ export function FloorAccordion({
           <XStack justifyContent="space-between" alignItems="center">
             {/* 왼쪽: 화살표 + 층명 */}
             <XStack gap="$3" alignItems="center" flex={1}>
-              <Animated.View style={arrowStyle}>
+              <View style={{ transform: [{ rotate: expanded ? '90deg' : '0deg' }] }}>
                 <YStack
                   width={28}
                   height={28}
@@ -129,7 +99,7 @@ export function FloorAccordion({
                     ›
                   </Text>
                 </YStack>
-              </Animated.View>
+              </View>
 
               <YStack flex={1} gap="$0.5">
                 <Text fontSize={16} fontWeight="700" color="$gray900">
@@ -177,7 +147,7 @@ export function FloorAccordion({
             </XStack>
           </XStack>
         </YStack>
-      </AnimatedPressable>
+      </Pressable>
 
       {/* 체크포인트 목록 */}
       {expanded && (

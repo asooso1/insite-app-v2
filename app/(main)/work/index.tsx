@@ -4,10 +4,9 @@
  * 2026 Modern UI - 그라디언트 헤더 + Glass 필터 + Floating 카드
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import { FlatList, RefreshControl } from 'react-native';
+import { FlatList, RefreshControl, View } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { useRouter } from 'expo-router';
-import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import { WorkOrderCard } from '@/features/work/components/WorkOrderCard';
@@ -99,16 +98,14 @@ export default function WorkListScreen() {
 
   // 렌더링 함수
   const renderItem = useCallback(
-    ({ item, index }: { item: WorkOrderDTO; index: number }) => (
-      <Animated.View
-        entering={FadeInDown.delay(index * 50).springify()}
-      >
+    ({ item }: { item: WorkOrderDTO }) => (
+      <View>
         <WorkOrderCard
           workOrder={item}
           onPress={handleWorkOrderPress}
           progress={item.state === 'PROCESSING' ? Math.floor(Math.random() * 80) + 20 : undefined}
         />
-      </Animated.View>
+      </View>
     ),
     [handleWorkOrderPress]
   );
@@ -134,7 +131,7 @@ export default function WorkListScreen() {
     return (
       <YStack>
         {/* 필터 Pills */}
-        <Animated.View entering={FadeInRight.delay(100).springify()}>
+        <View>
           <XStack
             paddingHorizontal="$4"
             paddingTop="$3"
@@ -155,7 +152,7 @@ export default function WorkListScreen() {
               );
             })}
           </XStack>
-        </Animated.View>
+        </View>
 
         {/* 결과 카운트 */}
         <XStack
