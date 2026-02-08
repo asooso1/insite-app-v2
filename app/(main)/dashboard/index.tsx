@@ -9,7 +9,6 @@ import { ScrollView, RefreshControl, StyleSheet, View } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import {
   StatCardRow,
@@ -105,7 +104,7 @@ export default function OperationDashboard() {
   return (
     <View style={styles.container}>
       {/* 그라디언트 헤더 */}
-      <Animated.View entering={FadeIn.duration(500)}>
+      <View>
         <LinearGradient
           colors={['#0066CC', '#00A3FF']}
           start={{ x: 0, y: 0 }}
@@ -125,7 +124,7 @@ export default function OperationDashboard() {
             </Text>
           </YStack>
         </LinearGradient>
-      </Animated.View>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -136,14 +135,14 @@ export default function OperationDashboard() {
         showsVerticalScrollIndicator={false}
       >
         {/* 통계 카드 행 */}
-        <Animated.View entering={FadeInDown.delay(100).springify()}>
+        <View>
           <YStack marginTop="$4">
             <StatCardRow items={statItems} animationDelay={200} />
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 작업 현황 도넛 차트 */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
+        <View>
           <YStack paddingHorizontal="$4" marginTop="$4">
             <DonutChart
               title="작업 현황"
@@ -152,10 +151,10 @@ export default function OperationDashboard() {
               strokeWidth={18}
             />
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 순찰 현황 막대 차트 */}
-        <Animated.View entering={FadeInDown.delay(300).springify()}>
+        <View>
           <YStack paddingHorizontal="$4" marginTop="$4">
             <BarChart
               title="순찰 현황"
@@ -164,14 +163,14 @@ export default function OperationDashboard() {
               barHeight={26}
             />
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 주간 추세 섹션 */}
-        <Animated.View entering={FadeInDown.delay(400).springify()}>
+        <View>
           <YStack paddingHorizontal="$4" marginTop="$4">
             <WeeklyTrendCard data={mockDashboardStats.weeklyTrend} />
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 하단 여백 */}
         <YStack height={40} />
@@ -222,13 +221,11 @@ function WeeklyTrendCard({
 
       {/* 막대 그래프 */}
       <XStack justifyContent="space-between" alignItems="flex-end" height={100}>
-        {data.map((item, index) => (
+        {data.map((item) => (
           <YStack key={item.day} alignItems="center" gap="$2" flex={1}>
             <XStack gap={3} alignItems="flex-end" height={80}>
               {/* 작업 막대 */}
-              <Animated.View
-                entering={FadeInDown.delay(500 + index * 50).springify()}
-              >
+              <View>
                 <LinearGradient
                   colors={['#0066CC', '#00A3FF']}
                   style={[
@@ -236,11 +233,9 @@ function WeeklyTrendCard({
                     { height: (item.work / maxValue) * 70 || 4 },
                   ]}
                 />
-              </Animated.View>
+              </View>
               {/* 순찰 막대 */}
-              <Animated.View
-                entering={FadeInDown.delay(550 + index * 50).springify()}
-              >
+              <View>
                 <LinearGradient
                   colors={['#FF6B00', '#FFB800']}
                   style={[
@@ -248,7 +243,7 @@ function WeeklyTrendCard({
                     { height: (item.patrol / maxValue) * 70 || 4 },
                   ]}
                 />
-              </Animated.View>
+              </View>
             </XStack>
             <Text fontSize={12} color="$gray500">
               {item.day}

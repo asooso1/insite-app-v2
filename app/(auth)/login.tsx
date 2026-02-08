@@ -4,7 +4,7 @@
  * 2026 Modern UI - Premium Facility Management
  * Glassmorphism + 그라디언트 기반 현대적 로그인 경험
  */
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   StyleSheet,
@@ -15,16 +15,6 @@ import {
 } from 'react-native';
 import { Link } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  withDelay,
-  Easing,
-  interpolate,
-  FadeInUp,
-} from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -125,68 +115,6 @@ const GuestLink = styled(Text, {
 export default function LoginScreen() {
   const { login, isLoading, error } = useLogin();
 
-  // 애니메이션 값
-  const circleScale = useSharedValue(0);
-  const logoOpacity = useSharedValue(0);
-  const cardTranslateY = useSharedValue(50);
-  const cardOpacity = useSharedValue(0);
-
-  // 마운트 시 애니메이션 실행
-  useEffect(() => {
-    // 배경 원형 애니메이션
-    circleScale.value = withDelay(
-      100,
-      withSpring(1, {
-        damping: 15,
-        stiffness: 100,
-      })
-    );
-
-    // 로고 페이드인
-    logoOpacity.value = withDelay(
-      300,
-      withTiming(1, {
-        duration: 600,
-        easing: Easing.out(Easing.cubic),
-      })
-    );
-
-    // 카드 슬라이드 업
-    cardTranslateY.value = withDelay(
-      500,
-      withSpring(0, {
-        damping: 20,
-        stiffness: 150,
-      })
-    );
-    cardOpacity.value = withDelay(
-      500,
-      withTiming(1, {
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-      })
-    );
-  }, []);
-
-  // 애니메이션 스타일
-  const circleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: circleScale.value }],
-  }));
-
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [
-      {
-        translateY: interpolate(logoOpacity.value, [0, 1], [20, 0]),
-      },
-    ],
-  }));
-
-  const cardStyle = useAnimatedStyle(() => ({
-    opacity: cardOpacity.value,
-    transform: [{ translateY: cardTranslateY.value }],
-  }));
-
   const {
     control,
     handleSubmit,
@@ -219,39 +147,39 @@ export default function LoginScreen() {
       />
 
       {/* 장식용 원형 요소들 */}
-      <Animated.View style={[styles.decorativeCircle1, circleStyle]}>
+      <View style={styles.decorativeCircle1}>
         <LinearGradient
           colors={['rgba(0, 163, 255, 0.3)', 'rgba(0, 102, 204, 0.1)']}
           style={styles.circleGradient}
         />
-      </Animated.View>
+      </View>
 
-      <Animated.View style={[styles.decorativeCircle2, circleStyle]}>
+      <View style={styles.decorativeCircle2}>
         <LinearGradient
           colors={['rgba(255, 107, 0, 0.2)', 'rgba(255, 184, 0, 0.05)']}
           style={styles.circleGradient}
         />
-      </Animated.View>
+      </View>
 
-      <Animated.View style={[styles.decorativeCircle3, circleStyle]}>
+      <View style={styles.decorativeCircle3}>
         <LinearGradient
           colors={['rgba(0, 200, 83, 0.15)', 'rgba(105, 240, 174, 0.05)']}
           style={styles.circleGradient}
         />
-      </Animated.View>
+      </View>
 
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* 로고 영역 */}
-        <Animated.View style={[styles.header, logoStyle]}>
+        <View style={styles.header}>
           <LogoText>{APP_NAME}</LogoText>
           <SubtitleText>Facility Management</SubtitleText>
-        </Animated.View>
+        </View>
 
         {/* 로그인 카드 */}
-        <Animated.View style={[styles.cardWrapper, cardStyle]}>
+        <View style={styles.cardWrapper}>
           {/* Glassmorphism 효과 */}
           <BlurView intensity={40} tint="light" style={styles.blurView}>
             <View style={styles.glassCard}>
@@ -326,13 +254,10 @@ export default function LoginScreen() {
               </YStack>
             </View>
           </BlurView>
-        </Animated.View>
+        </View>
 
         {/* 하단 링크 */}
-        <Animated.View
-          entering={FadeInUp.delay(800).duration(500)}
-          style={styles.footer}
-        >
+        <View style={styles.footer}>
           <Link href="/(auth)/guest-login" asChild>
             <XStack
               paddingVertical={12}
@@ -344,7 +269,7 @@ export default function LoginScreen() {
               <GuestLink>NFC 게스트 로그인</GuestLink>
             </XStack>
           </Link>
-        </Animated.View>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );

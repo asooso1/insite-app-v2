@@ -2,21 +2,13 @@
  * DonutChart 컴포넌트
  *
  * 2026 Modern UI - SVG 도넛 차트
- * 그라디언트 세그먼트, 범례, 애니메이션
+ * 그라디언트 세그먼트, 범례
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { XStack, YStack, Text } from 'tamagui';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, G, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
-import Animated, {
-  useSharedValue,
-  useAnimatedProps,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface ChartSegment {
   /** 라벨 */
@@ -125,17 +117,17 @@ export function DonutChart({
 
               {/* 세그먼트들 */}
               {segmentData.map((seg, idx) => (
-                <AnimatedSegment
+                <Circle
                   key={idx}
                   cx={center}
                   cy={center}
                   r={radius}
+                  stroke={`url(#segment-gradient-${idx})`}
                   strokeWidth={strokeWidth}
-                  gradientId={`segment-gradient-${idx}`}
-                  strokeDasharray={circumference}
+                  fill="transparent"
+                  strokeDasharray={`${seg.length} ${circumference - seg.length}`}
                   strokeDashoffset={seg.offset}
-                  length={seg.length}
-                  delay={idx * 150}
+                  strokeLinecap="round"
                 />
               ))}
             </G>
@@ -170,63 +162,6 @@ export function DonutChart({
         </YStack>
       </XStack>
     </YStack>
-  );
-}
-
-interface AnimatedSegmentProps {
-  cx: number;
-  cy: number;
-  r: number;
-  strokeWidth: number;
-  gradientId: string;
-  strokeDasharray: number;
-  strokeDashoffset: number;
-  length: number;
-  delay: number;
-}
-
-function AnimatedSegment({
-  cx,
-  cy,
-  r,
-  strokeWidth,
-  gradientId,
-  strokeDasharray,
-  strokeDashoffset,
-  length,
-  delay,
-}: AnimatedSegmentProps) {
-  const animatedLength = useSharedValue(0);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      animatedLength.value = withTiming(length, {
-        duration: 800,
-        easing: Easing.out(Easing.cubic),
-      });
-    }, delay);
-
-    return () => clearTimeout(timeout);
-  }, [length, delay, animatedLength]);
-
-  const animatedProps = useAnimatedProps(() => {
-    return {
-      strokeDasharray: [animatedLength.value, strokeDasharray - animatedLength.value],
-    };
-  });
-
-  return (
-    <AnimatedCircle
-      cx={cx}
-      cy={cy}
-      r={r}
-      stroke={`url(#${gradientId})`}
-      strokeWidth={strokeWidth}
-      fill="transparent"
-      strokeDashoffset={strokeDashoffset}
-      animatedProps={animatedProps}
-      strokeLinecap="round"
-    />
   );
 }
 

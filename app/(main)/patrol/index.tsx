@@ -10,10 +10,6 @@ import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Animated, {
-  FadeInDown,
-  FadeIn,
-} from 'react-native-reanimated';
 
 import { GlassFilterBar, PatrolCardEnhanced } from '@/features/patrol/components';
 import { mockPatrols } from '@/features/patrol/data/mockPatrols';
@@ -96,12 +92,10 @@ export default function PatrolListScreen() {
   }, [todayPatrols, otherPatrols]);
 
   // 리스트 아이템 렌더링
-  const renderItem = ({ item, index }: { item: (typeof sections)[0]; index: number }) => {
+  const renderItem = ({ item }: { item: (typeof sections)[0] }) => {
     if (item.type === 'header') {
       return (
-        <Animated.View
-          entering={FadeInDown.delay(index * 50).springify()}
-        >
+        <View>
           <XStack
             paddingHorizontal="$5"
             paddingTop="$5"
@@ -114,21 +108,19 @@ export default function PatrolListScreen() {
               {item.title}
             </Text>
           </XStack>
-        </Animated.View>
+        </View>
       );
     }
 
     if (item.data) {
       return (
-        <Animated.View
-          entering={FadeInDown.delay(index * 50).springify()}
-        >
+        <View>
           <PatrolCardEnhanced
             patrol={item.data}
             onPress={handlePatrolPress}
             highlighted={item.data.isToday}
           />
-        </Animated.View>
+        </View>
       );
     }
 
@@ -166,7 +158,7 @@ export default function PatrolListScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* 그라디언트 헤더 */}
-      <Animated.View entering={FadeIn.duration(500)}>
+      <View>
         <LinearGradient
           colors={['#0066CC', '#00A3FF']}
           start={{ x: 0, y: 0 }}
@@ -186,7 +178,7 @@ export default function PatrolListScreen() {
             </Text>
           </YStack>
         </LinearGradient>
-      </Animated.View>
+      </View>
 
       {/* 필터 바 */}
       <GlassFilterBar
