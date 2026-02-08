@@ -58,6 +58,8 @@
     "zustand": "5.0.11"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/plugin-transform-optional-chaining": "^7.25.0",
     "@types/react": "19.1.0",
     "ajv": "^8.17.1",
     "ajv-draft-04": "^1.0.0",
