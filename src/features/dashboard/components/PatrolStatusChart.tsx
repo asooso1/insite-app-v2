@@ -74,21 +74,9 @@ export function PatrolStatusChart({ data }: PatrolStatusChartProps) {
 
           {/* 상태별 통계 */}
           <XStack gap="$4" justifyContent="center" width="100%">
-            <StatusBadge
-              label="완료"
-              value={completed}
-              color="$success"
-            />
-            <StatusBadge
-              label="진행중"
-              value={processing}
-              color="$warning"
-            />
-            <StatusBadge
-              label="미실시"
-              value={notStarted}
-              color="$error"
-            />
+            <StatusBadge label="완료" value={completed} color="$success" />
+            <StatusBadge label="진행중" value={processing} color="$warning" />
+            <StatusBadge label="미실시" value={notStarted} color="$error" />
           </XStack>
         </YStack>
 
@@ -110,15 +98,7 @@ export function PatrolStatusChart({ data }: PatrolStatusChartProps) {
 /**
  * 상태 배지 컴포넌트
  */
-function StatusBadge({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
+function StatusBadge({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <YStack alignItems="center" gap="$1">
       <XStack
@@ -162,12 +142,7 @@ function FloorProgress({
       </Text>
 
       <YStack flex={1} gap="$1">
-        <XStack
-          height={20}
-          backgroundColor="$gray200"
-          borderRadius="$2"
-          overflow="hidden"
-        >
+        <XStack height={20} backgroundColor="$gray200" borderRadius="$2" overflow="hidden">
           <YStack
             width={`${percentage}%`}
             backgroundColor="$success"

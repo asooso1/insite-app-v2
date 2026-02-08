@@ -113,9 +113,43 @@ export const logoutApi = async (): Promise<void> => {
   }
 };
 
+/**
+ * 비밀번호 변경 요청
+ */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/**
+ * 비밀번호 변경 응답
+ */
+export interface ChangePasswordResponse {
+  code: string;
+  message: string;
+}
+
+/**
+ * 비밀번호 변경 API
+ */
+export const changePasswordApi = async (
+  params: ChangePasswordRequest
+): Promise<ChangePasswordResponse> => {
+  console.log('[Auth] 비밀번호 변경 요청');
+
+  const response = await apiClient.put<ChangePasswordResponse>(
+    '/m/api/account/password',
+    params
+  );
+
+  console.log('[Auth] 비밀번호 변경 응답:', response.data);
+  return response.data;
+};
+
 export default {
   login,
   guestLogin,
   logoutApi,
+  changePasswordApi,
   LOGIN_RESPONSE_CODES,
 };
