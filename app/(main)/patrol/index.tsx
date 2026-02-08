@@ -1,15 +1,21 @@
 /**
  * 순찰점검 목록 화면
  *
+ * 2026 Modern UI - Glassmorphism, 그라디언트 헤더, 플로팅 카드
  * 순찰 일정 목록, 오늘의 순찰 강조, 상태별 필터 기능 제공
  */
 import React, { useState, useMemo } from 'react';
-import { FlatList } from 'react-native';
-import { YStack, XStack, Text, Separator } from 'tamagui';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { YStack, XStack, Text } from 'tamagui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { PatrolCard } from '@/features/patrol/components/PatrolCard';
-import { PatrolFilterBar } from '@/features/patrol/components/PatrolFilterBar';
+import Animated, {
+  FadeInDown,
+  FadeIn,
+} from 'react-native-reanimated';
+
+import { GlassFilterBar, PatrolCardEnhanced } from '@/features/patrol/components';
 import { mockPatrols } from '@/features/patrol/data/mockPatrols';
 import type { PatrolDTO, PatrolFilterOption } from '@/features/patrol/types/patrol.types';
 
@@ -18,7 +24,24 @@ import type { PatrolDTO, PatrolFilterOption } from '@/features/patrol/types/patr
  */
 export default function PatrolListScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [selectedFilter, setSelectedFilter] = useState<PatrolFilterOption>('ALL');
+
+  // 필터 옵션 (카운트 포함)
+  const filterOptions = useMemo(() => {
+    const counts = {
+      ALL: mockPatrols.length,
+      ISSUE: mockPatrols.filter((p) => p.state === 'ISSUE').length,
+      PROCESSING: mockPatrols.filter((p) => p.state === 'PROCESSING').length,
+      COMPLETED: mockPatrols.filter((p) => p.state === 'COMPLETED').length,
+    };
+    return [
+      { value: 'ALL' as PatrolFilterOption, label: '전체', count: counts.ALL },
+      { value: 'ISSUE' as PatrolFilterOption, label: '미실시', count: counts.ISSUE },
+      { value: 'PROCESSING' as PatrolFilterOption, label: '진행중', count: counts.PROCESSING },
+      { value: 'COMPLETED' as PatrolFilterOption, label: '완료', count: counts.COMPLETED },
+    ];
+  }, []);
 
   // 필터링된 순찰 목록
   const filteredPatrols = useMemo(() => {
@@ -41,17 +64,21 @@ export default function PatrolListScreen() {
 
   // 순찰 카드 클릭 핸들러
   const handlePatrolPress = (patrol: PatrolDTO) => {
-    // 상세 화면으로 이동 (다음 태스크)
     router.push(`/patrol/${patrol.id}`);
   };
 
   // 섹션별 렌더링을 위한 데이터 구조
   const sections = useMemo(() => {
-    const result: Array<{ type: 'header' | 'item'; data?: PatrolDTO; title?: string }> = [];
+    const result: Array<{
+      type: 'header' | 'item';
+      data?: PatrolDTO;
+      title?: string;
+      icon?: string;
+    }> = [];
 
     // 오늘의 순찰 섹션
     if (todayPatrols.length > 0) {
-      result.push({ type: 'header', title: '오늘의 순찰' });
+      result.push({ type: 'header', title: '오늘의 순찰', icon: '🔥' });
       todayPatrols.forEach((patrol) => {
         result.push({ type: 'item', data: patrol });
       });
@@ -59,7 +86,7 @@ export default function PatrolListScreen() {
 
     // 기타 순찰 섹션
     if (otherPatrols.length > 0) {
-      result.push({ type: 'header', title: '예정 순찰' });
+      result.push({ type: 'header', title: '예정 순찰', icon: '📅' });
       otherPatrols.forEach((patrol) => {
         result.push({ type: 'item', data: patrol });
       });
@@ -69,25 +96,39 @@ export default function PatrolListScreen() {
   }, [todayPatrols, otherPatrols]);
 
   // 리스트 아이템 렌더링
-  const renderItem = ({ item }: { item: (typeof sections)[0] }) => {
+  const renderItem = ({ item, index }: { item: (typeof sections)[0]; index: number }) => {
     if (item.type === 'header') {
       return (
-        <YStack paddingHorizontal="$4" paddingTop="$4" paddingBottom="$2">
-          <Text fontSize={18} fontWeight="700" color="$gray900">
-            {item.title}
-          </Text>
-          <Separator marginTop="$2" backgroundColor="$gray200" />
-        </YStack>
+        <Animated.View
+          entering={FadeInDown.delay(index * 50).springify()}
+        >
+          <XStack
+            paddingHorizontal="$5"
+            paddingTop="$5"
+            paddingBottom="$2"
+            gap="$2"
+            alignItems="center"
+          >
+            <Text fontSize={18}>{item.icon}</Text>
+            <Text fontSize={18} fontWeight="700" color="$gray800" letterSpacing={-0.3}>
+              {item.title}
+            </Text>
+          </XStack>
+        </Animated.View>
       );
     }
 
     if (item.data) {
       return (
-        <PatrolCard
-          patrol={item.data}
-          onPress={handlePatrolPress}
-          highlighted={item.data.isToday}
-        />
+        <Animated.View
+          entering={FadeInDown.delay(index * 50).springify()}
+        >
+          <PatrolCardEnhanced
+            patrol={item.data}
+            onPress={handlePatrolPress}
+            highlighted={item.data.isToday}
+          />
+        </Animated.View>
       );
     }
 
@@ -97,7 +138,21 @@ export default function PatrolListScreen() {
   // 빈 상태 렌더링
   const renderEmpty = () => (
     <YStack flex={1} justifyContent="center" alignItems="center" paddingVertical="$10">
-      <Text fontSize={16} color="$gray500">
+      <YStack
+        width={80}
+        height={80}
+        borderRadius="$full"
+        backgroundColor="$gray100"
+        alignItems="center"
+        justifyContent="center"
+        marginBottom="$4"
+      >
+        <Text fontSize={36}>📋</Text>
+      </YStack>
+      <Text fontSize={16} fontWeight="600" color="$gray700" marginBottom="$2">
+        순찰 일정이 없습니다
+      </Text>
+      <Text fontSize={14} color="$gray500" textAlign="center">
         {selectedFilter === 'ALL'
           ? '등록된 순찰이 없습니다'
           : '해당 상태의 순찰이 없습니다'}
@@ -105,42 +160,85 @@ export default function PatrolListScreen() {
     </YStack>
   );
 
+  // 오늘의 순찰 카운트
+  const todayCount = mockPatrols.filter((p) => p.isToday).length;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-      <YStack flex={1}>
-        {/* 헤더 */}
-        <XStack
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          borderBottomWidth={1}
-          borderBottomColor="$gray200"
-          backgroundColor="$white"
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* 그라디언트 헤더 */}
+      <Animated.View entering={FadeIn.duration(500)}>
+        <LinearGradient
+          colors={['#0066CC', '#00A3FF']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
         >
-          <Text fontSize={24} fontWeight="700" color="$gray900">
-            순찰점검
-          </Text>
-        </XStack>
+          {/* 배경 장식 */}
+          <View style={styles.headerDecor1} />
+          <View style={styles.headerDecor2} />
 
-        {/* 필터 바 */}
-        <PatrolFilterBar
-          selectedFilter={selectedFilter}
-          onFilterChange={setSelectedFilter}
-        />
+          <YStack paddingHorizontal="$5" paddingVertical="$4" gap="$1" zIndex={1}>
+            <Text fontSize={28} fontWeight="800" color="white" letterSpacing={-0.5}>
+              순찰점검
+            </Text>
+            <Text fontSize={15} color="rgba(255, 255, 255, 0.85)">
+              오늘 {todayCount}건의 순찰이 있습니다
+            </Text>
+          </YStack>
+        </LinearGradient>
+      </Animated.View>
 
-        {/* 순찰 목록 */}
-        <FlatList
-          data={sections}
-          renderItem={renderItem}
-          keyExtractor={(item, index) =>
-            item.type === 'header' ? `header-${index}` : `patrol-${item.data?.id}`
-          }
-          contentContainerStyle={{
-            paddingBottom: 20,
-            flexGrow: 1,
-          }}
-          ListEmptyComponent={renderEmpty}
-        />
-      </YStack>
-    </SafeAreaView>
+      {/* 필터 바 */}
+      <GlassFilterBar
+        options={filterOptions}
+        selectedFilter={selectedFilter}
+        onFilterChange={setSelectedFilter}
+      />
+
+      {/* 순찰 목록 */}
+      <FlatList
+        data={sections}
+        renderItem={renderItem}
+        keyExtractor={(item, index) =>
+          item.type === 'header' ? `header-${index}` : `patrol-${item.data?.id}`
+        }
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={renderEmpty}
+        showsVerticalScrollIndicator={false}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  headerGradient: {
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerDecor1: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    top: -80,
+    right: -40,
+  },
+  headerDecor2: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    bottom: -30,
+    left: -20,
+  },
+  listContent: {
+    paddingBottom: 24,
+    flexGrow: 1,
+  },
+});

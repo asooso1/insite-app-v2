@@ -5,7 +5,7 @@
  */
 
 // 기본 컴포넌트
-export { Button, type ButtonProps } from './Button';
+export { Button, IconButton, type ButtonProps, type IconButtonProps } from './Button';
 export { Input, type InputProps } from './Input';
 export {
   Card,
@@ -14,6 +14,9 @@ export {
   CardDescription,
   CardContent,
   CardFooter,
+  CardImage,
+  CardBadge,
+  CardBadgeText,
   type CardProps,
 } from './Card';
 
@@ -23,7 +26,16 @@ export { Avatar, AvatarImage, AvatarFallback, type AvatarProps } from './Avatar'
 export { Divider, type DividerProps } from './Divider';
 
 // 폼 컴포넌트
-export { TextField, TextFieldLabel, TextFieldHelper, type TextFieldProps } from './TextField';
+export {
+  TextField,
+  PasswordField,
+  SearchField,
+  TextFieldLabel,
+  TextFieldHelper,
+  type TextFieldProps,
+  type PasswordFieldProps,
+  type SearchFieldProps,
+} from './TextField';
 export { Select, type SelectProps, type SelectOption } from './Select';
 export { Checkbox, type CheckboxProps } from './Checkbox';
 export { Switch, type SwitchProps } from './Switch';
@@ -73,3 +85,12 @@ export {
   withErrorBoundary,
   type ErrorBoundaryProps,
 } from './ErrorBoundary';
+
+// 2026 Modern UI 컴포넌트
+export { GradientHeader } from './GradientHeader';
+export { GlassCard } from './GlassCard';
+export { QuickStatCard } from './QuickStatCard';
+export { SectionHeader } from './SectionHeader';
+export { ProgressBar } from './ProgressBar';
+export { FilterPill } from './FilterPill';
+export { GlassSearchInput } from './GlassSearchInput';

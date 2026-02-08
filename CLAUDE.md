@@ -70,7 +70,13 @@
 - **Tamagui Only**: StyleSheet 사용 금지 (네이티브 모듈 연동 제외)
 - **비즈니스 로직 분리**: UI 컴포넌트에 로직 작성 금지, hooks/로 분리
 
-### 5. 파일 명명 규칙
+### 5. 제외 기능 (구현하지 않음)
+- **BEMS API 관련 기능**: 빌딩 에너지 관리 시스템 연동 기능 제외
+- **PC API 관련 기능**: PC 연동 기능 제외
+- 위 API들은 config에서도 제거됨
+- v1 앱에서 해당 기능 참조 시 스킵
+
+### 6. 파일 명명 규칙
 ```
 컴포넌트: PascalCase.tsx (Button.tsx, WorkOrderCard.tsx)
 훅: use*.ts (useAuth.ts, useWorkOrders.ts)
@@ -79,7 +85,7 @@
 타입: *.types.ts 또는 types/index.ts
 ```
 
-### 6. 커밋 메시지 타입
+### 7. 커밋 메시지 타입
 ```
 feat: 새로운 기능 추가
 fix: 버그 수정
@@ -185,11 +191,13 @@ InsiteApp-v2/
 ## 환경 설정
 
 ### API 엔드포인트
-| 환경 | Main API | BEMS API |
-|------|----------|----------|
-| Development | stage.hdc-insite.com:8083 | stage.hdc-insite.com:8086 |
-| Staging | stage.hdc-insite.com:8083 | stage.hdc-insite.com:8086 |
-| Production | www.hdc-insite.com:8083 | www.hdc-insite.com:8086 |
+| 환경 | Main API |
+|------|----------|
+| Development | 121.133.17.22:8083 |
+| Staging | stage.hdc-insite.com:8083 |
+| Production | www.hdc-insite.com:8083 |
+
+> **참고**: BEMS API, PC API는 v2.0에서 제외됨
 
 ### EAS Build 프로파일
 - `development`: 개발용 (Dev Client)
