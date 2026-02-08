@@ -1,16 +1,21 @@
 /**
  * 작업지시 목록 화면
+ *
+ * 2026 Modern UI - 그라디언트 헤더 + Glass 필터 + Floating 카드
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import { FlatList, RefreshControl, Pressable } from 'react-native';
-import { YStack, XStack, Text, Input } from 'tamagui';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, RefreshControl } from 'react-native';
+import { YStack, XStack, Text } from 'tamagui';
 import { useRouter } from 'expo-router';
+import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import { WorkOrderCard } from '@/features/work/components/WorkOrderCard';
+import { GradientHeader } from '@/components/ui/GradientHeader';
+import { GlassSearchInput } from '@/components/ui/GlassSearchInput';
+import { FilterPill } from '@/components/ui/FilterPill';
+import { EmptyState } from '@/components/ui/EmptyState';
 import type { WorkOrderDTO } from '@/api/generated/models';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { mockWorkOrders } from '@/features/work/utils/mockData';
 
 /**
@@ -19,37 +24,32 @@ import { mockWorkOrders } from '@/features/work/utils/mockData';
 type WorkOrderStateFilter = 'WRITE' | 'ISSUE' | 'PROCESSING' | 'REQ_COMPLETE' | 'COMPLETE' | 'CANCEL';
 
 /**
+ * 필터 옵션
+ */
+const FILTER_OPTIONS: { state: WorkOrderStateFilter | null; label: string }[] = [
+  { state: null, label: '전체' },
+  { state: 'ISSUE', label: '발행' },
+  { state: 'PROCESSING', label: '진행중' },
+  { state: 'REQ_COMPLETE', label: '완료요청' },
+  { state: 'COMPLETE', label: '완료' },
+];
+
+/**
  * 작업지시 목록 화면
  */
 export default function WorkListScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   // 상태 관리
   const [searchText, setSearchText] = useState('');
-  const [selectedStates, setSelectedStates] = useState<WorkOrderStateFilter[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedState, setSelectedState] = useState<WorkOrderStateFilter | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // 디바운스된 검색어 (300ms)
   const debouncedSearch = useDebounce(searchText, 300);
 
-  // TODO: 실제 API 연동 (useWorkOrdersInfinite 사용)
-  // const {
-  //   data,
-  //   fetchNextPage,
-  //   hasNextPage,
-  //   isFetchingNextPage,
-  //   refetch,
-  //   isRefetching,
-  //   isLoading,
-  // } = useWorkOrdersInfinite({
-  //   buildingId: 1, // 실제 사용자의 buildingId 사용
-  //   state: selectedStates.length > 0 ? selectedStates.join(',') : undefined,
-  //   searchKeyword: debouncedSearch || undefined,
-  //   size: 10,
-  // });
-
-  // Mock 데이터 사용 (개발용)
+  // Mock 데이터 필터링 (실제로는 API 사용)
   const workOrders = useMemo(() => {
     let filtered = [...mockWorkOrders];
 
@@ -65,24 +65,12 @@ export default function WorkListScreen() {
     }
 
     // 상태 필터
-    if (selectedStates.length > 0) {
-      filtered = filtered.filter((item) => selectedStates.includes(item.state as WorkOrderStateFilter));
+    if (selectedState) {
+      filtered = filtered.filter((item) => item.state === selectedState);
     }
 
     return filtered;
-  }, [debouncedSearch, selectedStates]);
-
-  // 상태 필터 토글
-  const handleStateToggle = useCallback((state: WorkOrderStateFilter) => {
-    setSelectedStates((prev) =>
-      prev.includes(state) ? prev.filter((s) => s !== state) : [...prev, state]
-    );
-  }, []);
-
-  // 필터 초기화
-  const handleResetFilters = useCallback(() => {
-    setSelectedStates([]);
-  }, []);
+  }, [debouncedSearch, selectedState]);
 
   // 작업지시 상세로 이동
   const handleWorkOrderPress = useCallback(
@@ -96,146 +84,160 @@ export default function WorkListScreen() {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     // TODO: 실제 refetch 호출
-    // await refetch();
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    setIsRefreshing(false);
+  }, []);
+
+  // 상태별 카운트
+  const stateCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: mockWorkOrders.length };
+    mockWorkOrders.forEach((wo) => {
+      counts[wo.state || 'WRITE'] = (counts[wo.state || 'WRITE'] || 0) + 1;
+    });
+    return counts;
   }, []);
 
   // 렌더링 함수
   const renderItem = useCallback(
-    ({ item }: { item: WorkOrderDTO }) => (
-      <WorkOrderCard workOrder={item} onPress={handleWorkOrderPress} />
+    ({ item, index }: { item: WorkOrderDTO; index: number }) => (
+      <Animated.View
+        entering={FadeInDown.delay(index * 50).springify()}
+      >
+        <WorkOrderCard
+          workOrder={item}
+          onPress={handleWorkOrderPress}
+          progress={item.state === 'PROCESSING' ? Math.floor(Math.random() * 80) + 20 : undefined}
+        />
+      </Animated.View>
     ),
     [handleWorkOrderPress]
   );
 
   const renderEmpty = useCallback(() => {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$6">
-        <Text fontSize={16} color="$gray500" textAlign="center">
-          작업지시가 없습니다
-        </Text>
-        {(debouncedSearch || selectedStates.length > 0) && (
-          <Text fontSize={14} color="$gray400" marginTop="$2" textAlign="center">
-            필터를 변경해보세요
-          </Text>
-        )}
-      </YStack>
-    );
-  }, [debouncedSearch, selectedStates]);
-
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }} edges={['top']}>
-      <YStack flex={1}>
-        {/* 헤더 */}
-        <YStack
-          backgroundColor="$white"
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          borderBottomWidth={1}
-          borderBottomColor="$gray200"
-        >
-          <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-            <Text fontSize={24} fontWeight="700" color="$gray900">
-              작업지시
-            </Text>
-            <Button
-              variant="primary"
-              size="sm"
-              onPress={() => router.push('/work/create')}
-            >
-              + 작업지시 등록
-            </Button>
-          </XStack>
-
-          {/* 검색 입력 */}
-          <Input
-            placeholder="작업명, 건물, 담당자로 검색"
-            value={searchText}
-            onChangeText={setSearchText}
-            backgroundColor="$gray50"
-            borderColor="$gray200"
-            borderWidth={1}
-            borderRadius="$2"
-            paddingHorizontal="$3"
-            paddingVertical="$2"
-            fontSize={15}
-            height={44}
-          />
-
-          {/* 필터 토글 버튼 */}
-          <XStack marginTop="$3" justifyContent="space-between" alignItems="center">
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={() => setShowFilters(!showFilters)}
-            >
-              {showFilters ? '필터 숨기기' : '필터 보기'}
-            </Button>
-
-            {selectedStates.length > 0 && (
-              <Button variant="ghost" size="sm" onPress={handleResetFilters}>
-                초기화
-              </Button>
-            )}
-          </XStack>
-        </YStack>
-
-        {/* 상태 필터 */}
-        {showFilters && (
-          <YStack backgroundColor="$white" paddingHorizontal="$4" paddingVertical="$3">
-            <Text fontSize={14} fontWeight="600" color="$gray700" marginBottom="$2">
-              상태
-            </Text>
-            <XStack gap="$2" flexWrap="wrap">
-              {(
-                [
-                  { state: 'WRITE' as const, label: '작성' },
-                  { state: 'ISSUE' as const, label: '발행' },
-                  { state: 'PROCESSING' as const, label: '처리중' },
-                  { state: 'REQ_COMPLETE' as const, label: '완료요청' },
-                  { state: 'COMPLETE' as const, label: '완료' },
-                  { state: 'CANCEL' as const, label: '취소' },
-                ]
-              ).map(({ state, label }) => {
-                const isSelected = selectedStates.includes(state);
-                return (
-                  <Pressable key={state} onPress={() => handleStateToggle(state)}>
-                    <Badge
-                      variant={isSelected ? 'primary' : 'default'}
-                      size="md"
-                      paddingHorizontal="$3"
-                      paddingVertical="$2"
-                    >
-                      {label}
-                    </Badge>
-                  </Pressable>
-                );
-              })}
-            </XStack>
-          </YStack>
-        )}
-
-        {/* 작업지시 목록 */}
-        <FlatList
-          data={workOrders}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id?.toString() ?? ''}
-          ListEmptyComponent={renderEmpty}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              tintColor="#0066CC"
-            />
+      <YStack flex={1} justifyContent="center" alignItems="center" padding="$10">
+        <EmptyState
+          title="작업지시가 없습니다"
+          description={
+            debouncedSearch || selectedState
+              ? '필터를 변경해보세요'
+              : '새 작업지시를 등록해주세요'
           }
-          contentContainerStyle={{
-            paddingVertical: 8,
-            flexGrow: 1,
-          }}
+          actionLabel={!debouncedSearch && !selectedState ? '작업지시 등록' : undefined}
+          onAction={!debouncedSearch && !selectedState ? () => router.push('/work/create') : undefined}
         />
       </YStack>
-    </SafeAreaView>
+    );
+  }, [debouncedSearch, selectedState, router]);
+
+  const renderHeader = useCallback(() => {
+    return (
+      <YStack>
+        {/* 필터 Pills */}
+        <Animated.View entering={FadeInRight.delay(100).springify()}>
+          <XStack
+            paddingHorizontal="$4"
+            paddingTop="$3"
+            paddingBottom="$2"
+            gap="$2"
+            flexWrap="wrap"
+          >
+            {FILTER_OPTIONS.map(({ state, label }) => {
+              const count = state ? stateCounts[state] || 0 : stateCounts.all;
+              return (
+                <FilterPill
+                  key={state || 'all'}
+                  label={`${label} ${count}`}
+                  selected={selectedState === state}
+                  onPress={() => setSelectedState(state)}
+                  size="md"
+                />
+              );
+            })}
+          </XStack>
+        </Animated.View>
+
+        {/* 결과 카운트 */}
+        <XStack
+          paddingHorizontal="$5"
+          paddingVertical="$2"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Text fontSize={13} color="$gray500">
+            총 {workOrders.length}건
+          </Text>
+          {(debouncedSearch || selectedState) && (
+            <Text
+              fontSize={13}
+              color="$primary"
+              pressStyle={{ opacity: 0.7 }}
+              onPress={() => {
+                setSearchText('');
+                setSelectedState(null);
+              }}
+            >
+              필터 초기화
+            </Text>
+          )}
+        </XStack>
+      </YStack>
+    );
+  }, [selectedState, stateCounts, workOrders.length, debouncedSearch]);
+
+  return (
+    <YStack flex={1} backgroundColor="$gray50">
+      {/* 그라디언트 헤더 */}
+      <GradientHeader
+        title="작업지시"
+        height={160}
+        rightAction={
+          <YStack
+            backgroundColor="rgba(255, 255, 255, 0.2)"
+            paddingHorizontal="$3"
+            paddingVertical="$2"
+            borderRadius={12}
+            borderWidth={1}
+            borderColor="rgba(255, 255, 255, 0.3)"
+            pressStyle={{ opacity: 0.8, scale: 0.97 }}
+            onPress={() => router.push('/work/create')}
+          >
+            <Text fontSize={13} fontWeight="700" color="$white">
+              + 등록
+            </Text>
+          </YStack>
+        }
+        bottomContent={
+          <GlassSearchInput
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder="작업명, 건물, 담당자로 검색"
+          />
+        }
+      />
+
+      {/* 작업지시 목록 */}
+      <FlatList
+        data={workOrders}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id?.toString() ?? ''}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmpty}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#0066CC"
+            colors={['#0066CC']}
+            progressViewOffset={-20}
+          />
+        }
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 20,
+          flexGrow: 1,
+        }}
+        showsVerticalScrollIndicator={false}
+      />
+    </YStack>
   );
 }

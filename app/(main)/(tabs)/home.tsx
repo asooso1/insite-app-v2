@@ -1,9 +1,24 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { useState, useCallback } from 'react';
+/**
+ * 홈 화면
+ *
+ * 2026 Modern UI - 그라디언트 헤더 + Glassmorphism 카드
+ * 오늘의 요약, 진행 중인 작업, 순찰 상태 표시
+ */
+import React, { useState, useCallback } from 'react';
+import { ScrollView, RefreshControl, Platform, ViewStyle } from 'react-native';
+import { YStack, XStack, Text } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuthStore } from '@/stores/auth.store';
+import { GradientHeader } from '@/components/ui/GradientHeader';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { QuickStatCard } from '@/components/ui/QuickStatCard';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 
+/**
+ * 홈 화면
+ */
 export default function HomeScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -11,277 +26,421 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // TODO: Refetch dashboard data
+    // TODO: 실제 데이터 갱신
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setRefreshing(false);
   }, []);
 
+  // Mock 데이터 (실제로는 API에서 가져옴)
+  const todayStats = {
+    work: 5,
+    patrol: 2,
+    alarm: 1,
+    completed: 3,
+  };
+
+  const inProgressWork = {
+    id: 1,
+    title: '공조기 정기점검',
+    location: 'A동 3층',
+    progress: 80,
+  };
+
+  const todayPatrol = {
+    id: 1,
+    title: 'A동 정기순찰',
+    floorsTotal: 5,
+    floorsCompleted: 2,
+  };
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <YStack flex={1} backgroundColor="$gray50">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#0066CC"
+            colors={['#0066CC']}
+          />
+        }
+        showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>안녕하세요,</Text>
-            <Text style={styles.userName}>{user?.name ?? '사용자'}님</Text>
-          </View>
-          <View style={styles.siteBadge}>
-            <Text style={styles.siteName}>{user?.siteName ?? '현장'}</Text>
-          </View>
-        </View>
-
-        {/* Quick Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>5</Text>
-            <Text style={styles.statLabel}>오늘의 작업</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>2</Text>
-            <Text style={styles.statLabel}>진행 중</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>3</Text>
-            <Text style={styles.statLabel}>완료</Text>
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>빠른 실행</Text>
-          <View style={styles.quickActions}>
-            <TouchableOpacity
-              style={styles.quickActionButton}
-              onPress={() => router.push('/(main)/work')}
+        {/* 그라디언트 헤더 */}
+        <GradientHeader
+          subtitle="안녕하세요,"
+          title={`${user?.name ?? '사용자'}님`}
+          rightAction={
+            <YStack
+              backgroundColor="rgba(255, 255, 255, 0.2)"
+              paddingHorizontal="$3"
+              paddingVertical="$2"
+              borderRadius={12}
+              borderWidth={1}
+              borderColor="rgba(255, 255, 255, 0.3)"
             >
-              <Text style={styles.quickActionIcon}>📋</Text>
-              <Text style={styles.quickActionText}>작업지시</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.quickActionButton}
-              onPress={() => router.push('/(main)/patrol')}
-            >
-              <Text style={styles.quickActionIcon}>🚶</Text>
-              <Text style={styles.quickActionText}>순찰점검</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.quickActionButton}
-              onPress={() => router.push('/(main)/dashboard/bems')}
-            >
-              <Text style={styles.quickActionIcon}>📊</Text>
-              <Text style={styles.quickActionText}>대시보드</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.quickActionButton}
-              onPress={() => router.push('/(main)/(tabs)/scan')}
-            >
-              <Text style={styles.quickActionIcon}>📱</Text>
-              <Text style={styles.quickActionText}>NFC 스캔</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              <Text fontSize={12} fontWeight="600" color="$white">
+                {user?.siteName ?? '현장'}
+              </Text>
+            </YStack>
+          }
+          height={180}
+        />
 
-        {/* Today's Work */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>오늘의 작업</Text>
-            <TouchableOpacity onPress={() => router.push('/(main)/work')}>
-              <Text style={styles.seeAllText}>전체보기</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.workList}>
-            {/* Mock work items */}
-            {[1, 2, 3].map((i) => (
-              <TouchableOpacity key={i} style={styles.workItem}>
-                <View style={styles.workItemHeader}>
-                  <View style={styles.workStatusBadge}>
-                    <Text style={styles.workStatusText}>진행중</Text>
-                  </View>
-                  <Text style={styles.workItemTime}>09:00</Text>
-                </View>
-                <Text style={styles.workItemTitle}>설비 점검 #{i}</Text>
-                <Text style={styles.workItemLocation}>B1F 기계실</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Notices */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>공지사항</Text>
-          <View style={styles.noticeCard}>
-            <Text style={styles.noticeTitle}>시스템 점검 안내</Text>
-            <Text style={styles.noticeContent}>
-              2024년 1월 20일 새벽 2시~4시 시스템 점검이 예정되어 있습니다.
+        {/* 오늘의 요약 (Glass Card - 오버랩) */}
+        <Animated.View entering={FadeInDown.delay(100).springify()}>
+          <GlassCard
+            marginHorizontal={20}
+            marginTop={-32}
+            floating
+            intensity="heavy"
+          >
+            <Text fontSize={15} fontWeight="700" color="$gray900" marginBottom="$4">
+              오늘의 업무 현황
             </Text>
-            <Text style={styles.noticeDate}>2024-01-15</Text>
-          </View>
-        </View>
+            <XStack gap="$3">
+              <QuickStatCard
+                icon="📋"
+                value={todayStats.work}
+                label="작업"
+                variant="primary"
+                onPress={() => router.push('/(main)/work')}
+              />
+              <QuickStatCard
+                icon="🚶"
+                value={todayStats.patrol}
+                label="순찰"
+                variant="accent"
+                onPress={() => router.push('/(main)/patrol')}
+              />
+              <QuickStatCard
+                icon="⚠️"
+                value={todayStats.alarm}
+                label="알람"
+                variant="warning"
+                onPress={() => router.push('/(main)/dashboard/alarm')}
+              />
+              <QuickStatCard
+                icon="✅"
+                value={todayStats.completed}
+                label="완료"
+                variant="success"
+              />
+            </XStack>
+          </GlassCard>
+        </Animated.View>
+
+        {/* 빠른 실행 */}
+        <Animated.View entering={FadeInDown.delay(200).springify()}>
+          <YStack paddingHorizontal="$5" marginTop="$6">
+            <SectionHeader title="빠른 실행" showAccent />
+            <XStack gap="$3">
+              <QuickActionButton
+                icon="📋"
+                label="작업지시"
+                onPress={() => router.push('/(main)/work')}
+              />
+              <QuickActionButton
+                icon="🚶"
+                label="순찰점검"
+                onPress={() => router.push('/(main)/patrol')}
+              />
+              <QuickActionButton
+                icon="📊"
+                label="대시보드"
+                onPress={() => router.push('/(main)/dashboard')}
+              />
+              <QuickActionButton
+                icon="📱"
+                label="NFC 스캔"
+                onPress={() => router.push('/(main)/(tabs)/scan')}
+              />
+            </XStack>
+          </YStack>
+        </Animated.View>
+
+        {/* 진행 중인 작업 */}
+        <Animated.View entering={FadeInDown.delay(300).springify()}>
+          <YStack paddingHorizontal="$5" marginTop="$6">
+            <SectionHeader
+              title="진행 중인 작업"
+              actionText="전체보기"
+              onAction={() => router.push('/(main)/work')}
+              showAccent
+            />
+            <WorkInProgressCard
+              title={inProgressWork.title}
+              location={inProgressWork.location}
+              progress={inProgressWork.progress}
+              onPress={() => router.push(`/work/${inProgressWork.id}`)}
+            />
+          </YStack>
+        </Animated.View>
+
+        {/* 오늘의 순찰 */}
+        <Animated.View entering={FadeInDown.delay(400).springify()}>
+          <YStack paddingHorizontal="$5" marginTop="$6">
+            <SectionHeader
+              title="오늘의 순찰"
+              actionText="전체보기"
+              onAction={() => router.push('/(main)/patrol')}
+              showAccent
+            />
+            <PatrolStatusCard
+              title={todayPatrol.title}
+              floorsTotal={todayPatrol.floorsTotal}
+              floorsCompleted={todayPatrol.floorsCompleted}
+              onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
+            />
+          </YStack>
+        </Animated.View>
+
+        {/* 공지사항 */}
+        <Animated.View entering={FadeInDown.delay(500).springify()}>
+          <YStack paddingHorizontal="$5" marginTop="$6">
+            <SectionHeader title="공지사항" showAccent />
+            <NoticeCard
+              title="시스템 점검 안내"
+              content="2026년 2월 15일 새벽 2시~4시 시스템 점검이 예정되어 있습니다."
+              date="2026-02-08"
+            />
+          </YStack>
+        </Animated.View>
       </ScrollView>
-    </SafeAreaView>
+    </YStack>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  greeting: {
-    fontSize: 14,
-    color: '#6E6E6E',
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2C2C2C',
-  },
-  siteBadge: {
-    backgroundColor: '#E6F0FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  siteName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#0064FF',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0064FF',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6E6E6E',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2C2C2C',
-    marginBottom: 12,
-  },
-  seeAllText: {
-    fontSize: 14,
-    color: '#0064FF',
-  },
-  quickActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  quickActionButton: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  quickActionIcon: {
-    fontSize: 28,
-    marginBottom: 8,
-  },
-  quickActionText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#2C2C2C',
-  },
-  workList: {
-    gap: 12,
-  },
-  workItem: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-  },
-  workItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  workStatusBadge: {
-    backgroundColor: '#FFF4E6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  workStatusText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#BEA736',
-  },
-  workItemTime: {
-    fontSize: 12,
-    color: '#6E6E6E',
-  },
-  workItemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C2C2C',
-    marginBottom: 4,
-  },
-  workItemLocation: {
-    fontSize: 14,
-    color: '#6E6E6E',
-  },
-  noticeCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-  },
-  noticeTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C2C2C',
-    marginBottom: 8,
-  },
-  noticeContent: {
-    fontSize: 14,
-    color: '#6E6E6E',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  noticeDate: {
-    fontSize: 12,
-    color: '#8E8E8E',
-  },
-});
+/**
+ * 빠른 실행 버튼
+ */
+interface QuickActionButtonProps {
+  icon: string;
+  label: string;
+  onPress: () => void;
+}
+
+function QuickActionButton({ icon, label, onPress }: QuickActionButtonProps) {
+  return (
+    <YStack
+      flex={1}
+      backgroundColor="$surface"
+      borderRadius={16}
+      padding="$3"
+      alignItems="center"
+      gap="$2"
+      pressStyle={{ opacity: 0.8, scale: 0.97 }}
+      onPress={onPress}
+      style={Platform.select({
+        ios: {
+          shadowColor: '#0066CC',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+        },
+        android: {
+          elevation: 3,
+        },
+      }) as ViewStyle}
+    >
+      <Text fontSize={24}>{icon}</Text>
+      <Text fontSize={12} fontWeight="500" color="$gray700">
+        {label}
+      </Text>
+    </YStack>
+  );
+}
+
+/**
+ * 진행 중인 작업 카드
+ */
+interface WorkInProgressCardProps {
+  title: string;
+  location: string;
+  progress: number;
+  onPress: () => void;
+}
+
+function WorkInProgressCard({
+  title,
+  location,
+  progress,
+  onPress,
+}: WorkInProgressCardProps) {
+  return (
+    <YStack
+      backgroundColor="$surface"
+      borderRadius={20}
+      padding="$4"
+      pressStyle={{ opacity: 0.95, scale: 0.99 }}
+      onPress={onPress}
+      style={Platform.select({
+        ios: {
+          shadowColor: '#0066CC',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.12,
+          shadowRadius: 20,
+        },
+        android: {
+          elevation: 6,
+        },
+      }) as ViewStyle}
+    >
+      <XStack justifyContent="space-between" alignItems="flex-start" marginBottom="$3">
+        <YStack flex={1} gap="$1">
+          <XStack gap="$2" alignItems="center">
+            <Text fontSize={20}>🔧</Text>
+            <Text fontSize={16} fontWeight="700" color="$gray900" letterSpacing={-0.3}>
+              {title}
+            </Text>
+          </XStack>
+          <XStack gap="$2" alignItems="center">
+            <Text fontSize={13} color="$gray500">{location}</Text>
+            <Text fontSize={13} color="$gray300">|</Text>
+            <XStack alignItems="center" gap="$1">
+              <YStack
+                width={8}
+                height={8}
+                borderRadius={4}
+                backgroundColor="$secondary"
+              />
+              <Text fontSize={13} color="$secondary" fontWeight="600">진행중</Text>
+            </XStack>
+          </XStack>
+        </YStack>
+      </XStack>
+
+      <ProgressBar
+        progress={progress}
+        variant="accent"
+        height={8}
+        glow
+        animated
+      />
+
+      <Text
+        fontSize={12}
+        color="$gray500"
+        textAlign="right"
+        marginTop="$2"
+      >
+        {progress}% 완료
+      </Text>
+    </YStack>
+  );
+}
+
+/**
+ * 순찰 상태 카드
+ */
+interface PatrolStatusCardProps {
+  title: string;
+  floorsTotal: number;
+  floorsCompleted: number;
+  onPress: () => void;
+}
+
+function PatrolStatusCard({
+  title,
+  floorsTotal,
+  floorsCompleted,
+  onPress,
+}: PatrolStatusCardProps) {
+  const progress = Math.round((floorsCompleted / floorsTotal) * 100);
+
+  return (
+    <YStack
+      backgroundColor="$surface"
+      borderRadius={20}
+      padding="$4"
+      pressStyle={{ opacity: 0.95, scale: 0.99 }}
+      onPress={onPress}
+      style={Platform.select({
+        ios: {
+          shadowColor: '#0066CC',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.12,
+          shadowRadius: 20,
+        },
+        android: {
+          elevation: 6,
+        },
+      }) as ViewStyle}
+    >
+      <XStack justifyContent="space-between" alignItems="center">
+        <XStack gap="$2" alignItems="center" flex={1}>
+          <Text fontSize={20}>🚶</Text>
+          <YStack flex={1}>
+            <Text fontSize={16} fontWeight="700" color="$gray900" letterSpacing={-0.3}>
+              {title}
+            </Text>
+            <Text fontSize={13} color="$gray500">
+              {floorsTotal}층 중 {floorsCompleted}층 완료
+            </Text>
+          </YStack>
+        </XStack>
+
+        <XStack alignItems="center" gap="$1">
+          <YStack
+            width={8}
+            height={8}
+            borderRadius={4}
+            backgroundColor="$secondary"
+          />
+          <Text fontSize={13} color="$secondary" fontWeight="600">진행중</Text>
+        </XStack>
+      </XStack>
+
+      <YStack marginTop="$3">
+        <ProgressBar
+          progress={progress}
+          variant="primary"
+          height={6}
+          animated
+        />
+      </YStack>
+    </YStack>
+  );
+}
+
+/**
+ * 공지사항 카드
+ */
+interface NoticeCardProps {
+  title: string;
+  content: string;
+  date: string;
+}
+
+function NoticeCard({ title, content, date }: NoticeCardProps) {
+  return (
+    <YStack
+      backgroundColor="$surface"
+      borderRadius={16}
+      padding="$4"
+      style={Platform.select({
+        ios: {
+          shadowColor: '#0066CC',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+        },
+        android: {
+          elevation: 3,
+        },
+      }) as ViewStyle}
+    >
+      <Text fontSize={15} fontWeight="700" color="$gray900" marginBottom="$2">
+        {title}
+      </Text>
+      <Text fontSize={14} color="$gray600" lineHeight={20} marginBottom="$2">
+        {content}
+      </Text>
+      <Text fontSize={12} color="$gray400">
+        {date}
+      </Text>
+    </YStack>
+  );
+}
