@@ -30,12 +30,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     resizeMode: 'contain',
     backgroundColor: '#0064FF',
   },
+  jsEngine: 'hermes',
   ios: {
     supportsTablet: true,
     bundleIdentifier: getUniqueIdentifier(),
     infoPlist: {
       NFCReaderUsageDescription: '순찰 체크포인트 및 설비 태그 스캔을 위해 NFC가 필요합니다.',
-      NSCameraUsageDescription: '작업 결과 사진 촬영을 위해 카메라 접근이 필요합니다.',
+      NSCameraUsageDescription: '작업 결과 사진 촬영을 위해 카메라 접근 권한이 필요합니다.',
+      NSPhotoLibraryUsageDescription: '작업 결과 사진 첨부를 위해 사진 라이브러리 접근 권한이 필요합니다.',
       ITSAppUsesNonExemptEncryption: false,
     },
   },
@@ -48,6 +50,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     permissions: [
       'android.permission.NFC',
       'android.permission.CAMERA',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.READ_MEDIA_IMAGES',
       'android.permission.RECEIVE_BOOT_COMPLETED',
       'android.permission.VIBRATE',
     ],
@@ -64,7 +69,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-camera',
       {
-        cameraPermission: '작업 결과 사진 촬영을 위해 카메라 접근이 필요합니다.',
+        cameraPermission: '작업 결과 사진 촬영을 위해 카메라 접근 권한이 필요합니다.',
+      },
+    ],
+    [
+      'expo-image-picker',
+      {
+        photosPermission: '작업 결과 사진 첨부를 위해 사진 라이브러리 접근 권한이 필요합니다.',
       },
     ],
     [

@@ -3,8 +3,6 @@ type Environment = 'development' | 'staging' | 'production';
 interface Config {
   env: Environment;
   apiBaseUrl: string;
-  bemsApiBaseUrl: string;
-  pcApiBaseUrl: string;
   sentryDsn: string | null;
   enableMockApi: boolean;
 }
@@ -13,33 +11,25 @@ const getEnvironment = (): Environment => {
   if (__DEV__) {
     return 'development';
   }
-  // In production, check APP_VARIANT from app.config.ts
-  // This is set during build time
   return 'production';
 };
 
 const configs: Record<Environment, Config> = {
   development: {
     env: 'development',
-    apiBaseUrl: 'https://stage.hdc-insite.com:8083/api',
-    bemsApiBaseUrl: 'https://stage.hdc-insite.com:8086/bems',
-    pcApiBaseUrl: 'https://stage.hdc-insite.com:8081/pc',
+    apiBaseUrl: 'https://stage.hdc-insite.com:8083',
     sentryDsn: null,
     enableMockApi: false,
   },
   staging: {
     env: 'staging',
-    apiBaseUrl: 'https://stage.hdc-insite.com:8083/api',
-    bemsApiBaseUrl: 'https://stage.hdc-insite.com:8086/bems',
-    pcApiBaseUrl: 'https://stage.hdc-insite.com:8081/pc',
+    apiBaseUrl: 'https://stage.hdc-insite.com:8083',
     sentryDsn: 'YOUR_STAGING_SENTRY_DSN',
     enableMockApi: false,
   },
   production: {
     env: 'production',
-    apiBaseUrl: 'https://www.hdc-insite.com:8083/api',
-    bemsApiBaseUrl: 'https://www.hdc-insite.com:8086/bems',
-    pcApiBaseUrl: 'https://www.hdc-insite.com:8081/pc',
+    apiBaseUrl: 'https://www.hdc-insite.com:8083',
     sentryDsn: 'YOUR_PRODUCTION_SENTRY_DSN',
     enableMockApi: false,
   },

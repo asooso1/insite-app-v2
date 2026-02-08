@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   View,
   Text,
@@ -8,26 +7,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { useRouter, Link } from 'expo-router';
+import { Link } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuthStore } from '@/stores/auth.store';
 import { APP_NAME } from '@/constants/config';
+import { useLogin } from '@/features/auth/hooks/useLogin';
 
 const loginSchema = z.object({
-  email: z.string().email('올바른 이메일 주소를 입력하세요'),
-  password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다'),
+  userId: z.string().min(1, '아이디를 입력하세요'),
+  password: z.string().min(1, '비밀번호를 입력하세요'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading, error } = useLogin();
 
   const {
     control,
@@ -36,37 +32,16 @@ export default function LoginScreen() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      userId: '',
       password: '',
     },
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
-
-    try {
-      // TODO: Replace with actual API call
-      // const response = await authApi.login(data);
-
-      // Mock login for development
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const mockUser = {
-        id: '1',
-        email: data.email,
-        name: '테스트 사용자',
-        role: 'worker' as const,
-        siteId: 'site1',
-        siteName: '테스트 현장',
-      };
-
-      setAuth(mockUser, 'mock-token', 'mock-refresh-token');
-      router.replace('/(main)/(tabs)/home');
-    } catch (error) {
-      Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인하세요');
-    } finally {
-      setIsLoading(false);
-    }
+    await login({
+      userId: data.userId,
+      passwd: data.password,
+    });
   };
 
   return (
@@ -83,18 +58,30 @@ export default function LoginScreen() {
 
         {/* Login Form */}
         <View style={styles.form}>
-          {/* Email Input */}
+          {/* 서버 연결 상태 표시 */}
+          <View style={styles.serverInfo}>
+            <View style={styles.serverDot} />
+            <Text style={styles.serverText}>스테이징 서버 연결</Text>
+          </View>
+
+          {/* API 오류 표시 */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorMessage}>{error}</Text>
+            </View>
+          )}
+
+          {/* User ID Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>이메일</Text>
+            <Text style={styles.label}>아이디</Text>
             <Controller
               control={control}
-              name="email"
+              name="userId"
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
-                  style={[styles.input, errors.email && styles.inputError]}
-                  placeholder="이메일을 입력하세요"
+                  style={[styles.input, errors.userId && styles.inputError]}
+                  placeholder="아이디를 입력하세요"
                   placeholderTextColor="#8E8E8E"
-                  keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
                   onBlur={onBlur}
@@ -104,7 +91,7 @@ export default function LoginScreen() {
                 />
               )}
             />
-            {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
+            {errors.userId && <Text style={styles.errorText}>{errors.userId.message}</Text>}
           </View>
 
           {/* Password Input */}
@@ -183,6 +170,35 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 20,
+  },
+  serverInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  serverDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#34C759',
+    marginRight: 8,
+  },
+  serverText: {
+    fontSize: 12,
+    color: '#8E8E8E',
+  },
+  errorContainer: {
+    backgroundColor: '#FFF2F2',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#C9252D',
+    textAlign: 'center',
   },
   inputContainer: {
     gap: 8,

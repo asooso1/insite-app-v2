@@ -16,6 +16,10 @@ tags:
     description: 계정 관리
   - name: devices
     description: 기기 관리
+  - name: workOrder
+    description: 작업지시 관리
+  - name: patrol
+    description: 순찰점검 관리 (NFC Round)
 
 paths:
   /m/api/account/login:
@@ -101,6 +105,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /m/api/account/password:
+    put:
+      tags:
+        - account
+      summary: 비밀번호 변경
+      description: 현재 비밀번호 확인 후 새 비밀번호로 변경
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: 비밀번호 변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 잘못된 요청 (현재 비밀번호 불일치 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /m/api/devices/disconnect:
     post:
       tags:
@@ -140,6 +179,557 @@ paths:
             text/event-stream:
               schema:
                 type: string
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/workOrder/workOrderList:
+    get:
+      tags:
+        - workOrder
+      summary: 작업지시 목록 조회
+      description: 작업지시 목록을 조회합니다
+      operationId: getWorkOrderList
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: 페이지 번호 (0부터 시작)
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          description: 페이지 크기
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: buildingId
+          in: query
+          required: true
+          description: 빌딩 ID
+          schema:
+            type: integer
+        - name: state
+          in: query
+          description: 작업지시 상태 필터
+          schema:
+            type: string
+            enum: [WRITE, ISSUE, PROCESSING, REQ_COMPLETE, COMPLETE, CANCEL]
+        - name: searchKeyword
+          in: query
+          description: 검색 키워드 (작업명, 설명 등)
+          schema:
+            type: string
+        - name: termDateFrom
+          in: query
+          description: 시작일 (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: termDateTo
+          in: query
+          description: 종료일 (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 작업지시 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkOrderListResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/workOrder/orderView/view/{workorderId}:
+    get:
+      tags:
+        - workOrder
+      summary: 작업지시 상세 조회
+      description: 특정 작업지시의 상세 정보를 조회합니다
+      operationId: getWorkOrderDetail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workorderId
+          in: path
+          required: true
+          description: 작업지시 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 작업지시 상세 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkOrderDetailResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 작업지시를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/workOrder/issueWorkOrder/{workorderId}:
+    put:
+      tags:
+        - workOrder
+      summary: 작업지시 발행
+      description: 작업지시를 발행 상태로 변경합니다
+      operationId: issueWorkOrder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workorderId
+          in: path
+          required: true
+          description: 작업지시 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 작업지시 발행 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 작업지시를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/workOrder/addOrder/v2:
+    post:
+      tags:
+        - workOrder
+      summary: 작업지시 등록
+      description: 새로운 작업지시를 등록합니다
+      operationId: createWorkOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateWorkOrderRequest'
+      responses:
+        '200':
+          description: 작업지시 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkOrderResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/workOrder/addWorkOrderResult/v2:
+    post:
+      tags:
+        - workOrder
+      summary: 작업 결과 등록
+      description: 작업 결과 및 첨부 파일을 등록합니다
+      operationId: addWorkOrderResult
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkOrderResultRequest'
+      responses:
+        '200':
+          description: 작업 결과 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/nfc-round/{nfcRoundId}:
+    get:
+      tags:
+        - patrol
+      summary: 순찰점검 상세 조회
+      description: 특정 순찰점검의 상세 정보를 조회합니다
+      operationId: getPatrolDetail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nfcRoundId
+          in: path
+          required: true
+          description: 순찰점검 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 순찰점검 상세 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatrolDetailResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 순찰점검을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/nfc-round/targets:
+    get:
+      tags:
+        - patrol
+      summary: 순찰 대상 조회
+      description: 순찰점검의 층별 구역 목록을 조회합니다
+      operationId: getPatrolTargets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nfcRoundId
+          in: query
+          required: true
+          description: 순찰점검 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 순찰 대상 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatrolTargetsResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/nfc-round/items:
+    get:
+      tags:
+        - patrol
+      summary: 순찰 점검 항목 조회
+      description: 특정 구역의 점검 항목 목록을 조회합니다
+      operationId: getPatrolItems
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nfcRoundId
+          in: query
+          required: true
+          description: 순찰점검 ID
+          schema:
+            type: integer
+        - name: buildingFloorZoneId
+          in: query
+          required: true
+          description: 건물 구역 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 점검 항목 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatrolItemsResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/nfc-round/result:
+    get:
+      tags:
+        - patrol
+      summary: 순찰 점검 결과 조회
+      description: 특정 구역의 점검 결과를 조회합니다
+      operationId: getPatrolResult
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nfcRoundId
+          in: query
+          required: true
+          description: 순찰점검 ID
+          schema:
+            type: integer
+        - name: buildingFloorZoneId
+          in: query
+          required: true
+          description: 건물 구역 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 점검 결과 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatrolResultResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - patrol
+      summary: 순찰 점검 결과 저장
+      description: 순찰 점검 결과 및 첨부 이미지를 저장합니다
+      operationId: savePatrolResult
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SavePatrolResultRequest'
+      responses:
+        '200':
+          description: 점검 결과 저장 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - patrol
+      summary: 순찰 점검 결과 수정
+      description: 기존 순찰 점검 결과를 수정합니다
+      operationId: updatePatrolResult
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SavePatrolResultRequest'
+      responses:
+        '200':
+          description: 점검 결과 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/nfc-round/state:
+    put:
+      tags:
+        - patrol
+      summary: 구역 상태 변경
+      description: 순찰 구역의 상태를 변경합니다 (ISSUE → PROCESSING)
+      operationId: updatePatrolZoneState
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePatrolZoneStateRequest'
+      responses:
+        '200':
+          description: 상태 변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/nfc-round/request-complete/{nfcRoundId}:
+    post:
+      tags:
+        - patrol
+      summary: 순찰 완료 요청
+      description: 순찰점검 완료를 요청합니다
+      operationId: requestCompletePatrol
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nfcRoundId
+          in: path
+          required: true
+          description: 순찰점검 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 완료 요청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 잘못된 요청 (미완료 구역 존재 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /m/api/nfc-round/not-possible/{nfcRoundId}:
+    get:
+      tags:
+        - patrol
+      summary: 조치불가 항목 조회
+      description: 순찰점검 중 조치 불가로 처리된 항목 목록을 조회합니다
+      operationId: getNotPossiblePatrolResults
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nfcRoundId
+          in: path
+          required: true
+          description: 순찰점검 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 조치불가 항목 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotPossiblePatrolResultsResponse'
         '401':
           description: 인증 실패
           content:
@@ -192,6 +782,21 @@ components:
           type: string
           description: FCM 푸시 토큰 (선택)
           example: fcm_token_example
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          description: 현재 비밀번호
+          example: oldPassword123
+        newPassword:
+          type: string
+          description: 새 비밀번호 (8자 이상, 영문+숫자 포함)
+          example: newPassword456
 
     LoginResponse:
       type: object
@@ -295,3 +900,660 @@ components:
           type: object
           additionalProperties: true
           description: 추가 오류 정보
+
+    WorkOrderDTO:
+      type: object
+      required:
+        - id
+        - name
+        - state
+        - stateName
+      properties:
+        id:
+          type: integer
+          description: 작업지시 ID
+          example: 12345
+        name:
+          type: string
+          description: 작업지시명
+          example: 냉방기 점검
+        description:
+          type: string
+          description: 작업 설명
+          example: 1층 냉방기 정기 점검
+        state:
+          type: string
+          enum: [WRITE, ISSUE, PROCESSING, REQ_COMPLETE, COMPLETE, CANCEL]
+          description: |
+            작업지시 상태
+            - WRITE: 작성중
+            - ISSUE: 발행
+            - PROCESSING: 진행중
+            - REQ_COMPLETE: 완료요청
+            - COMPLETE: 완료
+            - CANCEL: 취소
+          example: ISSUE
+        stateName:
+          type: string
+          description: 상태 한글명
+          example: 발행
+        firstClassName:
+          type: string
+          description: 1차 분류명
+          example: 설비
+        secondClassName:
+          type: string
+          description: 2차 분류명
+          example: 냉방
+        buildingId:
+          type: integer
+          description: 빌딩 ID
+          example: 1
+        buildingName:
+          type: string
+          description: 빌딩명
+          example: 아이파크몰
+        planStartDate:
+          type: string
+          format: date-time
+          description: 계획 시작일시
+          example: '2026-02-10T09:00:00'
+        planEndDate:
+          type: string
+          format: date-time
+          description: 계획 종료일시
+          example: '2026-02-10T18:00:00'
+        writeDate:
+          type: string
+          format: date-time
+          description: 작성일시
+          example: '2026-02-08T14:30:00'
+        writerName:
+          type: string
+          description: 작성자명
+          example: 홍길동
+        itemSize:
+          type: integer
+          description: 작업 항목 개수
+          example: 5
+
+    WorkOrderListResponse:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          enum: [success, fail]
+          example: success
+        message:
+          type: string
+          example: 조회 성공
+        data:
+          type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/WorkOrderDTO'
+              description: 작업지시 목록
+            totalElements:
+              type: integer
+              description: 전체 데이터 개수
+              example: 100
+            totalPages:
+              type: integer
+              description: 전체 페이지 수
+              example: 5
+            pageNumber:
+              type: integer
+              description: 현재 페이지 번호 (0부터 시작)
+              example: 0
+
+    WorkOrderDetailDTO:
+      allOf:
+        - $ref: '#/components/schemas/WorkOrderDTO'
+        - type: object
+          properties:
+            location:
+              type: string
+              description: 작업 위치
+              example: 1층 로비
+            managerName:
+              type: string
+              description: 담당자명
+              example: 김철수
+            managerPhone:
+              type: string
+              description: 담당자 연락처
+              example: '01098765432'
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/WorkOrderItemDTO'
+              description: 작업 항목 목록
+            attachments:
+              type: array
+              items:
+                $ref: '#/components/schemas/AttachmentDTO'
+              description: 첨부 파일 목록
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/WorkOrderResultDTO'
+              description: 작업 결과 목록
+
+    WorkOrderItemDTO:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          description: 작업 항목 ID
+          example: 1
+        name:
+          type: string
+          description: 작업 항목명
+          example: 필터 청소
+        description:
+          type: string
+          description: 항목 설명
+          example: 에어 필터 분리 및 청소
+        completed:
+          type: boolean
+          description: 완료 여부
+          example: false
+
+    AttachmentDTO:
+      type: object
+      required:
+        - id
+        - fileName
+        - fileUrl
+      properties:
+        id:
+          type: integer
+          description: 첨부 파일 ID
+          example: 1
+        fileName:
+          type: string
+          description: 파일명
+          example: image_001.jpg
+        fileUrl:
+          type: string
+          description: 파일 URL
+          example: /uploads/files/image_001.jpg
+        fileSize:
+          type: integer
+          description: 파일 크기 (bytes)
+          example: 1024000
+        uploadDate:
+          type: string
+          format: date-time
+          description: 업로드 일시
+          example: '2026-02-08T14:30:00'
+
+    WorkOrderResultDTO:
+      type: object
+      required:
+        - id
+        - content
+        - writer
+        - writeDate
+      properties:
+        id:
+          type: integer
+          description: 작업 결과 ID
+          example: 1
+        content:
+          type: string
+          description: 작업 결과 내용
+          example: 필터 청소 완료
+        writer:
+          type: string
+          description: 작성자명
+          example: 김철수
+        writeDate:
+          type: string
+          format: date-time
+          description: 작성일시
+          example: '2026-02-10T16:30:00'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttachmentDTO'
+          description: 첨부 파일 목록
+
+    WorkOrderDetailResponse:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          enum: [success, fail]
+          example: success
+        message:
+          type: string
+          example: 조회 성공
+        data:
+          type: object
+          properties:
+            workOrderDTO:
+              $ref: '#/components/schemas/WorkOrderDetailDTO'
+
+    CreateWorkOrderRequest:
+      type: object
+      required:
+        - name
+        - firstClassId
+        - secondClassId
+        - planStartDate
+        - planEndDate
+        - buildingId
+        - chargeAccountIds
+      properties:
+        name:
+          type: string
+          description: 작업지시명
+          example: 냉방기 정기 점검
+        description:
+          type: string
+          description: 작업 설명
+          example: 1층 냉방기 필터 청소 및 점검
+        firstClassId:
+          type: integer
+          description: 대분류 ID
+          example: 1
+        secondClassId:
+          type: integer
+          description: 소분류 ID
+          example: 11
+        planStartDate:
+          type: string
+          format: date
+          description: 계획 시작일 (YYYY-MM-DD)
+          example: '2026-02-10'
+        planEndDate:
+          type: string
+          format: date
+          description: 계획 종료일 (YYYY-MM-DD)
+          example: '2026-02-12'
+        buildingId:
+          type: integer
+          description: 빌딩 ID
+          example: 1
+        chargeAccountIds:
+          type: array
+          items:
+            type: integer
+          description: 담당자 ID 목록
+          example: [101, 102]
+        approveAccountIds:
+          type: array
+          items:
+            type: integer
+          description: 승인자 ID 목록 (선택)
+          example: [104]
+        files:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: 첨부 파일 목록 (선택)
+
+    CreateWorkOrderResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum: [success, fail]
+          example: success
+        message:
+          type: string
+          example: 작업지시가 등록되었습니다
+        data:
+          type: object
+          properties:
+            workorderId:
+              type: integer
+              description: 생성된 작업지시 ID
+              example: 12345
+
+    WorkOrderResultRequest:
+      type: object
+      required:
+        - workOrderId
+        - content
+      properties:
+        workOrderId:
+          type: integer
+          description: 작업지시 ID
+          example: 12345
+        content:
+          type: string
+          description: 작업 결과 내용
+          example: 냉방기 점검 완료. 이상 없음.
+        attachmentIds:
+          type: array
+          items:
+            type: integer
+          description: 첨부 파일 ID 목록
+          example: [1, 2, 3]
+
+    # ==================== 순찰점검 (Patrol) 스키마 ====================
+
+    PatrolDetailDTO:
+      type: object
+      required:
+        - nfcRoundId
+        - buildingId
+        - buildingName
+        - state
+      properties:
+        nfcRoundId:
+          type: integer
+          description: 순찰점검 ID
+          example: 1001
+        buildingId:
+          type: integer
+          description: 빌딩 ID
+          example: 1
+        buildingName:
+          type: string
+          description: 빌딩명
+          example: 아이파크몰
+        state:
+          type: string
+          enum: [WRITE, ISSUE, PROCESSING, REQ_COMPLETE, COMPLETE]
+          description: |
+            순찰점검 상태
+            - WRITE: 작성중
+            - ISSUE: 발행
+            - PROCESSING: 진행중
+            - REQ_COMPLETE: 완료요청
+            - COMPLETE: 완료
+          example: PROCESSING
+        roundName:
+          type: string
+          description: 순찰명
+          example: 야간 순찰
+        startDate:
+          type: string
+          format: date-time
+          description: 시작일시
+          example: '2026-02-10T22:00:00'
+        endDate:
+          type: string
+          format: date-time
+          description: 종료일시
+          example: '2026-02-11T06:00:00'
+
+    PatrolDetailResponse:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          enum: [success, fail]
+          example: success
+        message:
+          type: string
+          example: 조회 성공
+        data:
+          $ref: '#/components/schemas/PatrolDetailDTO'
+
+    PatrolFloorDTO:
+      type: object
+      required:
+        - buildingFloorId
+        - buildingFloorName
+        - nfcRoundTargetDTOS
+      properties:
+        buildingFloorId:
+          type: integer
+          description: 층 ID
+          example: 10
+        buildingFloorName:
+          type: string
+          description: 층 이름
+          example: 1층
+        nfcRoundTargetDTOS:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatrolZoneDTO'
+          description: 해당 층의 구역 목록
+
+    PatrolZoneDTO:
+      type: object
+      required:
+        - buildingFloorZoneId
+        - buildingFloorZoneName
+        - isCompleted
+      properties:
+        buildingFloorZoneId:
+          type: integer
+          description: 구역 ID
+          example: 101
+        buildingFloorZoneName:
+          type: string
+          description: 구역 이름
+          example: 로비
+        isCompleted:
+          type: boolean
+          description: 점검 완료 여부
+          example: false
+        nfcRoundId:
+          type: integer
+          description: 순찰점검 ID
+          example: 1001
+
+    PatrolTargetsResponse:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          enum: [success, fail]
+          example: success
+        message:
+          type: string
+          example: 조회 성공
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatrolFloorDTO'
+          description: 층별 구역 목록
+
+    PatrolItemDTO:
+      type: object
+      required:
+        - nfcRoundItemId
+        - itemName
+        - categoryItemId
+        - type
+      properties:
+        nfcRoundItemId:
+          type: integer
+          description: 점검 항목 ID
+          example: 5001
+        itemName:
+          type: string
+          description: 항목 이름
+          example: 비상구 점검
+        categoryItemId:
+          type: integer
+          description: 카테고리 항목 ID
+          example: 201
+        type:
+          type: string
+          description: 항목 유형
+          example: SAFETY
+        description:
+          type: string
+          description: 항목 설명
+          example: 비상구 출입문 개폐 확인
+
+    PatrolItemsResponse:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          enum: [success, fail]
+          example: success
+        message:
+          type: string
+          example: 조회 성공
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatrolItemDTO'
+          description: 점검 항목 목록
+
+    PatrolResultImageDTO:
+      type: object
+      required:
+        - imageUrl
+      properties:
+        nfcRoundResultImageId:
+          type: integer
+          description: 이미지 ID
+          example: 3001
+        imageUrl:
+          type: string
+          description: 이미지 URL
+          example: /uploads/patrol/image_001.jpg
+
+    PatrolResultItemDTO:
+      type: object
+      required:
+        - nfcRoundResultId
+        - nfcRoundItemId
+        - actionType
+      properties:
+        nfcRoundResultId:
+          type: integer
+          description: 점검 결과 ID
+          example: 2001
+        nfcRoundItemId:
+          type: integer
+          description: 점검 항목 ID
+          example: 5001
+        nfcRoundItemDTO:
+          $ref: '#/components/schemas/PatrolItemDTO'
+        actionType:
+          type: string
+          enum: [NONE, ON_SITE, NOT_POSSIBLE]
+          description: |
+            조치 유형
+            - NONE: 양호 (조치 불필요)
+            - ON_SITE: 현장 조치 완료
+            - NOT_POSSIBLE: 조치 불가
+          example: ON_SITE
+        actionTaken:
+          type: string
+          description: 조치 내용 또는 조치 불가 사유
+          example: 비상구 개폐 확인 완료
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatrolResultImageDTO'
+          description: 첨부 이미지 목록 (조치불가 시)
+        buildingFloorName:
+          type: string
+          description: 층 이름
+          example: 1층
+        buildingFloorZoneName:
+          type: string
+          description: 구역 이름
+          example: 로비
+
+    PatrolResultResponse:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          enum: [success, fail]
+          example: success
+        message:
+          type: string
+          example: 조회 성공
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatrolResultItemDTO'
+          description: 점검 결과 목록
+
+    SavePatrolResultRequest:
+      type: object
+      required:
+        - nfcRoundId
+        - buildingFloorZoneId
+        - results
+      properties:
+        nfcRoundId:
+          type: integer
+          description: 순찰점검 ID
+          example: 1001
+        buildingFloorZoneId:
+          type: integer
+          description: 구역 ID
+          example: 101
+        results:
+          type: string
+          description: 점검 결과 JSON 문자열 (배열)
+          example: '[{"nfcRoundItemId":5001,"actionType":"ON_SITE","actionTaken":"정상"}]'
+        images:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: 첨부 이미지 파일 목록 (조치불가 항목용)
+        deleteImageIds:
+          type: string
+          description: 삭제할 이미지 ID 목록 (JSON 배열 문자열, 수정 시)
+          example: '[3001, 3002]'
+
+    UpdatePatrolZoneStateRequest:
+      type: object
+      required:
+        - nfcRoundId
+        - buildingFloorZoneId
+      properties:
+        nfcRoundId:
+          type: integer
+          description: 순찰점검 ID
+          example: 1001
+        buildingFloorZoneId:
+          type: integer
+          description: 구역 ID
+          example: 101
+
+    NotPossiblePatrolResultsResponse:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          enum: [success, fail]
+          example: success
+        message:
+          type: string
+          example: 조회 성공
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatrolResultItemDTO'
+          description: 조치불가 항목 목록

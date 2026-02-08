@@ -29,11 +29,7 @@ export function StatCard({ data }: StatCardProps) {
           {title}
         </Text>
         {change !== undefined && (
-          <Text
-            fontSize={12}
-            fontWeight="500"
-            color={change >= 0 ? '$success' : '$error'}
-          >
+          <Text fontSize={12} fontWeight="500" color={change >= 0 ? '$success' : '$error'}>
             {change >= 0 ? '▲' : '▼'} {Math.abs(change)}%
           </Text>
         )}
@@ -51,12 +47,7 @@ export function StatCard({ data }: StatCardProps) {
 
       {/* 프로그레스 바 */}
       <YStack gap="$1">
-        <XStack
-          height={8}
-          backgroundColor="$gray200"
-          borderRadius="$full"
-          overflow="hidden"
-        >
+        <XStack height={8} backgroundColor="$gray200" borderRadius="$full" overflow="hidden">
           <YStack
             width={`${percentage}%`}
             style={{ backgroundColor: color }}
@@ -95,7 +86,13 @@ export function WorkStatsCard({
 
         {/* 통계 그리드 */}
         <XStack gap="$3">
-          <YStack flex={1} alignItems="center" padding="$3" backgroundColor="$gray50" borderRadius="$2">
+          <YStack
+            flex={1}
+            alignItems="center"
+            padding="$3"
+            backgroundColor="$gray50"
+            borderRadius="$2"
+          >
             <Text fontSize={24} fontWeight="700" color="$success">
               {completed}
             </Text>
@@ -104,7 +101,13 @@ export function WorkStatsCard({
             </Text>
           </YStack>
 
-          <YStack flex={1} alignItems="center" padding="$3" backgroundColor="$gray50" borderRadius="$2">
+          <YStack
+            flex={1}
+            alignItems="center"
+            padding="$3"
+            backgroundColor="$gray50"
+            borderRadius="$2"
+          >
             <Text fontSize={24} fontWeight="700" color="$warning">
               {processing}
             </Text>
@@ -113,7 +116,13 @@ export function WorkStatsCard({
             </Text>
           </YStack>
 
-          <YStack flex={1} alignItems="center" padding="$3" backgroundColor="$gray50" borderRadius="$2">
+          <YStack
+            flex={1}
+            alignItems="center"
+            padding="$3"
+            backgroundColor="$gray50"
+            borderRadius="$2"
+          >
             <Text fontSize={24} fontWeight="700" color="$gray500">
               {pending}
             </Text>
@@ -169,7 +178,13 @@ export function PatrolStatsCard({
 
         {/* 통계 그리드 */}
         <XStack gap="$3">
-          <YStack flex={1} alignItems="center" padding="$3" backgroundColor="$gray50" borderRadius="$2">
+          <YStack
+            flex={1}
+            alignItems="center"
+            padding="$3"
+            backgroundColor="$gray50"
+            borderRadius="$2"
+          >
             <Text fontSize={24} fontWeight="700" color="$success">
               {completed}
             </Text>
@@ -178,7 +193,13 @@ export function PatrolStatsCard({
             </Text>
           </YStack>
 
-          <YStack flex={1} alignItems="center" padding="$3" backgroundColor="$gray50" borderRadius="$2">
+          <YStack
+            flex={1}
+            alignItems="center"
+            padding="$3"
+            backgroundColor="$gray50"
+            borderRadius="$2"
+          >
             <Text fontSize={24} fontWeight="700" color="$warning">
               {processing}
             </Text>
@@ -187,7 +208,13 @@ export function PatrolStatsCard({
             </Text>
           </YStack>
 
-          <YStack flex={1} alignItems="center" padding="$3" backgroundColor="$gray50" borderRadius="$2">
+          <YStack
+            flex={1}
+            alignItems="center"
+            padding="$3"
+            backgroundColor="$gray50"
+            borderRadius="$2"
+          >
             <Text fontSize={24} fontWeight="700" color="$error">
               {notStarted}
             </Text>
@@ -207,17 +234,8 @@ export function PatrolStatsCard({
               {percentage}%
             </Text>
           </XStack>
-          <XStack
-            height={12}
-            backgroundColor="$gray200"
-            borderRadius="$full"
-            overflow="hidden"
-          >
-            <YStack
-              width={`${percentage}%`}
-              backgroundColor="$success"
-              borderRadius="$full"
-            />
+          <XStack height={12} backgroundColor="$gray200" borderRadius="$full" overflow="hidden">
+            <YStack width={`${percentage}%`} backgroundColor="$success" borderRadius="$full" />
           </XStack>
         </YStack>
       </YStack>
