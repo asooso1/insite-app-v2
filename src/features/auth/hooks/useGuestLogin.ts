@@ -113,7 +113,7 @@ export function useGuestLogin() {
           // 로그인 성공 시 홈 화면으로 이동
           // auth store의 isAuthenticated 상태 변경으로 자동 리다이렉트됨
           console.log('[GuestLogin] 홈 화면으로 이동');
-          router.replace('/(main)/(tabs)/home');
+          router.replace('/(main)/(home)');
         }
 
         return success;

@@ -47,7 +47,7 @@ export default function LoginScreen() {
     if (isAuthenticated) {
       console.log('[Login] 인증 성공 -> 홈 화면으로 이동');
       requestAnimationFrame(() => {
-        router.replace('/(main)/(tabs)/home');
+        router.replace('/(main)/(home)');
       });
     }
   }, [isAuthenticated, router]);

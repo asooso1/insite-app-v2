@@ -31,11 +31,7 @@ interface UseCreateClaimOptions {
  * });
  * ```
  */
-export function useCreateClaim({
-  onSuccess,
-  onError,
-  useMock = true,
-}: UseCreateClaimOptions = {}) {
+export function useCreateClaim({ onSuccess, onError, useMock = true }: UseCreateClaimOptions = {}) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({

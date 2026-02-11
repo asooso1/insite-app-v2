@@ -2,10 +2,7 @@
  * 고객불편 상세 조회 Hook
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getComplainDetail,
-  getGetComplainDetailQueryKey,
-} from '@/api/generated/complain/complain';
+import { getComplainDetail, getGetComplainDetailQueryKey } from '@/api/generated/complain/complain';
 import { mockClaims } from '../utils/mockData';
 import type { ClaimDTO } from '../types';
 
@@ -26,11 +23,7 @@ interface UseClaimDetailOptions {
  * });
  * ```
  */
-export function useClaimDetail({
-  claimId,
-  enabled = true,
-  useMock = true,
-}: UseClaimDetailOptions) {
+export function useClaimDetail({ claimId, enabled = true, useMock = true }: UseClaimDetailOptions) {
   const queryClient = useQueryClient();
 
   // API 조회 (실제 사용 시)

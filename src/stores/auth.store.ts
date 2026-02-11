@@ -9,6 +9,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  roleId?: number; // V1 호환 역할 ID (1~21)
   siteId?: string;
   siteName?: string;
 }

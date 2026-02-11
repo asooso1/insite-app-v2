@@ -146,7 +146,14 @@ export function CategoryFilter({
       if (third) parts.push(third.name);
     }
     return parts.join(' - ');
-  }, [currentFirst, currentSecond, currentThird, firstCategories, secondCategories, thirdCategories]);
+  }, [
+    currentFirst,
+    currentSecond,
+    currentThird,
+    firstCategories,
+    secondCategories,
+    thirdCategories,
+  ]);
 
   // 초기 선택 동기화
   useEffect(() => {
@@ -256,7 +263,16 @@ export function CategoryFilter({
         }
       }
     }
-  }, [visible, currentFirst, currentSecond, currentThird, firstCategories, secondCategories, thirdCategories, isSeniorMode]);
+  }, [
+    visible,
+    currentFirst,
+    currentSecond,
+    currentThird,
+    firstCategories,
+    secondCategories,
+    thirdCategories,
+    isSeniorMode,
+  ]);
 
   const categoryText = getCategoryText();
   const itemHeight = isSeniorMode ? 56 : 44;
@@ -427,7 +443,12 @@ export function CategoryFilter({
 
           {/* 완료 버튼 */}
           <YStack padding="$4" paddingBottom={Platform.OS === 'ios' ? 34 : 16}>
-            <Button variant="primary" size={isSeniorMode ? 'senior' : 'lg'} fullWidth onPress={handleConfirm}>
+            <Button
+              variant="primary"
+              size={isSeniorMode ? 'senior' : 'lg'}
+              fullWidth
+              onPress={handleConfirm}
+            >
               완료
             </Button>
           </YStack>
