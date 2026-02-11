@@ -180,10 +180,7 @@ export function useFacilities(options: UseFacilitiesOptions = {}) {
   }, []);
 
   // 키워드 설정 (메모이제이션)
-  const setKeyword = useCallback(
-    (keyword: string) => updateFilter({ keyword }),
-    [updateFilter]
-  );
+  const setKeyword = useCallback((keyword: string) => updateFilter({ keyword }), [updateFilter]);
 
   // 상태 설정 (메모이제이션)
   const setStatus = useCallback(
@@ -311,7 +308,10 @@ interface UseFacilityDetailOptions {
 /**
  * 설비 상세 훅
  */
-export function useFacilityDetail({ facilityId, useMock: _useMock = true }: UseFacilityDetailOptions) {
+export function useFacilityDetail({
+  facilityId,
+  useMock: _useMock = true,
+}: UseFacilityDetailOptions) {
   const facility = mockFacilities.find((f) => f.id === facilityId);
 
   return {

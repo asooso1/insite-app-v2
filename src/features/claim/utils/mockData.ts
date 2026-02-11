@@ -7,7 +7,8 @@ export const mockClaims: ClaimDTO[] = [
   {
     id: 1,
     title: '회의실 온도가 너무 높아요',
-    content: '5층 대회의실 에어컨이 제대로 작동하지 않아 온도가 너무 높습니다. 빠른 조치 부탁드립니다.',
+    content:
+      '5층 대회의실 에어컨이 제대로 작동하지 않아 온도가 너무 높습니다. 빠른 조치 부탁드립니다.',
     state: 'PROCESSING',
     stateName: '처리중',
     receivedDate: '2026-02-10 09:30',

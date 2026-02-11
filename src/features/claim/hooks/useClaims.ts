@@ -5,11 +5,12 @@
  */
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import type { ComplainListResponse, GetComplainListParams, GetComplainListState } from '@/api/generated/models';
-import {
-  getComplainList,
-  getGetComplainListQueryKey,
-} from '@/api/generated/complain/complain';
+import type {
+  ComplainListResponse,
+  GetComplainListParams,
+  GetComplainListState,
+} from '@/api/generated/models';
+import { getComplainList, getGetComplainListQueryKey } from '@/api/generated/complain/complain';
 import { mockClaims } from '../utils/mockData';
 import type { ClaimDTO, ClaimState, SearchOption } from '../types';
 

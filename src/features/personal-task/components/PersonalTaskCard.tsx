@@ -175,7 +175,9 @@ export function PersonalTaskCard({ task, onPress, compact = false }: PersonalTas
 
                   {task.teamName && (
                     <XStack
-                      backgroundColor={statusBg as `rgba(${number}, ${number}, ${number}, ${number})`}
+                      backgroundColor={
+                        statusBg as `rgba(${number}, ${number}, ${number}, ${number})`
+                      }
                       paddingHorizontal="$2"
                       paddingVertical="$1"
                       borderRadius={6}

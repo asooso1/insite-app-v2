@@ -1,0 +1,16 @@
+/**
+ * Scan Tab - Stack Navigator
+ */
+import { Stack } from 'expo-router';
+
+export default function ScanLayout() {
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="index" />
+    </Stack>
+  );
+}

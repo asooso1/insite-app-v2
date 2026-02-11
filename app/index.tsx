@@ -27,7 +27,7 @@ export default function Index() {
   // 인증 상태에 따른 리다이렉트
   if (isAuthenticated) {
     console.log('[Index] 인증됨 -> 홈 화면으로 이동');
-    return <Redirect href="/(main)/(tabs)/home" />;
+    return <Redirect href="/(main)/(home)" />;
   }
 
   console.log('[Index] 미인증 -> 로그인 화면으로 이동');

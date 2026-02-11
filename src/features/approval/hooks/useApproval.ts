@@ -8,12 +8,13 @@
  */
 import { useMemo, useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  useGetTaskList,
-  useBulkConfirmTasks,
-  useGetTaskCount,
-} from '@/api/generated/tasks/tasks';
-import type { GetTaskListParams, TaskDTO, BulkConfirmTasksRequest, GetTaskListType } from '@/api/generated/models';
+import { useGetTaskList, useBulkConfirmTasks, useGetTaskCount } from '@/api/generated/tasks/tasks';
+import type {
+  GetTaskListParams,
+  TaskDTO,
+  BulkConfirmTasksRequest,
+  GetTaskListType,
+} from '@/api/generated/models';
 import type { ApprovalItemDTO, ApprovalType, ApprovalStatus } from '../types';
 
 /**
@@ -35,9 +36,9 @@ function mapTaskToApprovalItem(task: TaskDTO): ApprovalItemDTO {
     PENDING: 'PENDING',
     APPROVED: 'APPROVED',
     REJECTED: 'REJECTED',
-    '승인완료': 'APPROVED',
+    승인완료: 'APPROVED',
     '확인 완료': 'APPROVED',
-    '승인요청': 'PENDING',
+    승인요청: 'PENDING',
   };
 
   const type = typeMap[task.type] || 'WORK';
@@ -164,7 +165,7 @@ export function useBulkApprove() {
   const mutation = useBulkConfirmTasks();
 
   const bulkApprove = useCallback(
-    async (items: Array<{ id: number; type: ApprovalType }>) => {
+    async (items: { id: number; type: ApprovalType }[]) => {
       // ApprovalType을 API TaskConfirmItemType으로 변환
       const typeMap: Record<ApprovalType, 'WORK_ORDER' | 'PATROL' | 'PERSONAL' | 'COMPLAIN'> = {
         WORK: 'WORK_ORDER',

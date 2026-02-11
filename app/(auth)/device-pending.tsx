@@ -53,7 +53,7 @@ export default function DevicePendingScreen() {
               {
                 text: '확인',
                 onPress: () => {
-                  router.replace('/(main)/(tabs)/home');
+                  router.replace('/(main)/(home)');
                 },
               },
             ]);
