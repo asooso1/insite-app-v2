@@ -3,6 +3,8 @@
  *
  * 2026 Modern UI - Glassmorphism, 그라디언트 헤더, 플로팅 카드
  * 순찰 일정 목록, 오늘의 순찰 강조, 상태별 필터 기능 제공
+ * Lucide Icons 사용
+ * 시니어 모드 지원: 확대된 리스트 아이템, 고대비 배지, 테두리 강조
  */
 import React, { useState, useMemo } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
@@ -10,14 +12,14 @@ import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Animated, {
-  FadeInDown,
-  FadeIn,
-} from 'react-native-reanimated';
 
 import { GlassFilterBar, PatrolCardEnhanced } from '@/features/patrol/components';
 import { mockPatrols } from '@/features/patrol/data/mockPatrols';
 import type { PatrolDTO, PatrolFilterOption } from '@/features/patrol/types/patrol.types';
+import { LAYOUT } from '@/theme/tokens';
+import { AppIcon, type IconName } from '@/components/icons';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
+import { SeniorCardListItem, SeniorStatusBadge } from '@/components/ui/SeniorCard';
 
 /**
  * 순찰점검 목록 화면
@@ -26,6 +28,7 @@ export default function PatrolListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [selectedFilter, setSelectedFilter] = useState<PatrolFilterOption>('ALL');
+  const { isSeniorMode, fontSize } = useSeniorStyles();
 
   // 필터 옵션 (카운트 포함)
   const filterOptions = useMemo(() => {
@@ -67,18 +70,31 @@ export default function PatrolListScreen() {
     router.push(`/patrol/${patrol.id}`);
   };
 
+  // 상태 매핑 헬퍼
+  const getPatrolStatusBadgeProps = (state: string | undefined) => {
+    switch (state) {
+      case 'COMPLETED':
+        return { status: 'completed' as const, label: '완료' };
+      case 'PROCESSING':
+        return { status: 'inProgress' as const, label: '진행중' };
+      case 'ISSUE':
+      default:
+        return { status: 'pending' as const, label: '미실시' };
+    }
+  };
+
   // 섹션별 렌더링을 위한 데이터 구조
   const sections = useMemo(() => {
-    const result: Array<{
+    const result: {
       type: 'header' | 'item';
       data?: PatrolDTO;
       title?: string;
-      icon?: string;
-    }> = [];
+      icon?: IconName;
+    }[] = [];
 
     // 오늘의 순찰 섹션
     if (todayPatrols.length > 0) {
-      result.push({ type: 'header', title: '오늘의 순찰', icon: '🔥' });
+      result.push({ type: 'header', title: '오늘의 순찰', icon: 'fire' });
       todayPatrols.forEach((patrol) => {
         result.push({ type: 'item', data: patrol });
       });
@@ -86,7 +102,7 @@ export default function PatrolListScreen() {
 
     // 기타 순찰 섹션
     if (otherPatrols.length > 0) {
-      result.push({ type: 'header', title: '예정 순찰', icon: '📅' });
+      result.push({ type: 'header', title: '예정 순찰', icon: 'calendar' });
       otherPatrols.forEach((patrol) => {
         result.push({ type: 'item', data: patrol });
       });
@@ -96,12 +112,10 @@ export default function PatrolListScreen() {
   }, [todayPatrols, otherPatrols]);
 
   // 리스트 아이템 렌더링
-  const renderItem = ({ item, index }: { item: (typeof sections)[0]; index: number }) => {
+  const renderItem = ({ item }: { item: (typeof sections)[0]; index: number }) => {
     if (item.type === 'header') {
       return (
-        <Animated.View
-          entering={FadeInDown.delay(index * 50).springify()}
-        >
+        <View>
           <XStack
             paddingHorizontal="$5"
             paddingTop="$5"
@@ -109,26 +123,45 @@ export default function PatrolListScreen() {
             gap="$2"
             alignItems="center"
           >
-            <Text fontSize={18}>{item.icon}</Text>
-            <Text fontSize={18} fontWeight="700" color="$gray800" letterSpacing={-0.3}>
+            {item.icon && <AppIcon name={item.icon} size="sm" color="$accent" />}
+            <Text
+              fontSize={isSeniorMode ? fontSize.large : 18}
+              fontWeight="700"
+              color="$gray800"
+              letterSpacing={-0.3}
+            >
               {item.title}
             </Text>
           </XStack>
-        </Animated.View>
+        </View>
       );
     }
 
     if (item.data) {
+      if (isSeniorMode) {
+        // 시니어 모드: 리스트 아이템 형태
+        const statusProps = getPatrolStatusBadgeProps(item.data.state);
+        return (
+          <View style={{ marginBottom: 12, paddingHorizontal: 16 }}>
+            <SeniorCardListItem
+              title={item.data.name || '제목 없음'}
+              subtitle={`${item.data.buildingName || ''} · ${item.data.scheduledDate || ''}`}
+              right={<SeniorStatusBadge {...statusProps} />}
+              onPress={() => handlePatrolPress(item.data!)}
+            />
+          </View>
+        );
+      }
+
+      // 일반 모드: 기존 카드
       return (
-        <Animated.View
-          entering={FadeInDown.delay(index * 50).springify()}
-        >
+        <View>
           <PatrolCardEnhanced
             patrol={item.data}
             onPress={handlePatrolPress}
             highlighted={item.data.isToday}
           />
-        </Animated.View>
+        </View>
       );
     }
 
@@ -147,15 +180,13 @@ export default function PatrolListScreen() {
         justifyContent="center"
         marginBottom="$4"
       >
-        <Text fontSize={36}>📋</Text>
+        <AppIcon name="work" size="xl" color="$gray400" />
       </YStack>
       <Text fontSize={16} fontWeight="600" color="$gray700" marginBottom="$2">
         순찰 일정이 없습니다
       </Text>
       <Text fontSize={14} color="$gray500" textAlign="center">
-        {selectedFilter === 'ALL'
-          ? '등록된 순찰이 없습니다'
-          : '해당 상태의 순찰이 없습니다'}
+        {selectedFilter === 'ALL' ? '등록된 순찰이 없습니다' : '해당 상태의 순찰이 없습니다'}
       </Text>
     </YStack>
   );
@@ -166,7 +197,7 @@ export default function PatrolListScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* 그라디언트 헤더 */}
-      <Animated.View entering={FadeIn.duration(500)}>
+      <View>
         <LinearGradient
           colors={['#0066CC', '#00A3FF']}
           start={{ x: 0, y: 0 }}
@@ -181,12 +212,12 @@ export default function PatrolListScreen() {
             <Text fontSize={28} fontWeight="800" color="white" letterSpacing={-0.5}>
               순찰점검
             </Text>
-            <Text fontSize={15} color="rgba(255, 255, 255, 0.85)">
+            <Text fontSize={15} color="$glassWhite85">
               오늘 {todayCount}건의 순찰이 있습니다
             </Text>
           </YStack>
         </LinearGradient>
-      </Animated.View>
+      </View>
 
       {/* 필터 바 */}
       <GlassFilterBar
@@ -221,18 +252,18 @@ const styles = StyleSheet.create({
   },
   headerDecor1: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: LAYOUT.DECOR_CIRCLE_LARGE,
+    height: LAYOUT.DECOR_CIRCLE_LARGE,
+    borderRadius: LAYOUT.DECOR_CIRCLE_LARGE / 2,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     top: -80,
     right: -40,
   },
   headerDecor2: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: LAYOUT.DECOR_CIRCLE_MEDIUM,
+    height: LAYOUT.DECOR_CIRCLE_MEDIUM,
+    borderRadius: LAYOUT.DECOR_CIRCLE_MEDIUM / 2,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     bottom: -30,
     left: -20,

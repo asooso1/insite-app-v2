@@ -89,16 +89,8 @@ export function Modal({
   footer,
 }: ModalProps) {
   return (
-    <RNModal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <Pressable
-        style={{ flex: 1 }}
-        onPress={closeOnOverlayPress ? onClose : undefined}
-      >
+    <RNModal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={{ flex: 1 }} onPress={closeOnOverlayPress ? onClose : undefined}>
         <ModalOverlay>
           <Pressable onPress={(e) => e.stopPropagation()}>
             <ModalContent size={size}>

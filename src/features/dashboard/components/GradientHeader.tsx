@@ -44,10 +44,7 @@ export function GradientHeader({
         colors={colors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[
-          styles.gradient,
-          includeSafeArea && { paddingTop: insets.top + 16 },
-        ]}
+        style={[styles.gradient, includeSafeArea && { paddingTop: insets.top + 16 }]}
       >
         {/* 배경 패턴 */}
         <View style={styles.patternOverlay}>
@@ -55,44 +52,24 @@ export function GradientHeader({
           <View style={styles.circle2} />
         </View>
 
-        <YStack
-          paddingHorizontal="$5"
-          paddingVertical="$4"
-          gap="$1"
-          zIndex={1}
-        >
+        <YStack paddingHorizontal="$5" paddingVertical="$4" gap="$1" zIndex={1}>
           <YStack gap="$1" flex={1}>
-            <Text
-              fontSize={28}
-              fontWeight="800"
-              color="white"
-              letterSpacing={-0.5}
-            >
+            <Text fontSize={28} fontWeight="800" color="white" letterSpacing={-0.5}>
               {title}
             </Text>
             {subtitle && (
-              <Text
-                fontSize={15}
-                color="rgba(255, 255, 255, 0.85)"
-                fontWeight="500"
-              >
+              <Text fontSize={15} color="rgba(255, 255, 255, 0.85)" fontWeight="500">
                 {subtitle}
               </Text>
             )}
             {info && (
-              <Text
-                fontSize={14}
-                color="rgba(255, 255, 255, 0.7)"
-                marginTop="$1"
-              >
+              <Text fontSize={14} color="rgba(255, 255, 255, 0.7)" marginTop="$1">
                 {info}
               </Text>
             )}
           </YStack>
 
-          {rightAction && (
-            <View style={styles.rightAction}>{rightAction}</View>
-          )}
+          {rightAction && <View style={styles.rightAction}>{rightAction}</View>}
         </YStack>
       </LinearGradient>
     </View>

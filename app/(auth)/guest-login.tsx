@@ -2,9 +2,14 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { APP_NAME } from '@/constants/config';
+import { useGuestLogin } from '@/features/auth/hooks/useGuestLogin';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
+import { SeniorButton } from '@/components/ui/SeniorButton';
 
 export default function GuestLoginScreen() {
   const router = useRouter();
+  const { isLoading, performGuestLogin } = useGuestLogin();
+  const { isSeniorMode, fontSize } = useSeniorStyles();
   const [isScanning, setIsScanning] = useState(false);
   const [nfcSupported, setNfcSupported] = useState<boolean | null>(null);
 
@@ -14,28 +19,62 @@ export default function GuestLoginScreen() {
     setNfcSupported(true); // Mock for now
   }, []);
 
+  /**
+   * NFC 스캔 시작
+   */
   const startNfcScan = async () => {
     setIsScanning(true);
 
     try {
       // TODO: Implement NFC scanning
-      // const tag = await NfcManager.requestTechnology(NfcTech.Ndef);
+      // ============================================================
+      // NFC 라이브러리 통합 시 아래 코드로 교체:
+      //
+      // import NfcManager, { NfcTech } from 'react-native-nfc-manager';
+      //
+      // await NfcManager.requestTechnology(NfcTech.Ndef);
+      // const tag = await NfcManager.getTag();
+      //
+      // if (!tag || !tag.id) {
+      //   throw new Error('유효하지 않은 NFC 태그입니다');
+      // }
+      //
       // const tagId = tag.id;
+      // const buildingId = extractBuildingIdFromTag(tag); // 태그에서 빌딩 ID 추출
+      //
+      // await performGuestLogin({
+      //   tagId,
+      //   buildingId,
+      // });
+      // ============================================================
 
+      // Mock: 개발 중에는 더미 데이터로 테스트
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      Alert.alert('NFC 스캔', 'NFC 태그 스캔이 완료되었습니다 (개발 중)');
+      // Mock 게스트 로그인 실행
+      await performGuestLogin({
+        tagId: 'MOCK_NFC_TAG_12345',
+        buildingId: 'MOCK_BUILDING_001',
+      });
     } catch (error) {
-      Alert.alert('오류', 'NFC 스캔에 실패했습니다');
+      console.error('[GuestLogin] NFC 스캔 오류:', error);
+      Alert.alert('NFC 스캔 실패', 'NFC 태그를 읽는 데 실패했습니다.\n다시 시도해주세요.', [
+        { text: '확인' },
+      ]);
     } finally {
       setIsScanning(false);
+      // TODO: Cancel NFC technology request
+      // await NfcManager.cancelTechnologyRequest();
     }
   };
 
+  /**
+   * NFC 스캔 취소
+   */
   const cancelScan = () => {
     setIsScanning(false);
     // TODO: Cancel NFC scan
-    // NfcManager.cancelTechnologyRequest();
+    // NfcManager.cancelTechnologyRequest().catch(console.error);
   };
 
   if (nfcSupported === null) {
@@ -50,11 +89,24 @@ export default function GuestLoginScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.title}>NFC 미지원</Text>
-          <Text style={styles.description}>이 기기는 NFC를 지원하지 않습니다.</Text>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>돌아가기</Text>
-          </TouchableOpacity>
+          <Text style={[styles.title, isSeniorMode && { fontSize: fontSize.title }]}>
+            NFC 미지원
+          </Text>
+          <Text style={[styles.description, isSeniorMode && { fontSize: fontSize.medium }]}>
+            이 기기는 NFC를 지원하지 않습니다.
+          </Text>
+          {isSeniorMode ? (
+            <SeniorButton
+              label="돌아가기"
+              onPress={() => router.back()}
+              variant="outline"
+              fullWidth
+            />
+          ) : (
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Text style={styles.backButtonText}>돌아가기</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
@@ -63,41 +115,98 @@ export default function GuestLoginScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>{APP_NAME}</Text>
-        <Text style={styles.subtitle}>NFC 게스트 로그인</Text>
+        <Text style={[styles.title, isSeniorMode && { fontSize: fontSize.title }]}>{APP_NAME}</Text>
+        <Text style={[styles.subtitle, isSeniorMode && { fontSize: fontSize.medium }]}>
+          NFC 게스트 로그인
+        </Text>
 
         <View style={styles.nfcArea}>
-          {isScanning ? (
+          {isScanning || isLoading ? (
             <>
               <ActivityIndicator size="large" color="#0064FF" style={styles.spinner} />
-              <Text style={styles.scanningText}>NFC 태그를 스캔하세요</Text>
-              <Text style={styles.scanningHint}>기기 뒷면을 NFC 태그에 가까이 대주세요</Text>
+              <Text style={[styles.scanningText, isSeniorMode && { fontSize: fontSize.large }]}>
+                {isScanning ? 'NFC 태그를 스캔하세요' : '로그인 중...'}
+              </Text>
+              <Text style={[styles.scanningHint, isSeniorMode && { fontSize: fontSize.small }]}>
+                {isScanning ? '기기 뒷면을 NFC 태그에 가까이 대주세요' : '잠시만 기다려주세요'}
+              </Text>
             </>
           ) : (
             <>
-              <View style={styles.nfcIcon}>
-                <Text style={styles.nfcIconText}>NFC</Text>
+              <View
+                style={[
+                  styles.nfcIcon,
+                  isSeniorMode && { width: 160, height: 160, borderRadius: 80 },
+                ]}
+              >
+                <Text style={[styles.nfcIconText, isSeniorMode && { fontSize: fontSize.title }]}>
+                  NFC
+                </Text>
               </View>
-              <Text style={styles.description}>
+              <Text style={[styles.description, isSeniorMode && { fontSize: fontSize.medium }]}>
                 NFC 태그를 스캔하여{'\n'}게스트로 로그인하세요
               </Text>
             </>
           )}
         </View>
 
+        {/* 버튼 - 시니어 모드 대응 */}
         {isScanning ? (
-          <TouchableOpacity style={styles.cancelButton} onPress={cancelScan}>
-            <Text style={styles.cancelButtonText}>취소</Text>
-          </TouchableOpacity>
+          isSeniorMode ? (
+            <SeniorButton
+              label="취소"
+              onPress={cancelScan}
+              disabled={isLoading}
+              variant="outline"
+              fullWidth
+            />
+          ) : (
+            <TouchableOpacity style={styles.cancelButton} onPress={cancelScan} disabled={isLoading}>
+              <Text style={styles.cancelButtonText}>취소</Text>
+            </TouchableOpacity>
+          )
+        ) : isSeniorMode ? (
+          <SeniorButton
+            label="NFC 스캔 시작"
+            onPress={startNfcScan}
+            disabled={isLoading}
+            variant="primary"
+            fullWidth
+          />
         ) : (
-          <TouchableOpacity style={styles.scanButton} onPress={startNfcScan}>
+          <TouchableOpacity
+            style={[styles.scanButton, isLoading && styles.scanButtonDisabled]}
+            onPress={startNfcScan}
+            disabled={isLoading}
+          >
             <Text style={styles.scanButtonText}>NFC 스캔 시작</Text>
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>이메일로 로그인</Text>
-        </TouchableOpacity>
+        {isSeniorMode ? (
+          <SeniorButton
+            label="이메일로 로그인"
+            onPress={() => router.back()}
+            disabled={isLoading || isScanning}
+            variant="outline"
+            fullWidth
+          />
+        ) : (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            disabled={isLoading || isScanning}
+          >
+            <Text
+              style={[
+                styles.backButtonText,
+                (isLoading || isScanning) && styles.backButtonTextDisabled,
+              ]}
+            >
+              이메일로 로그인
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -174,6 +283,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  scanButtonDisabled: {
+    backgroundColor: '#B3B3B3',
+  },
   scanButtonText: {
     fontSize: 16,
     fontWeight: '600',
@@ -199,5 +311,8 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 14,
     color: '#0064FF',
+  },
+  backButtonTextDisabled: {
+    color: '#B3B3B3',
   },
 });

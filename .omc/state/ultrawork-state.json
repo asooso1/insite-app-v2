@@ -1,0 +1,7 @@
+{
+  "active": true,
+  "started_at": "2026-02-06T04:36:49.170Z",
+  "original_prompt": "ulw: 이제까지 작성한 문서들을 토대로 새로운 디렉터리로 만들어. 인증은 그대로두고 앱이름은 insite로 고정이야 작업 진행해",
+  "reinforcement_count": 10,
+  "last_checked_at": "2026-02-07T14:40:28.757Z"
+}

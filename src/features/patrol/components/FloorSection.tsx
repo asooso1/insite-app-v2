@@ -32,13 +32,9 @@ export function FloorSection({
   };
 
   // 총 체크포인트 수와 완료된 체크포인트 수 계산
-  const totalCheckpoints = floor.zones.reduce(
-    (sum, zone) => sum + zone.checkpoints.length,
-    0
-  );
+  const totalCheckpoints = floor.zones.reduce((sum, zone) => sum + zone.checkpoints.length, 0);
   const completedCheckpoints = floor.zones.reduce(
-    (sum, zone) =>
-      sum + zone.checkpoints.filter((cp) => cp.status === 'COMPLETED').length,
+    (sum, zone) => sum + zone.checkpoints.filter((cp) => cp.status === 'COMPLETED').length,
     0
   );
 
@@ -81,9 +77,7 @@ export function FloorSection({
                 >
                   <XStack
                     width={`${floor.completionRate}%`}
-                    backgroundColor={
-                      floor.completionRate === 100 ? '$success' : '$warning'
-                    }
+                    backgroundColor={floor.completionRate === 100 ? '$success' : '$warning'}
                   />
                 </XStack>
                 <Text
@@ -107,12 +101,7 @@ export function FloorSection({
           {floor.zones.map((zone) => (
             <YStack key={zone.buildingFloorZoneId} marginBottom="$3">
               {/* 구역명 헤더 */}
-              <XStack
-                paddingHorizontal="$5"
-                paddingVertical="$2"
-                alignItems="center"
-                gap="$2"
-              >
+              <XStack paddingHorizontal="$5" paddingVertical="$2" alignItems="center" gap="$2">
                 <Text fontSize={14} fontWeight="600" color="$gray700">
                   {zone.buildingFloorZoneName}
                 </Text>

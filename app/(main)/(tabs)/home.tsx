@@ -3,26 +3,48 @@
  *
  * 2026 Modern UI - 그라디언트 헤더 + Glassmorphism 카드
  * 오늘의 요약, 진행 중인 작업, 순찰 상태 표시
+ * Lucide Icons 사용
+ *
+ * 시니어 모드 지원:
+ * - 확대된 텍스트와 터치 영역
+ * - 고대비 색상
+ * - 아이콘 + 텍스트 라벨 조합
+ * - 테두리로 클릭 가능 요소 표시
  */
 import React, { useState, useCallback } from 'react';
-import { ScrollView, RefreshControl, Platform, ViewStyle } from 'react-native';
-import { YStack, XStack, Text } from 'tamagui';
+import {
+  ScrollView,
+  RefreshControl,
+  Platform,
+  ViewStyle,
+  View,
+  Pressable,
+  StyleSheet,
+  TextStyle,
+} from 'react-native';
+import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuthStore } from '@/stores/auth.store';
 import { GradientHeader } from '@/components/ui/GradientHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { QuickStatCard } from '@/components/ui/QuickStatCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+import { LAYOUT } from '@/theme/tokens';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
+import { SeniorStatusBadge } from '@/components/ui/SeniorCard';
+import { AppIcon, type IconName } from '@/components/icons';
 
 /**
  * 홈 화면
  */
 export default function HomeScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const user = useAuthStore((state) => state.user);
   const [refreshing, setRefreshing] = useState(false);
+  const seniorStyles = useSeniorStyles();
+  const { isSeniorMode } = seniorStyles;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -62,8 +84,8 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#0066CC"
-            colors={['#0066CC']}
+            tintColor={theme.primary.val}
+            colors={[theme.primary.val]}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -74,26 +96,26 @@ export default function HomeScreen() {
           title={`${user?.name ?? '사용자'}님`}
           rightAction={
             <YStack
-              backgroundColor="rgba(255, 255, 255, 0.2)"
+              backgroundColor="$glassWhite20"
               paddingHorizontal="$3"
               paddingVertical="$2"
               borderRadius={12}
               borderWidth={1}
-              borderColor="rgba(255, 255, 255, 0.3)"
+              borderColor="$glassWhite30"
             >
               <Text fontSize={12} fontWeight="600" color="$white">
                 {user?.siteName ?? '현장'}
               </Text>
             </YStack>
           }
-          height={180}
+          height={LAYOUT.HEADER_HEIGHT_DEFAULT}
         />
 
         {/* 오늘의 요약 (Glass Card - 오버랩) */}
-        <Animated.View entering={FadeInDown.delay(100).springify()}>
+        <View>
           <GlassCard
-            marginHorizontal={20}
-            marginTop={-32}
+            marginHorizontal={LAYOUT.CARD_SPACING}
+            marginTop={LAYOUT.HEADER_TOP_OFFSET}
             floating
             intensity="heavy"
           >
@@ -102,112 +124,236 @@ export default function HomeScreen() {
             </Text>
             <XStack gap="$3">
               <QuickStatCard
-                icon="📋"
+                icon="work"
                 value={todayStats.work}
                 label="작업"
                 variant="primary"
                 onPress={() => router.push('/(main)/work')}
               />
               <QuickStatCard
-                icon="🚶"
+                icon="patrol"
                 value={todayStats.patrol}
                 label="순찰"
                 variant="accent"
                 onPress={() => router.push('/(main)/patrol')}
               />
               <QuickStatCard
-                icon="⚠️"
+                icon="warning"
                 value={todayStats.alarm}
                 label="알람"
                 variant="warning"
                 onPress={() => router.push('/(main)/dashboard/alarm')}
               />
               <QuickStatCard
-                icon="✅"
+                icon="success"
                 value={todayStats.completed}
                 label="완료"
                 variant="success"
               />
             </XStack>
           </GlassCard>
-        </Animated.View>
+        </View>
 
         {/* 빠른 실행 */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
+        <View>
           <YStack paddingHorizontal="$5" marginTop="$6">
-            <SectionHeader title="빠른 실행" showAccent />
-            <XStack gap="$3">
-              <QuickActionButton
-                icon="📋"
-                label="작업지시"
-                onPress={() => router.push('/(main)/work')}
-              />
-              <QuickActionButton
-                icon="🚶"
-                label="순찰점검"
-                onPress={() => router.push('/(main)/patrol')}
-              />
-              <QuickActionButton
-                icon="📊"
-                label="대시보드"
-                onPress={() => router.push('/(main)/dashboard')}
-              />
-              <QuickActionButton
-                icon="📱"
-                label="NFC 스캔"
-                onPress={() => router.push('/(main)/(tabs)/scan')}
-              />
-            </XStack>
+            <SectionHeader
+              title="빠른 실행"
+              showAccent
+              // 시니어 모드: 더 큰 제목
+              fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
+            />
+            {isSeniorMode ? (
+              // 시니어 모드: 2x2 그리드로 더 큰 버튼
+              <YStack gap="$4">
+                <XStack gap="$4">
+                  <SeniorQuickActionButton
+                    icon="work"
+                    label="작업지시"
+                    description="작업 목록 보기"
+                    onPress={() => router.push('/(main)/work')}
+                  />
+                  <SeniorQuickActionButton
+                    icon="patrol"
+                    label="순찰점검"
+                    description="순찰 목록 보기"
+                    onPress={() => router.push('/(main)/patrol')}
+                  />
+                </XStack>
+                <XStack gap="$4">
+                  <SeniorQuickActionButton
+                    icon="document"
+                    label="일상업무"
+                    description="일상업무 현황"
+                    onPress={() => router.push('/(main)/personal-task')}
+                  />
+                  <SeniorQuickActionButton
+                    icon="notice"
+                    label="고객불편"
+                    description="고객불편 접수"
+                    onPress={() => router.push('/(main)/claim')}
+                  />
+                </XStack>
+                <XStack gap="$4">
+                  <SeniorQuickActionButton
+                    icon="settings"
+                    label="설비정보"
+                    description="설비 조회"
+                    onPress={() => router.push('/(main)/facility')}
+                  />
+                  <SeniorQuickActionButton
+                    icon="success"
+                    label="승인/확인"
+                    description="업무 승인"
+                    onPress={() => router.push('/(main)/approval')}
+                  />
+                </XStack>
+                <XStack gap="$4">
+                  <SeniorQuickActionButton
+                    icon="dashboard"
+                    label="대시보드"
+                    description="통계 보기"
+                    onPress={() => router.push('/(main)/dashboard')}
+                  />
+                  <SeniorQuickActionButton
+                    icon="nfc"
+                    label="NFC 태그"
+                    description="태그 스캔하기"
+                    onPress={() => router.push('/(main)/(tabs)/scan')}
+                  />
+                </XStack>
+              </YStack>
+            ) : (
+              // 일반 모드: 4열 그리드 2행
+              <YStack gap="$3">
+                <XStack gap="$3">
+                  <QuickActionButton
+                    icon="work"
+                    label="작업지시"
+                    onPress={() => router.push('/(main)/work')}
+                  />
+                  <QuickActionButton
+                    icon="patrol"
+                    label="순찰점검"
+                    onPress={() => router.push('/(main)/patrol')}
+                  />
+                  <QuickActionButton
+                    icon="document"
+                    label="일상업무"
+                    onPress={() => router.push('/(main)/personal-task')}
+                  />
+                  <QuickActionButton
+                    icon="notice"
+                    label="고객불편"
+                    onPress={() => router.push('/(main)/claim')}
+                  />
+                </XStack>
+                <XStack gap="$3">
+                  <QuickActionButton
+                    icon="settings"
+                    label="설비정보"
+                    onPress={() => router.push('/(main)/facility')}
+                  />
+                  <QuickActionButton
+                    icon="success"
+                    label="승인/확인"
+                    onPress={() => router.push('/(main)/approval')}
+                  />
+                  <QuickActionButton
+                    icon="dashboard"
+                    label="대시보드"
+                    onPress={() => router.push('/(main)/dashboard')}
+                  />
+                  <QuickActionButton
+                    icon="nfc"
+                    label="NFC 스캔"
+                    onPress={() => router.push('/(main)/(tabs)/scan')}
+                  />
+                </XStack>
+              </YStack>
+            )}
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 진행 중인 작업 */}
-        <Animated.View entering={FadeInDown.delay(300).springify()}>
+        <View>
           <YStack paddingHorizontal="$5" marginTop="$6">
             <SectionHeader
               title="진행 중인 작업"
               actionText="전체보기"
               onAction={() => router.push('/(main)/work')}
               showAccent
+              fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
             />
-            <WorkInProgressCard
-              title={inProgressWork.title}
-              location={inProgressWork.location}
-              progress={inProgressWork.progress}
-              onPress={() => router.push(`/work/${inProgressWork.id}`)}
-            />
+            {isSeniorMode ? (
+              <SeniorWorkInProgressCard
+                title={inProgressWork.title}
+                location={inProgressWork.location}
+                progress={inProgressWork.progress}
+                onPress={() => router.push(`/work/${inProgressWork.id}`)}
+              />
+            ) : (
+              <WorkInProgressCard
+                title={inProgressWork.title}
+                location={inProgressWork.location}
+                progress={inProgressWork.progress}
+                onPress={() => router.push(`/work/${inProgressWork.id}`)}
+              />
+            )}
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 오늘의 순찰 */}
-        <Animated.View entering={FadeInDown.delay(400).springify()}>
+        <View>
           <YStack paddingHorizontal="$5" marginTop="$6">
             <SectionHeader
               title="오늘의 순찰"
               actionText="전체보기"
               onAction={() => router.push('/(main)/patrol')}
               showAccent
+              fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
             />
-            <PatrolStatusCard
-              title={todayPatrol.title}
-              floorsTotal={todayPatrol.floorsTotal}
-              floorsCompleted={todayPatrol.floorsCompleted}
-              onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
-            />
+            {isSeniorMode ? (
+              <SeniorPatrolStatusCard
+                title={todayPatrol.title}
+                floorsTotal={todayPatrol.floorsTotal}
+                floorsCompleted={todayPatrol.floorsCompleted}
+                onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
+              />
+            ) : (
+              <PatrolStatusCard
+                title={todayPatrol.title}
+                floorsTotal={todayPatrol.floorsTotal}
+                floorsCompleted={todayPatrol.floorsCompleted}
+                onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
+              />
+            )}
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 공지사항 */}
-        <Animated.View entering={FadeInDown.delay(500).springify()}>
+        <View>
           <YStack paddingHorizontal="$5" marginTop="$6">
-            <SectionHeader title="공지사항" showAccent />
-            <NoticeCard
-              title="시스템 점검 안내"
-              content="2026년 2월 15일 새벽 2시~4시 시스템 점검이 예정되어 있습니다."
-              date="2026-02-08"
+            <SectionHeader
+              title="공지사항"
+              showAccent
+              fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
             />
+            {isSeniorMode ? (
+              <SeniorNoticeCard
+                title="시스템 점검 안내"
+                content="2026년 2월 15일 새벽 2시~4시 시스템 점검이 예정되어 있습니다."
+                date="2026-02-08"
+              />
+            ) : (
+              <NoticeCard
+                title="시스템 점검 안내"
+                content="2026년 2월 15일 새벽 2시~4시 시스템 점검이 예정되어 있습니다."
+                date="2026-02-08"
+              />
+            )}
           </YStack>
-        </Animated.View>
+        </View>
       </ScrollView>
     </YStack>
   );
@@ -217,12 +363,14 @@ export default function HomeScreen() {
  * 빠른 실행 버튼
  */
 interface QuickActionButtonProps {
-  icon: string;
+  icon: IconName;
   label: string;
   onPress: () => void;
 }
 
 function QuickActionButton({ icon, label, onPress }: QuickActionButtonProps) {
+  const theme = useTheme();
+
   return (
     <YStack
       flex={1}
@@ -233,19 +381,21 @@ function QuickActionButton({ icon, label, onPress }: QuickActionButtonProps) {
       gap="$2"
       pressStyle={{ opacity: 0.8, scale: 0.97 }}
       onPress={onPress}
-      style={Platform.select({
-        ios: {
-          shadowColor: '#0066CC',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-        },
-        android: {
-          elevation: 3,
-        },
-      }) as ViewStyle}
+      style={
+        Platform.select({
+          ios: {
+            shadowColor: theme.primary.val,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+          },
+          android: {
+            elevation: 3,
+          },
+        }) as ViewStyle
+      }
     >
-      <Text fontSize={24}>{icon}</Text>
+      <AppIcon name={icon} size="md" color="$primary" />
       <Text fontSize={12} fontWeight="500" color="$gray700">
         {label}
       </Text>
@@ -263,12 +413,9 @@ interface WorkInProgressCardProps {
   onPress: () => void;
 }
 
-function WorkInProgressCard({
-  title,
-  location,
-  progress,
-  onPress,
-}: WorkInProgressCardProps) {
+function WorkInProgressCard({ title, location, progress, onPress }: WorkInProgressCardProps) {
+  const theme = useTheme();
+
   return (
     <YStack
       backgroundColor="$surface"
@@ -276,56 +423,48 @@ function WorkInProgressCard({
       padding="$4"
       pressStyle={{ opacity: 0.95, scale: 0.99 }}
       onPress={onPress}
-      style={Platform.select({
-        ios: {
-          shadowColor: '#0066CC',
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.12,
-          shadowRadius: 20,
-        },
-        android: {
-          elevation: 6,
-        },
-      }) as ViewStyle}
+      style={
+        Platform.select({
+          ios: {
+            shadowColor: theme.primary.val,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.12,
+            shadowRadius: 20,
+          },
+          android: {
+            elevation: 6,
+          },
+        }) as ViewStyle
+      }
     >
       <XStack justifyContent="space-between" alignItems="flex-start" marginBottom="$3">
         <YStack flex={1} gap="$1">
           <XStack gap="$2" alignItems="center">
-            <Text fontSize={20}>🔧</Text>
+            <AppIcon name="maintenance" size="sm" color="$primary" />
             <Text fontSize={16} fontWeight="700" color="$gray900" letterSpacing={-0.3}>
               {title}
             </Text>
           </XStack>
           <XStack gap="$2" alignItems="center">
-            <Text fontSize={13} color="$gray500">{location}</Text>
-            <Text fontSize={13} color="$gray300">|</Text>
+            <Text fontSize={13} color="$gray500">
+              {location}
+            </Text>
+            <Text fontSize={13} color="$gray300">
+              |
+            </Text>
             <XStack alignItems="center" gap="$1">
-              <YStack
-                width={8}
-                height={8}
-                borderRadius={4}
-                backgroundColor="$secondary"
-              />
-              <Text fontSize={13} color="$secondary" fontWeight="600">진행중</Text>
+              <YStack width={8} height={8} borderRadius={4} backgroundColor="$secondary" />
+              <Text fontSize={13} color="$secondary" fontWeight="600">
+                진행중
+              </Text>
             </XStack>
           </XStack>
         </YStack>
       </XStack>
 
-      <ProgressBar
-        progress={progress}
-        variant="accent"
-        height={8}
-        glow
-        animated
-      />
+      <ProgressBar progress={progress} variant="accent" height={8} glow animated />
 
-      <Text
-        fontSize={12}
-        color="$gray500"
-        textAlign="right"
-        marginTop="$2"
-      >
+      <Text fontSize={12} color="$gray500" textAlign="right" marginTop="$2">
         {progress}% 완료
       </Text>
     </YStack>
@@ -342,12 +481,8 @@ interface PatrolStatusCardProps {
   onPress: () => void;
 }
 
-function PatrolStatusCard({
-  title,
-  floorsTotal,
-  floorsCompleted,
-  onPress,
-}: PatrolStatusCardProps) {
+function PatrolStatusCard({ title, floorsTotal, floorsCompleted, onPress }: PatrolStatusCardProps) {
+  const theme = useTheme();
   const progress = Math.round((floorsCompleted / floorsTotal) * 100);
 
   return (
@@ -357,21 +492,23 @@ function PatrolStatusCard({
       padding="$4"
       pressStyle={{ opacity: 0.95, scale: 0.99 }}
       onPress={onPress}
-      style={Platform.select({
-        ios: {
-          shadowColor: '#0066CC',
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.12,
-          shadowRadius: 20,
-        },
-        android: {
-          elevation: 6,
-        },
-      }) as ViewStyle}
+      style={
+        Platform.select({
+          ios: {
+            shadowColor: theme.primary.val,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.12,
+            shadowRadius: 20,
+          },
+          android: {
+            elevation: 6,
+          },
+        }) as ViewStyle
+      }
     >
       <XStack justifyContent="space-between" alignItems="center">
         <XStack gap="$2" alignItems="center" flex={1}>
-          <Text fontSize={20}>🚶</Text>
+          <AppIcon name="patrol" size="sm" color="$accent" />
           <YStack flex={1}>
             <Text fontSize={16} fontWeight="700" color="$gray900" letterSpacing={-0.3}>
               {title}
@@ -383,23 +520,15 @@ function PatrolStatusCard({
         </XStack>
 
         <XStack alignItems="center" gap="$1">
-          <YStack
-            width={8}
-            height={8}
-            borderRadius={4}
-            backgroundColor="$secondary"
-          />
-          <Text fontSize={13} color="$secondary" fontWeight="600">진행중</Text>
+          <YStack width={8} height={8} borderRadius={4} backgroundColor="$secondary" />
+          <Text fontSize={13} color="$secondary" fontWeight="600">
+            진행중
+          </Text>
         </XStack>
       </XStack>
 
       <YStack marginTop="$3">
-        <ProgressBar
-          progress={progress}
-          variant="primary"
-          height={6}
-          animated
-        />
+        <ProgressBar progress={progress} variant="primary" height={6} animated />
       </YStack>
     </YStack>
   );
@@ -415,22 +544,26 @@ interface NoticeCardProps {
 }
 
 function NoticeCard({ title, content, date }: NoticeCardProps) {
+  const theme = useTheme();
+
   return (
     <YStack
       backgroundColor="$surface"
       borderRadius={16}
       padding="$4"
-      style={Platform.select({
-        ios: {
-          shadowColor: '#0066CC',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-        },
-        android: {
-          elevation: 3,
-        },
-      }) as ViewStyle}
+      style={
+        Platform.select({
+          ios: {
+            shadowColor: theme.primary.val,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+          },
+          android: {
+            elevation: 3,
+          },
+        }) as ViewStyle
+      }
     >
       <Text fontSize={15} fontWeight="700" color="$gray900" marginBottom="$2">
         {title}
@@ -444,3 +577,369 @@ function NoticeCard({ title, content, date }: NoticeCardProps) {
     </YStack>
   );
 }
+
+// ============================================================================
+// 시니어 모드 전용 컴포넌트
+// React Native 네이티브 컴포넌트 사용 (타입 호환성)
+// ============================================================================
+
+/**
+ * 시니어 모드 빠른 실행 버튼
+ *
+ * 더 큰 터치 영역, 설명 텍스트 포함, 테두리로 클릭 가능 표시
+ */
+interface SeniorQuickActionButtonProps {
+  icon: IconName;
+  label: string;
+  description: string;
+  onPress: () => void;
+}
+
+function SeniorQuickActionButton({
+  icon,
+  label,
+  description,
+  onPress,
+}: SeniorQuickActionButtonProps) {
+  const seniorStyles = useSeniorStyles();
+  const [isPressed, setIsPressed] = React.useState(false);
+
+  const containerStyle: ViewStyle = {
+    flex: 1,
+    backgroundColor: seniorStyles.colors.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
+    borderWidth: 2,
+    borderColor: isPressed ? seniorStyles.colors.primary : seniorStyles.colors.border,
+    minHeight: seniorStyles.touchTarget.min,
+    transform: [{ scale: isPressed ? 0.96 : 1 }],
+    opacity: isPressed ? 0.85 : 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: isPressed ? 1 : 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: isPressed ? 2 : 6,
+      },
+      android: {
+        elevation: isPressed ? 2 : 5,
+      },
+    }),
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      style={containerStyle}
+    >
+      {/* 아이콘 */}
+      <AppIcon name={icon} size={seniorStyles.iconSize.emoji} color="$primary" />
+
+      {/* 라벨 (메인) */}
+      <Text
+        style={
+          {
+            fontSize: seniorStyles.fontSize.medium,
+            fontWeight: '700',
+            color: seniorStyles.colors.text,
+          } as TextStyle
+        }
+      >
+        {label}
+      </Text>
+
+      {/* 설명 텍스트 */}
+      <Text
+        style={
+          {
+            fontSize: seniorStyles.fontSize.small,
+            color: seniorStyles.colors.textSecondary,
+          } as TextStyle
+        }
+      >
+        {description}
+      </Text>
+    </Pressable>
+  );
+}
+
+/**
+ * 시니어 모드 진행 중인 작업 카드
+ */
+function SeniorWorkInProgressCard({ title, location, progress, onPress }: WorkInProgressCardProps) {
+  const seniorStyles = useSeniorStyles();
+  const [isPressed, setIsPressed] = React.useState(false);
+
+  const containerStyle: ViewStyle = {
+    backgroundColor: seniorStyles.colors.cardBackground,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: isPressed ? seniorStyles.colors.primary : seniorStyles.colors.border,
+    transform: [{ scale: isPressed ? 0.98 : 1 }],
+    opacity: isPressed ? 0.9 : 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: isPressed ? 2 : 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: isPressed ? 4 : 8,
+      },
+      android: {
+        elevation: isPressed ? 3 : 6,
+      },
+    }),
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      style={containerStyle}
+    >
+      {/* 헤더 */}
+      <View style={seniorHomeStyles.cardHeader}>
+        <View style={{ flex: 1, gap: 8 }}>
+          <View style={seniorHomeStyles.rowCenter}>
+            <AppIcon name="maintenance" size={seniorStyles.iconSize.medium} color="$primary" />
+            <Text
+              style={
+                {
+                  fontSize: seniorStyles.fontSize.large,
+                  fontWeight: '700',
+                  color: seniorStyles.colors.text,
+                  letterSpacing: -0.3,
+                  marginLeft: 12,
+                } as TextStyle
+              }
+            >
+              {title}
+            </Text>
+          </View>
+          <View style={seniorHomeStyles.rowCenter}>
+            <Text
+              style={
+                {
+                  fontSize: seniorStyles.fontSize.medium,
+                  color: seniorStyles.colors.textSecondary,
+                } as TextStyle
+              }
+            >
+              {location}
+            </Text>
+            <Text
+              style={
+                {
+                  fontSize: seniorStyles.fontSize.medium,
+                  color: seniorStyles.colors.textMuted,
+                  marginHorizontal: 12,
+                } as TextStyle
+              }
+            >
+              |
+            </Text>
+            <SeniorStatusBadge status="inProgress" label="진행중" />
+          </View>
+        </View>
+      </View>
+
+      {/* 진행률 바 */}
+      <ProgressBar progress={progress} variant="accent" height={12} glow animated />
+
+      {/* 진행률 텍스트 */}
+      <Text
+        style={
+          {
+            fontSize: seniorStyles.fontSize.medium,
+            fontWeight: '600',
+            color: seniorStyles.colors.textSecondary,
+            textAlign: 'right',
+            marginTop: 12,
+          } as TextStyle
+        }
+      >
+        {progress}% 완료
+      </Text>
+    </Pressable>
+  );
+}
+
+/**
+ * 시니어 모드 순찰 상태 카드
+ */
+function SeniorPatrolStatusCard({
+  title,
+  floorsTotal,
+  floorsCompleted,
+  onPress,
+}: PatrolStatusCardProps) {
+  const seniorStyles = useSeniorStyles();
+  const [isPressed, setIsPressed] = React.useState(false);
+  const progress = Math.round((floorsCompleted / floorsTotal) * 100);
+
+  const containerStyle: ViewStyle = {
+    backgroundColor: seniorStyles.colors.cardBackground,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: isPressed ? seniorStyles.colors.primary : seniorStyles.colors.border,
+    transform: [{ scale: isPressed ? 0.98 : 1 }],
+    opacity: isPressed ? 0.9 : 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: isPressed ? 2 : 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: isPressed ? 4 : 8,
+      },
+      android: {
+        elevation: isPressed ? 3 : 6,
+      },
+    }),
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      style={containerStyle}
+    >
+      {/* 헤더 */}
+      <View style={seniorHomeStyles.cardHeaderRow}>
+        <View style={seniorHomeStyles.rowCenterFlex}>
+          <AppIcon name="patrol" size={seniorStyles.iconSize.medium} color="$accent" />
+          <View style={{ flex: 1, marginLeft: 12, gap: 4 }}>
+            <Text
+              style={
+                {
+                  fontSize: seniorStyles.fontSize.large,
+                  fontWeight: '700',
+                  color: seniorStyles.colors.text,
+                  letterSpacing: -0.3,
+                } as TextStyle
+              }
+            >
+              {title}
+            </Text>
+            <Text
+              style={
+                {
+                  fontSize: seniorStyles.fontSize.medium,
+                  color: seniorStyles.colors.textSecondary,
+                } as TextStyle
+              }
+            >
+              {floorsTotal}층 중 {floorsCompleted}층 완료
+            </Text>
+          </View>
+        </View>
+        <SeniorStatusBadge status="inProgress" label="진행중" />
+      </View>
+
+      {/* 진행률 바 */}
+      <ProgressBar progress={progress} variant="primary" height={10} animated />
+    </Pressable>
+  );
+}
+
+/**
+ * 시니어 모드 공지사항 카드
+ */
+function SeniorNoticeCard({ title, content, date }: NoticeCardProps) {
+  const seniorStyles = useSeniorStyles();
+
+  const containerStyle: ViewStyle = {
+    backgroundColor: seniorStyles.colors.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: seniorStyles.colors.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  };
+
+  return (
+    <View style={containerStyle}>
+      <View style={seniorHomeStyles.noticeHeader}>
+        <AppIcon name="notice" size={seniorStyles.iconSize.medium} color="$warning" />
+        <Text
+          style={
+            {
+              fontSize: seniorStyles.fontSize.large,
+              fontWeight: '700',
+              color: seniorStyles.colors.text,
+              marginLeft: 12,
+            } as TextStyle
+          }
+        >
+          {title}
+        </Text>
+      </View>
+      <Text
+        style={
+          {
+            fontSize: seniorStyles.fontSize.medium,
+            color: seniorStyles.colors.textSecondary,
+            lineHeight: seniorStyles.fontSize.medium * 1.5,
+            marginBottom: 12,
+          } as TextStyle
+        }
+      >
+        {content}
+      </Text>
+      <Text
+        style={
+          {
+            fontSize: seniorStyles.fontSize.small,
+            color: seniorStyles.colors.textMuted,
+          } as TextStyle
+        }
+      >
+        {date}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * 시니어 홈 화면 스타일
+ */
+const seniorHomeStyles = StyleSheet.create({
+  cardHeader: {
+    marginBottom: 16,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  rowCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rowCenterFlex: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  noticeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+});

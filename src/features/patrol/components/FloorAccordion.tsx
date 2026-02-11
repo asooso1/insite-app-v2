@@ -46,13 +46,9 @@ export function FloorAccordion({
   const scale = useSharedValue(1);
 
   // 총 체크포인트 수와 완료된 체크포인트 수 계산
-  const totalCheckpoints = floor.zones.reduce(
-    (sum, zone) => sum + zone.checkpoints.length,
-    0
-  );
+  const totalCheckpoints = floor.zones.reduce((sum, zone) => sum + zone.checkpoints.length, 0);
   const completedCheckpoints = floor.zones.reduce(
-    (sum, zone) =>
-      sum + zone.checkpoints.filter((cp) => cp.status === 'COMPLETED').length,
+    (sum, zone) => sum + zone.checkpoints.filter((cp) => cp.status === 'COMPLETED').length,
     0
   );
 
@@ -71,12 +67,7 @@ export function FloorAccordion({
   };
 
   const arrowStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(
-      rotation.value,
-      [0, 1],
-      [0, 90],
-      Extrapolation.CLAMP
-    );
+    const rotate = interpolate(rotation.value, [0, 1], [0, 90], Extrapolation.CLAMP);
     return {
       transform: [{ rotate: `${rotate}deg` }],
     };
@@ -144,12 +135,7 @@ export function FloorAccordion({
             {/* 오른쪽: 프로그레스 바 + 퍼센트 */}
             <XStack alignItems="center" gap="$3">
               <YStack width={60} height={6} borderRadius="$full" overflow="hidden">
-                <YStack
-                  flex={1}
-                  backgroundColor="$gray200"
-                  borderRadius="$full"
-                  overflow="hidden"
-                >
+                <YStack flex={1} backgroundColor="$gray200" borderRadius="$full" overflow="hidden">
                   <LinearGradient
                     colors={progressGradient}
                     start={{ x: 0, y: 0 }}

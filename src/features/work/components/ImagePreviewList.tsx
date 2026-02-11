@@ -14,11 +14,7 @@ interface ImagePreviewListProps {
  * - 가로 스크롤 가능한 이미지 목록
  * - 각 이미지마다 삭제 버튼 표시
  */
-export function ImagePreviewList({
-  images,
-  onRemove,
-  maxImages = 5,
-}: ImagePreviewListProps) {
+export function ImagePreviewList({ images, onRemove, maxImages = 5 }: ImagePreviewListProps) {
   if (images.length === 0) {
     return null;
   }
@@ -33,12 +29,7 @@ export function ImagePreviewList({
       {/* 이미지 목록 */}
       <XStack gap="$3" flexWrap="wrap">
         {images.map((image, index) => (
-          <ImagePreviewItem
-            key={image.uri}
-            image={image}
-            index={index}
-            onRemove={onRemove}
-          />
+          <ImagePreviewItem key={image.uri} image={image} index={index} onRemove={onRemove} />
         ))}
       </XStack>
     </YStack>
@@ -58,11 +49,7 @@ function ImagePreviewItem({ image, index, onRemove }: ImagePreviewItemProps) {
   return (
     <YStack position="relative" width={100} height={100}>
       {/* 이미지 */}
-      <RNImage
-        source={{ uri: image.uri }}
-        style={styles.image}
-        resizeMode="cover"
-      />
+      <RNImage source={{ uri: image.uri }} style={styles.image} resizeMode="cover" />
 
       {/* 삭제 버튼 */}
       <TouchableOpacity

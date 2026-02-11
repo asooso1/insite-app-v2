@@ -21,7 +21,10 @@ import { ImagePreviewList } from '@/features/work/components/ImagePreviewList';
 import { useWorkOrderDetail } from '@/features/work/hooks/useWorkOrderDetail';
 import { useWorkResult } from '@/features/work/hooks/useWorkResult';
 import { useImagePicker } from '@/features/work/hooks/useImagePicker';
-import type { ChecklistItemResult, WorkResultFormData } from '@/features/work/types/checklist.types';
+import type {
+  ChecklistItemResult,
+  WorkResultFormData,
+} from '@/features/work/types/checklist.types';
 
 /**
  * 작업 결과 폼 스키마
@@ -51,12 +54,9 @@ export default function WorkResultScreen() {
   });
 
   // 작업 결과 훅
-  const {
-    checklistItems,
-    submitResult,
-    uploadImages,
-    isSubmitting,
-  } = useWorkResult({ workOrderId });
+  const { checklistItems, submitResult, uploadImages, isSubmitting } = useWorkResult({
+    workOrderId,
+  });
 
   // 체크리스트 결과 상태
   const [checklistResults, setChecklistResults] = useState<ChecklistItemResult[]>([]);
@@ -104,7 +104,6 @@ export default function WorkResultScreen() {
       }
     });
   };
-
 
   // 폼 제출 핸들러
   const onSubmit = async (formData: WorkResultFormValues) => {
@@ -328,11 +327,7 @@ export default function WorkResultScreen() {
               </YStack>
 
               {/* 이미지 미리보기 */}
-              <ImagePreviewList
-                images={images}
-                onRemove={removeImage}
-                maxImages={maxImages}
-              />
+              <ImagePreviewList images={images} onRemove={removeImage} maxImages={maxImages} />
 
               {/* 사진 추가 버튼 */}
               <ImagePickerButton

@@ -108,10 +108,7 @@ export function Switch({
     <Pressable onPress={handlePress} disabled={disabled}>
       <XStack alignItems="center">
         <SwitchTrack checked={checked} disabled={disabled} size={size}>
-          <SwitchThumb
-            size={size}
-            x={getThumbOffset(size, checked)}
-          />
+          <SwitchThumb size={size} x={getThumbOffset(size, checked)} />
         </SwitchTrack>
         {label && (
           <SwitchLabel disabled={disabled} size={size}>

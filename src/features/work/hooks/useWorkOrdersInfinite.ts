@@ -3,7 +3,10 @@
  */
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type { WorkOrderListResponse, GetWorkOrderListParams } from '@/api/generated/models';
-import { getWorkOrderList, getGetWorkOrderListQueryKey } from '@/api/generated/work-order/work-order';
+import {
+  getWorkOrderList,
+  getGetWorkOrderListQueryKey,
+} from '@/api/generated/work-order/work-order';
 
 interface UseWorkOrdersInfiniteOptions {
   buildingId: number;
@@ -26,7 +29,11 @@ export function useWorkOrdersInfinite({
   size = 10,
 }: UseWorkOrdersInfiniteOptions) {
   return useInfiniteQuery<WorkOrderListResponse>({
-    queryKey: [...getGetWorkOrderListQueryKey({ buildingId }), 'infinite', { state, searchKeyword, termDateFrom, termDateTo, size }],
+    queryKey: [
+      ...getGetWorkOrderListQueryKey({ buildingId }),
+      'infinite',
+      { state, searchKeyword, termDateFrom, termDateTo, size },
+    ],
     queryFn: async ({ pageParam = 0 }) => {
       const params: GetWorkOrderListParams = {
         buildingId,

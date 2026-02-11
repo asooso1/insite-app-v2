@@ -6,7 +6,10 @@
 
 import { useUpdatePatrolZoneState, useRequestCompletePatrol } from '@/api/generated/patrol/patrol';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetPatrolTargetsQueryKey, getGetPatrolDetailQueryKey } from '@/api/generated/patrol/patrol';
+import {
+  getGetPatrolTargetsQueryKey,
+  getGetPatrolDetailQueryKey,
+} from '@/api/generated/patrol/patrol';
 
 /**
  * 순찰 구역 상태 변경 훅

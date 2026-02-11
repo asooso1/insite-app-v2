@@ -3,6 +3,7 @@
  *
  * 2026 Modern UI - 프로그레스 링, 플로팅 카드, 아코디언
  * 순찰 경로, 체크포인트 목록, 완료 상태 표시
+ * 시니어 모드 지원: 확대된 텍스트, 큰 프로그레스 링, 고대비 색상
  */
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
@@ -10,18 +11,19 @@ import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressRing, FloorAccordion } from '@/features/patrol/components';
 import { mockPatrolDetails } from '@/features/patrol/data/mockPatrols';
 import type { CheckpointDTO } from '@/features/patrol/types/patrol.types';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 
 export default function PatrolDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isSeniorMode, card: cardStyles } = useSeniorStyles();
 
   // Mock 데이터 가져오기
   const patrolDetail = useMemo(() => {
@@ -79,9 +81,7 @@ export default function PatrolDetailScreen() {
   // 완료율 계산
   const completionRate =
     patrolDetail.totalCheckpoints > 0
-      ? Math.round(
-          (patrolDetail.completedCheckpoints / patrolDetail.totalCheckpoints) * 100
-        )
+      ? Math.round((patrolDetail.completedCheckpoints / patrolDetail.totalCheckpoints) * 100)
       : 0;
 
   // 상태별 그라디언트
@@ -103,7 +103,7 @@ export default function PatrolDetailScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* 그라디언트 헤더 */}
-      <Animated.View entering={FadeIn.duration(400)}>
+      <View>
         <LinearGradient
           colors={statusGradient}
           start={{ x: 0, y: 0 }}
@@ -152,24 +152,16 @@ export default function PatrolDetailScreen() {
               {patrolDetail.name}
             </Text>
             <XStack gap="$2" marginTop="$1">
-              <Badge
-                backgroundColor="rgba(255, 255, 255, 0.2)"
-                color="white"
-                size="sm"
-              >
+              <Badge backgroundColor="rgba(255, 255, 255, 0.2)" color="white" size="sm">
                 {patrolDetail.buildingName}
               </Badge>
-              <Badge
-                backgroundColor="rgba(255, 255, 255, 0.2)"
-                color="white"
-                size="sm"
-              >
+              <Badge backgroundColor="rgba(255, 255, 255, 0.2)" color="white" size="sm">
                 {patrolDetail.floorCount}개 층
               </Badge>
             </XStack>
           </YStack>
         </LinearGradient>
-      </Animated.View>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -177,21 +169,23 @@ export default function PatrolDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* 프로그레스 링 카드 */}
-        <Animated.View entering={FadeInDown.delay(100).springify()}>
+        <View>
           <YStack
             marginHorizontal="$4"
             marginTop={-40}
             backgroundColor="$white"
             borderRadius="$5"
             padding="$5"
+            borderWidth={isSeniorMode ? cardStyles.borderWidth : 0}
+            borderColor={isSeniorMode ? (cardStyles.borderColor as any) : 'transparent'}
             style={styles.progressCard}
           >
             <XStack alignItems="center" gap="$5">
-              {/* 프로그레스 링 */}
+              {/* 프로그레스 링 (시니어 모드: 크기 확대) */}
               <ProgressRing
                 progress={completionRate}
-                size={110}
-                strokeWidth={12}
+                size={isSeniorMode ? 130 : 110}
+                strokeWidth={isSeniorMode ? 14 : 12}
                 colorType={progressColorType}
                 subtitle="완료율"
               />
@@ -210,18 +204,14 @@ export default function PatrolDetailScreen() {
                   value={`${patrolDetail.completedFloors}/${patrolDetail.floorCount}`}
                   subtext="층 완료"
                 />
-                <StatRow
-                  icon="📅"
-                  label="예정일"
-                  value={formatDate(patrolDetail.scheduledDate)}
-                />
+                <StatRow icon="📅" label="예정일" value={formatDate(patrolDetail.scheduledDate)} />
               </YStack>
             </XStack>
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 층별 체크포인트 섹션 헤더 */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
+        <View>
           <XStack
             paddingHorizontal="$5"
             paddingTop="$5"
@@ -234,30 +224,24 @@ export default function PatrolDetailScreen() {
               층별 체크포인트
             </Text>
           </XStack>
-        </Animated.View>
+        </View>
 
         {/* 층별 아코디언 목록 */}
         <YStack paddingBottom="$4">
           {patrolDetail.floors.map((floor, index) => (
-            <Animated.View
-              key={floor.buildingFloorId}
-              entering={FadeInDown.delay(250 + index * 50).springify()}
-            >
+            <View key={floor.buildingFloorId}>
               <FloorAccordion
                 floor={floor}
                 onCheckpointPress={handleCheckpointPress}
                 defaultExpanded={index === firstIncompleteFloorIndex || index === 0}
               />
-            </Animated.View>
+            </View>
           ))}
         </YStack>
       </ScrollView>
 
       {/* 하단 버튼 영역 */}
-      <Animated.View
-        entering={FadeInUp.delay(400).springify()}
-        style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}
-      >
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
         <LinearGradient
           colors={['rgba(248, 250, 252, 0)', 'rgba(248, 250, 252, 1)']}
           style={styles.bottomGradient}
@@ -274,9 +258,7 @@ export default function PatrolDetailScreen() {
           >
             <LinearGradient
               colors={
-                patrolDetail.state === 'COMPLETED'
-                  ? ['#94A3B8', '#CBD5E1']
-                  : ['#0066CC', '#00A3FF']
+                patrolDetail.state === 'COMPLETED' ? ['#94A3B8', '#CBD5E1'] : ['#0066CC', '#00A3FF']
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -288,13 +270,13 @@ export default function PatrolDetailScreen() {
             </LinearGradient>
           </Pressable>
         </YStack>
-      </Animated.View>
+      </View>
     </View>
   );
 }
 
 /**
- * 통계 행 컴포넌트
+ * 통계 행 컴포넌트 (시니어 모드 지원)
  */
 function StatRow({
   icon,
@@ -307,19 +289,21 @@ function StatRow({
   value: string;
   subtext?: string;
 }) {
+  const { isSeniorMode, fontSize, iconSize } = useSeniorStyles();
+
   return (
     <XStack alignItems="center" gap="$2">
-      <Text fontSize={14}>{icon}</Text>
+      <Text fontSize={isSeniorMode ? iconSize.small : 14}>{icon}</Text>
       <YStack flex={1}>
-        <Text fontSize={12} color="$gray500">
+        <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$gray500">
           {label}
         </Text>
         <XStack alignItems="baseline" gap="$1">
-          <Text fontSize={15} fontWeight="700" color="$gray900">
+          <Text fontSize={isSeniorMode ? fontSize.medium : 15} fontWeight="700" color="$gray900">
             {value}
           </Text>
           {subtext && (
-            <Text fontSize={12} color="$gray500">
+            <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$gray500">
               {subtext}
             </Text>
           )}

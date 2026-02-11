@@ -110,7 +110,9 @@ export default function MyWorkScreen() {
               {getStatusLabel(item.status)}
             </Text>
           </View>
-          <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(item.priority) }]} />
+          <View
+            style={[styles.priorityDot, { backgroundColor: getPriorityColor(item.priority) }]}
+          />
         </View>
         <Text style={styles.workTitle}>{item.title}</Text>
         <View style={styles.workMeta}>
@@ -133,7 +135,10 @@ export default function MyWorkScreen() {
         {statusFilters.map((filter) => (
           <TouchableOpacity
             key={filter.key}
-            style={[styles.filterButton, selectedStatus === filter.key && styles.filterButtonActive]}
+            style={[
+              styles.filterButton,
+              selectedStatus === filter.key && styles.filterButtonActive,
+            ]}
             onPress={() => setSelectedStatus(filter.key)}
           >
             <Text

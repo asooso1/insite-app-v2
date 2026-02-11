@@ -2,12 +2,12 @@
  * 작업지시 목록 화면
  *
  * 2026 Modern UI - 그라디언트 헤더 + Glass 필터 + Floating 카드
+ * 시니어 모드 지원: 확대된 리스트 아이템, 고대비 배지, 테두리 강조
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import { FlatList, RefreshControl } from 'react-native';
-import { YStack, XStack, Text } from 'tamagui';
+import { FlatList, RefreshControl, View } from 'react-native';
+import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
-import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import { WorkOrderCard } from '@/features/work/components/WorkOrderCard';
@@ -17,11 +17,19 @@ import { FilterPill } from '@/components/ui/FilterPill';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { WorkOrderDTO } from '@/api/generated/models';
 import { mockWorkOrders } from '@/features/work/utils/mockData';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
+import { SeniorCardListItem, SeniorStatusBadge } from '@/components/ui/SeniorCard';
 
 /**
  * 상태 필터 타입
  */
-type WorkOrderStateFilter = 'WRITE' | 'ISSUE' | 'PROCESSING' | 'REQ_COMPLETE' | 'COMPLETE' | 'CANCEL';
+type WorkOrderStateFilter =
+  | 'WRITE'
+  | 'ISSUE'
+  | 'PROCESSING'
+  | 'REQ_COMPLETE'
+  | 'COMPLETE'
+  | 'CANCEL';
 
 /**
  * 필터 옵션
@@ -40,6 +48,8 @@ const FILTER_OPTIONS: { state: WorkOrderStateFilter | null; label: string }[] = 
 export default function WorkListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const { isSeniorMode } = useSeniorStyles();
 
   // 상태 관리
   const [searchText, setSearchText] = useState('');
@@ -97,20 +107,53 @@ export default function WorkListScreen() {
     return counts;
   }, []);
 
+  // 상태 매핑 헬퍼
+  const getStatusBadgeProps = (state: string | undefined) => {
+    switch (state) {
+      case 'COMPLETE':
+        return { status: 'completed' as const, label: '완료' };
+      case 'PROCESSING':
+        return { status: 'inProgress' as const, label: '진행중' };
+      case 'REQ_COMPLETE':
+        return { status: 'pending' as const, label: '완료요청' };
+      case 'ISSUE':
+        return { status: 'pending' as const, label: '발행' };
+      default:
+        return { status: 'pending' as const, label: '대기' };
+    }
+  };
+
   // 렌더링 함수
   const renderItem = useCallback(
-    ({ item, index }: { item: WorkOrderDTO; index: number }) => (
-      <Animated.View
-        entering={FadeInDown.delay(index * 50).springify()}
-      >
-        <WorkOrderCard
-          workOrder={item}
-          onPress={handleWorkOrderPress}
-          progress={item.state === 'PROCESSING' ? Math.floor(Math.random() * 80) + 20 : undefined}
-        />
-      </Animated.View>
-    ),
-    [handleWorkOrderPress]
+    ({ item }: { item: WorkOrderDTO; index: number }) => {
+      if (isSeniorMode) {
+        // 시니어 모드: 리스트 아이템 형태
+        const statusProps = getStatusBadgeProps(item.state);
+        const subtitle = [item.buildingName, item.writerName].filter(Boolean).join(' · ');
+        return (
+          <View style={{ marginBottom: 12, paddingHorizontal: 16 }}>
+            <SeniorCardListItem
+              title={item.name || '제목 없음'}
+              subtitle={subtitle || '상세 정보 없음'}
+              right={<SeniorStatusBadge {...statusProps} />}
+              onPress={() => handleWorkOrderPress(item)}
+            />
+          </View>
+        );
+      }
+
+      // 일반 모드: 기존 카드
+      return (
+        <View>
+          <WorkOrderCard
+            workOrder={item}
+            onPress={handleWorkOrderPress}
+            progress={item.state === 'PROCESSING' ? Math.floor(Math.random() * 80) + 20 : undefined}
+          />
+        </View>
+      );
+    },
+    [handleWorkOrderPress, isSeniorMode]
   );
 
   const renderEmpty = useCallback(() => {
@@ -119,12 +162,12 @@ export default function WorkListScreen() {
         <EmptyState
           title="작업지시가 없습니다"
           description={
-            debouncedSearch || selectedState
-              ? '필터를 변경해보세요'
-              : '새 작업지시를 등록해주세요'
+            debouncedSearch || selectedState ? '필터를 변경해보세요' : '새 작업지시를 등록해주세요'
           }
           actionLabel={!debouncedSearch && !selectedState ? '작업지시 등록' : undefined}
-          onAction={!debouncedSearch && !selectedState ? () => router.push('/work/create') : undefined}
+          onAction={
+            !debouncedSearch && !selectedState ? () => router.push('/work/create') : undefined
+          }
         />
       </YStack>
     );
@@ -134,7 +177,7 @@ export default function WorkListScreen() {
     return (
       <YStack>
         {/* 필터 Pills */}
-        <Animated.View entering={FadeInRight.delay(100).springify()}>
+        <View>
           <XStack
             paddingHorizontal="$4"
             paddingTop="$3"
@@ -155,7 +198,7 @@ export default function WorkListScreen() {
               );
             })}
           </XStack>
-        </Animated.View>
+        </View>
 
         {/* 결과 카운트 */}
         <XStack
@@ -193,12 +236,12 @@ export default function WorkListScreen() {
         height={160}
         rightAction={
           <YStack
-            backgroundColor="rgba(255, 255, 255, 0.2)"
+            backgroundColor="$glassWhite20"
             paddingHorizontal="$3"
             paddingVertical="$2"
             borderRadius={12}
             borderWidth={1}
-            borderColor="rgba(255, 255, 255, 0.3)"
+            borderColor="$glassWhite30"
             pressStyle={{ opacity: 0.8, scale: 0.97 }}
             onPress={() => router.push('/work/create')}
           >
@@ -227,8 +270,8 @@ export default function WorkListScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor="#0066CC"
-            colors={['#0066CC']}
+            tintColor={theme.primary.val}
+            colors={[theme.primary.val]}
             progressViewOffset={-20}
           />
         }

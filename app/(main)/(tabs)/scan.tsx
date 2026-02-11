@@ -1,6 +1,13 @@
+/**
+ * 스캔 화면
+ *
+ * NFC/QR 코드 스캔 기능
+ * Lucide Icons 사용
+ */
 import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppIcon } from '@/components/icons';
 
 type ScanMode = 'nfc' | 'qr';
 
@@ -53,7 +60,9 @@ export default function ScanScreen() {
               <Text style={styles.nfcIconText}>NFC</Text>
             </View>
             <Text style={styles.scanInstructions}>
-              {isScanning ? 'NFC 태그를 스캔하세요...' : 'NFC 태그를 스캔하려면\n아래 버튼을 누르세요'}
+              {isScanning
+                ? 'NFC 태그를 스캔하세요...'
+                : 'NFC 태그를 스캔하려면\n아래 버튼을 누르세요'}
             </Text>
           </View>
         ) : (
@@ -89,7 +98,13 @@ export default function ScanScreen() {
           ].map((item) => (
             <View key={item.id} style={styles.recentItem}>
               <View style={styles.recentItemLeft}>
-                <Text style={styles.recentItemIcon}>{item.type === 'nfc' ? '📱' : '📷'}</Text>
+                <View style={styles.recentItemIcon}>
+                  <AppIcon
+                    name={item.type === 'nfc' ? 'nfc' : 'qrCode'}
+                    size="sm"
+                    color="$primary"
+                  />
+                </View>
                 <View>
                   <Text style={styles.recentItemName}>{item.name}</Text>
                   <Text style={styles.recentItemTime}>{item.time}</Text>
@@ -239,7 +254,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   recentItemIcon: {
-    fontSize: 20,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   recentItemName: {
     fontSize: 14,

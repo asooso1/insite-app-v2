@@ -3,6 +3,7 @@
  *
  * 2026 Modern UI - 체크포인트 아이템
  * 상태 아이콘, 연결선, 터치 리플 효과
+ * Lucide Icons 사용
  */
 import React from 'react';
 import { XStack, YStack, Text } from 'tamagui';
@@ -15,6 +16,7 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated';
 import type { CheckpointDTO } from '../types/patrol.types';
+import { AppIcon, type IconName } from '@/components/icons';
 
 interface CheckpointItemProps {
   checkpoint: CheckpointDTO;
@@ -46,10 +48,7 @@ export function CheckpointItem({
 
   const handlePress = () => {
     // 터치 피드백 애니메이션
-    scale.value = withSequence(
-      withSpring(0.97, { damping: 15 }),
-      withSpring(1, { damping: 15 })
-    );
+    scale.value = withSequence(withSpring(0.97, { damping: 15 }), withSpring(1, { damping: 15 }));
     onPress?.(checkpoint);
   };
 
@@ -67,9 +66,7 @@ export function CheckpointItem({
       {/* 연결선 및 상태 아이콘 */}
       <YStack width={32} alignItems="center" marginRight="$2">
         {/* 상단 연결선 */}
-        {!isFirst && (
-          <View style={[styles.connectorLine, styles.connectorTop]} />
-        )}
+        {!isFirst && <View style={[styles.connectorLine, styles.connectorTop]} />}
 
         {/* 상태 아이콘 */}
         <YStack
@@ -81,26 +78,16 @@ export function CheckpointItem({
           overflow="hidden"
           zIndex={1}
         >
-          <LinearGradient
-            colors={statusConfig.gradient}
-            style={StyleSheet.absoluteFill}
-          />
-          <Text fontSize={14} color="white" fontWeight="700">
-            {statusConfig.icon}
-          </Text>
+          <LinearGradient colors={statusConfig.gradient} style={StyleSheet.absoluteFill} />
+          <AppIcon name={statusConfig.icon} size={14} color="$white" />
         </YStack>
 
         {/* 하단 연결선 */}
-        {!isLast && (
-          <View style={[styles.connectorLine, styles.connectorBottom]} />
-        )}
+        {!isLast && <View style={[styles.connectorLine, styles.connectorBottom]} />}
       </YStack>
 
       {/* 체크포인트 카드 */}
-      <AnimatedPressable
-        onPress={handlePress}
-        style={[styles.cardContainer, animatedStyle]}
-      >
+      <AnimatedPressable onPress={handlePress} style={[styles.cardContainer, animatedStyle]}>
         <YStack
           flex={1}
           backgroundColor="$white"
@@ -108,21 +95,12 @@ export function CheckpointItem({
           paddingHorizontal="$4"
           paddingVertical="$3"
           borderWidth={1}
-          borderColor={
-            checkpoint.status === 'COMPLETED'
-              ? 'rgba(0, 200, 83, 0.3)'
-              : '$gray200'
-          }
+          borderColor={checkpoint.status === 'COMPLETED' ? 'rgba(0, 200, 83, 0.3)' : '$gray200'}
         >
           <XStack justifyContent="space-between" alignItems="center">
             {/* 체크포인트 정보 */}
             <YStack flex={1} gap="$1">
-              <Text
-                fontSize={15}
-                fontWeight="600"
-                color="$gray900"
-                numberOfLines={1}
-              >
+              <Text fontSize={15} fontWeight="600" color="$gray900" numberOfLines={1}>
                 {checkpoint.name}
               </Text>
               <Text fontSize={13} color="$gray500">
@@ -153,9 +131,7 @@ export function CheckpointItem({
                 alignItems="center"
                 justifyContent="center"
               >
-                <Text fontSize={14} color="$gray500">
-                  ›
-                </Text>
+                <AppIcon name="chevronRight" size={14} color="$gray500" />
               </YStack>
             </XStack>
           </XStack>
@@ -163,18 +139,11 @@ export function CheckpointItem({
           {/* 미니 프로그레스 바 */}
           {checkpoint.status !== 'COMPLETED' && checkpoint.itemCount > 0 && (
             <YStack marginTop="$2">
-              <YStack
-                height={3}
-                backgroundColor="$gray100"
-                borderRadius="$full"
-                overflow="hidden"
-              >
+              <YStack height={3} backgroundColor="$gray100" borderRadius="$full" overflow="hidden">
                 <YStack
                   width={`${completionRate}%`}
                   height="100%"
-                  backgroundColor={
-                    checkpoint.status === 'IN_PROGRESS' ? '$warning' : '$gray300'
-                  }
+                  backgroundColor={checkpoint.status === 'IN_PROGRESS' ? '$warning' : '$gray300'}
                   borderRadius="$full"
                 />
               </YStack>
@@ -189,22 +158,22 @@ export function CheckpointItem({
 /**
  * 상태별 설정 반환
  */
-function getStatusConfig(status: string) {
+function getStatusConfig(status: string): { icon: IconName; gradient: readonly [string, string] } {
   switch (status) {
     case 'COMPLETED':
       return {
-        icon: '✓',
+        icon: 'check',
         gradient: ['#00C853', '#69F0AE'] as const,
       };
     case 'IN_PROGRESS':
       return {
-        icon: '◐',
+        icon: 'inProgress',
         gradient: ['#FF8F00', '#FFB300'] as const,
       };
     case 'PENDING':
     default:
       return {
-        icon: '○',
+        icon: 'circle',
         gradient: ['#94A3B8', '#CBD5E1'] as const,
       };
   }

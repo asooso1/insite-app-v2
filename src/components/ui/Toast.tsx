@@ -1,8 +1,11 @@
 /**
  * Toast 컴포넌트
+ *
+ * Lucide Icons 지원
  */
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { styled, XStack, Text, YStack } from 'tamagui';
+import { AppIcon, type IconName } from '@/components/icons';
 
 const ToastContainer = styled(XStack, {
   name: 'ToastContainer',
@@ -46,19 +49,12 @@ const ToastText = styled(Text, {
   } as const,
 });
 
-const ToastIcon = styled(Text, {
-  name: 'ToastIcon',
-  fontSize: 16,
-
-  variants: {
-    variant: {
-      default: { color: '$white' },
-      success: { color: '$white' },
-      error: { color: '$white' },
-      warning: { color: '$gray900' },
-      info: { color: '$white' },
-    },
-  } as const,
+const ToastIconContainer = styled(YStack, {
+  name: 'ToastIconContainer',
+  width: 20,
+  height: 20,
+  alignItems: 'center',
+  justifyContent: 'center',
 });
 
 type ToastVariant = 'default' | 'success' | 'error' | 'warning' | 'info';
@@ -80,12 +76,22 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | null>(null);
 
-const iconMap: Record<ToastVariant, string> = {
-  default: 'ℹ️',
-  success: '✓',
-  error: '✕',
-  warning: '⚠',
-  info: 'ℹ',
+// 아이콘 매핑 (variant -> IconName)
+const iconMap: Record<ToastVariant, IconName> = {
+  default: 'info',
+  success: 'success',
+  error: 'error',
+  warning: 'warning',
+  info: 'info',
+};
+
+// 아이콘 색상 매핑 (variant -> color)
+const iconColorMap: Record<ToastVariant, string> = {
+  default: '$white',
+  success: '$white',
+  error: '$white',
+  warning: '$gray900',
+  info: '$white',
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -139,7 +145,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       >
         {toasts.map((toast) => (
           <ToastContainer key={toast.id} variant={toast.variant}>
-            <ToastIcon variant={toast.variant}>{iconMap[toast.variant]}</ToastIcon>
+            <ToastIconContainer>
+              <AppIcon
+                name={iconMap[toast.variant]}
+                size="sm"
+                color={iconColorMap[toast.variant]}
+              />
+            </ToastIconContainer>
             <ToastText variant={toast.variant}>{toast.message}</ToastText>
           </ToastContainer>
         ))}

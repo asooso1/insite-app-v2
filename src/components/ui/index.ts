@@ -52,12 +52,7 @@ export {
   type ModalProps,
   type ConfirmDialogProps,
 } from './Modal';
-export {
-  ToastProvider,
-  useToast,
-  type ToastVariant,
-  type ToastData,
-} from './Toast';
+export { ToastProvider, useToast, type ToastVariant, type ToastData } from './Toast';
 export {
   LoadingOverlay,
   LoadingSpinner,
@@ -80,11 +75,7 @@ export {
   NetworkError,
   type EmptyStateProps,
 } from './EmptyState';
-export {
-  ErrorBoundary,
-  withErrorBoundary,
-  type ErrorBoundaryProps,
-} from './ErrorBoundary';
+export { ErrorBoundary, withErrorBoundary, type ErrorBoundaryProps } from './ErrorBoundary';
 
 // 2026 Modern UI 컴포넌트
 export { GradientHeader } from './GradientHeader';
@@ -94,3 +85,15 @@ export { SectionHeader } from './SectionHeader';
 export { ProgressBar } from './ProgressBar';
 export { FilterPill } from './FilterPill';
 export { GlassSearchInput } from './GlassSearchInput';
+
+// 아이콘 시스템
+export {
+  AppIcon,
+  TabIcon,
+  ICONS,
+  ICON_SIZES,
+  SENIOR_ICON_SIZES,
+  ICON_COLORS,
+  type IconName,
+  type IconSize,
+} from '../icons';

@@ -131,15 +131,17 @@ export function GlassCard({
       overflow="hidden"
       pressStyle={onPress ? { opacity: 0.95, scale: 0.98 } : undefined}
       onPress={onPress}
-      style={[
-        Platform.select({
-          ios: getShadowStyle(),
-          android: {
-            elevation: floating ? 12 : glow ? 10 : 4,
-          },
-        }),
-        style,
-      ] as ViewStyle[]}
+      style={
+        [
+          Platform.select({
+            ios: getShadowStyle(),
+            android: {
+              elevation: floating ? 12 : glow ? 10 : 4,
+            },
+          }),
+          style,
+        ] as ViewStyle[]
+      }
     >
       {children}
     </YStack>

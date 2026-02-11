@@ -33,11 +33,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 /**
  * Glassmorphism 스타일 필터 바
  */
-export function GlassFilterBar({
-  options,
-  selectedFilter,
-  onFilterChange,
-}: GlassFilterBarProps) {
+export function GlassFilterBar({ options, selectedFilter, onFilterChange }: GlassFilterBarProps) {
   return (
     <XStack
       paddingHorizontal="$4"

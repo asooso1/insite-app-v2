@@ -34,9 +34,7 @@ export function PatrolCard({ patrol, onPress, highlighted = false }: PatrolCardP
 
   // 층별 진행률 계산
   const floorProgress =
-    patrol.floorCount > 0
-      ? `${patrol.completedFloors}/${patrol.floorCount}`
-      : '0/0';
+    patrol.floorCount > 0 ? `${patrol.completedFloors}/${patrol.floorCount}` : '0/0';
 
   return (
     <Pressable onPress={handlePress}>
@@ -57,12 +55,7 @@ export function PatrolCard({ patrol, onPress, highlighted = false }: PatrolCardP
                 {patrol.name}
               </Text>
               {highlighted && (
-                <Badge
-                  variant="primary"
-                  size="sm"
-                  marginTop="$2"
-                  alignSelf="flex-start"
-                >
+                <Badge variant="primary" size="sm" marginTop="$2" alignSelf="flex-start">
                   오늘의 순찰
                 </Badge>
               )}

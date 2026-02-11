@@ -13,10 +13,10 @@ interface PatrolFilterBarProps {
   onFilterChange: (filter: PatrolFilterOption) => void;
 }
 
-const FILTER_OPTIONS: Array<{
+const FILTER_OPTIONS: {
   value: PatrolFilterOption;
   label: string;
-}> = [
+}[] = [
   { value: 'ALL', label: '전체' },
   { value: 'ISSUE', label: '미실시' },
   { value: 'PROCESSING', label: '진행중' },

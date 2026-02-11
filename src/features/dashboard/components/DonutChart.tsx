@@ -1,22 +1,14 @@
 /**
  * DonutChart 컴포넌트
  *
- * 2026 Modern UI - SVG 도넛 차트
- * 그라디언트 세그먼트, 범례, 애니메이션
+ * 2026 Modern UI - SVG 도넛 차트 (정적 버전)
+ * Reanimated 제거 - 정적 렌더링
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { XStack, YStack, Text } from 'tamagui';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, G, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
-import Animated, {
-  useSharedValue,
-  useAnimatedProps,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface ChartSegment {
   /** 라벨 */
@@ -41,7 +33,7 @@ interface DonutChartProps {
 }
 
 /**
- * 도넛 차트 컴포넌트
+ * 도넛 차트 컴포넌트 (정적 버전)
  */
 export function DonutChart({
   title,
@@ -123,30 +115,26 @@ export function DonutChart({
                 fill="transparent"
               />
 
-              {/* 세그먼트들 */}
+              {/* 세그먼트들 - 정적 렌더링 */}
               {segmentData.map((seg, idx) => (
-                <AnimatedSegment
+                <Circle
                   key={idx}
                   cx={center}
                   cy={center}
                   r={radius}
+                  stroke={`url(#segment-gradient-${idx})`}
                   strokeWidth={strokeWidth}
-                  gradientId={`segment-gradient-${idx}`}
-                  strokeDasharray={circumference}
+                  fill="transparent"
                   strokeDashoffset={seg.offset}
-                  length={seg.length}
-                  delay={idx * 150}
+                  strokeDasharray={[seg.length, circumference - seg.length]}
+                  strokeLinecap="round"
                 />
               ))}
             </G>
           </Svg>
 
           {/* 중앙 텍스트 */}
-          <YStack
-            position="absolute"
-            alignItems="center"
-            justifyContent="center"
-          >
+          <YStack position="absolute" alignItems="center" justifyContent="center">
             <Text fontSize={32} fontWeight="800" color="$gray900" letterSpacing={-1}>
               {total > 0 && segments[0] ? Math.round((segments[0].value / total) * 100) : 0}%
             </Text>
@@ -170,63 +158,6 @@ export function DonutChart({
         </YStack>
       </XStack>
     </YStack>
-  );
-}
-
-interface AnimatedSegmentProps {
-  cx: number;
-  cy: number;
-  r: number;
-  strokeWidth: number;
-  gradientId: string;
-  strokeDasharray: number;
-  strokeDashoffset: number;
-  length: number;
-  delay: number;
-}
-
-function AnimatedSegment({
-  cx,
-  cy,
-  r,
-  strokeWidth,
-  gradientId,
-  strokeDasharray,
-  strokeDashoffset,
-  length,
-  delay,
-}: AnimatedSegmentProps) {
-  const animatedLength = useSharedValue(0);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      animatedLength.value = withTiming(length, {
-        duration: 800,
-        easing: Easing.out(Easing.cubic),
-      });
-    }, delay);
-
-    return () => clearTimeout(timeout);
-  }, [length, delay, animatedLength]);
-
-  const animatedProps = useAnimatedProps(() => {
-    return {
-      strokeDasharray: [animatedLength.value, strokeDasharray - animatedLength.value],
-    };
-  });
-
-  return (
-    <AnimatedCircle
-      cx={cx}
-      cy={cy}
-      r={r}
-      stroke={`url(#${gradientId})`}
-      strokeWidth={strokeWidth}
-      fill="transparent"
-      strokeDashoffset={strokeDashoffset}
-      animatedProps={animatedProps}
-      strokeLinecap="round"
-    />
   );
 }
 
