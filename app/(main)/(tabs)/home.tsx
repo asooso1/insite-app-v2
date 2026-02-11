@@ -5,9 +5,10 @@
  * 오늘의 요약, 진행 중인 작업, 순찰 상태 표시
  */
 import React, { useState, useCallback } from 'react';
-import { ScrollView, RefreshControl, Platform, ViewStyle, View } from 'react-native';
+import { ScrollView, RefreshControl, Platform, ViewStyle } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { useRouter } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuthStore } from '@/stores/auth.store';
 import { GradientHeader } from '@/components/ui/GradientHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -89,7 +90,7 @@ export default function HomeScreen() {
         />
 
         {/* 오늘의 요약 (Glass Card - 오버랩) */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(100).springify()}>
           <GlassCard
             marginHorizontal={20}
             marginTop={-32}
@@ -129,10 +130,10 @@ export default function HomeScreen() {
               />
             </XStack>
           </GlassCard>
-        </View>
+        </Animated.View>
 
         {/* 빠른 실행 */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(200).springify()}>
           <YStack paddingHorizontal="$5" marginTop="$6">
             <SectionHeader title="빠른 실행" showAccent />
             <XStack gap="$3">
@@ -158,10 +159,10 @@ export default function HomeScreen() {
               />
             </XStack>
           </YStack>
-        </View>
+        </Animated.View>
 
         {/* 진행 중인 작업 */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(300).springify()}>
           <YStack paddingHorizontal="$5" marginTop="$6">
             <SectionHeader
               title="진행 중인 작업"
@@ -176,10 +177,10 @@ export default function HomeScreen() {
               onPress={() => router.push(`/work/${inProgressWork.id}`)}
             />
           </YStack>
-        </View>
+        </Animated.View>
 
         {/* 오늘의 순찰 */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(400).springify()}>
           <YStack paddingHorizontal="$5" marginTop="$6">
             <SectionHeader
               title="오늘의 순찰"
@@ -194,10 +195,10 @@ export default function HomeScreen() {
               onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
             />
           </YStack>
-        </View>
+        </Animated.View>
 
         {/* 공지사항 */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(500).springify()}>
           <YStack paddingHorizontal="$5" marginTop="$6">
             <SectionHeader title="공지사항" showAccent />
             <NoticeCard
@@ -206,7 +207,7 @@ export default function HomeScreen() {
               date="2026-02-08"
             />
           </YStack>
-        </View>
+        </Animated.View>
       </ScrollView>
     </YStack>
   );

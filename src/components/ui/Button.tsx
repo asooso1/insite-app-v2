@@ -1,14 +1,22 @@
 /**
  * Button 컴포넌트
  *
- * 2026 Modern UI - 그라디언트 버튼
- * Expo Go 호환 버전 (Reanimated 미사용)
+ * 2026 Modern UI - 그라디언트 + 애니메이션 버튼
+ * 터치 피드백과 글로우 효과로 프리미엄 느낌
  */
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Pressable, ActivityIndicator, ViewStyle } from 'react-native';
 import { styled, Text, XStack } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { gradients } from '@/theme/tokens';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
  * 버튼 텍스트 스타일
@@ -167,6 +175,33 @@ export function Button({
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
+  // 애니메이션 값
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+
+  // 프레스 핸들러
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.96, {
+      damping: 15,
+      stiffness: 400,
+    });
+    opacity.value = withTiming(0.9, { duration: 100 });
+  }, [scale, opacity]);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 400,
+    });
+    opacity.value = withTiming(1, { duration: 150 });
+  }, [scale, opacity]);
+
+  // 애니메이션 스타일
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
   // 스타일 계산
   const buttonHeight = sizeToHeight[size] ?? 48;
   const paddingHorizontal = sizeToPadding[size] ?? 20;
@@ -248,14 +283,13 @@ export function Button({
   );
 
   return (
-    <Pressable
+    <AnimatedPressable
       testID={testID}
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isDisabled}
-      style={({ pressed }) => [
-        containerStyle,
-        pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
-      ]}
+      style={[containerStyle, animatedStyle]}
     >
       {isGradient && gradientColors ? (
         <LinearGradient
@@ -269,7 +303,7 @@ export function Button({
       ) : (
         <XStack style={contentStyle}>{renderContent()}</XStack>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -306,6 +340,20 @@ export function IconButton({
   const isDisabled = disabled || loading;
   const dimension = iconSizeToSize[size] ?? 44;
 
+  const scale = useSharedValue(1);
+
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.9, { damping: 15, stiffness: 400 });
+  }, [scale]);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+  }, [scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   const isGradient = ['primary', 'secondary', 'accent', 'danger', 'success'].includes(variant);
   const gradientColors = variantToGradient[variant];
   const solidStyle = variantToSolidStyle[variant];
@@ -339,14 +387,13 @@ export function IconButton({
       : '#FFFFFF';
 
   return (
-    <Pressable
+    <AnimatedPressable
       testID={testID}
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isDisabled}
-      style={({ pressed }) => [
-        containerStyle,
-        pressed && { opacity: 0.8, transform: [{ scale: 0.9 }] },
-      ]}
+      style={[containerStyle, animatedStyle]}
     >
       {isGradient && gradientColors ? (
         <LinearGradient
@@ -367,7 +414,7 @@ export function IconButton({
       ) : (
         icon
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

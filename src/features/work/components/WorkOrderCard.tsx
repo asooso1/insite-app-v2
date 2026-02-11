@@ -4,10 +4,15 @@
  * 2026 Modern UI - Floating Card 스타일
  * 그라디언트 상태 인디케이터, 볼드 타이포그래피, 부드러운 그림자
  */
-import React, { useState } from 'react';
-import { StyleSheet, Platform, ViewStyle, Pressable, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, Platform, ViewStyle, Pressable } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import type { WorkOrderDTO } from '@/api/generated/models';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 
@@ -74,19 +79,27 @@ export function WorkOrderCard({
   progress,
   compact = false,
 }: WorkOrderCardProps) {
-  const [isPressed, setIsPressed] = useState(false);
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
 
   const handlePressIn = () => {
-    setIsPressed(true);
+    scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
+    opacity.value = withSpring(0.9);
   };
 
   const handlePressOut = () => {
-    setIsPressed(false);
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+    opacity.value = withSpring(1);
   };
 
   const handlePress = () => {
     onPress?.(workOrder);
   };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
 
   const statusGradient = getStatusGradient(workOrder.state);
   const statusBg = STATUS_BG_COLORS[workOrder.state || 'WRITE'] || STATUS_BG_COLORS.WRITE;
@@ -101,7 +114,7 @@ export function WorkOrderCard({
       onPressOut={handlePressOut}
       onPress={handlePress}
     >
-      <View style={{ transform: [{ scale: isPressed ? 0.97 : 1 }], opacity: isPressed ? 0.9 : 1 }}>
+      <Animated.View style={animatedStyle}>
         <YStack
           marginHorizontal="$4"
           marginVertical="$2"
@@ -241,7 +254,7 @@ export function WorkOrderCard({
             )}
           </YStack>
         </YStack>
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }

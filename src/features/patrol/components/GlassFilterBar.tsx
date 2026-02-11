@@ -4,10 +4,16 @@
  * 2026 Modern UI - Glassmorphism 필터 바
  * 반투명 배경과 부드러운 전환 효과
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { XStack, Text } from 'tamagui';
 import { Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import type { PatrolFilterOption } from '../types/patrol.types';
 
 interface FilterOption {
@@ -21,6 +27,8 @@ interface GlassFilterBarProps {
   selectedFilter: PatrolFilterOption;
   onFilterChange: (filter: PatrolFilterOption) => void;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
  * Glassmorphism 스타일 필터 바
@@ -58,22 +66,33 @@ interface FilterPillProps {
 }
 
 function FilterPill({ option, isSelected, onPress }: FilterPillProps) {
-  const [isPressed, setIsPressed] = useState(false);
+  const scale = useSharedValue(1);
+  const selected = useSharedValue(isSelected ? 1 : 0);
+
+  React.useEffect(() => {
+    selected.value = withTiming(isSelected ? 1 : 0, { duration: 200 });
+  }, [isSelected, selected]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
 
   const handlePressIn = () => {
-    setIsPressed(true);
+    scale.value = withSpring(0.95);
   };
 
   const handlePressOut = () => {
-    setIsPressed(false);
+    scale.value = withSpring(1);
   };
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[styles.pill, { transform: [{ scale: isPressed ? 0.95 : 1 }] }]}
+      style={[styles.pill, animatedStyle]}
     >
       {isSelected ? (
         <LinearGradient
@@ -130,7 +149,7 @@ function FilterPill({ option, isSelected, onPress }: FilterPillProps) {
           )}
         </XStack>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

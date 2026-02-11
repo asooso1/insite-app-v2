@@ -4,10 +4,16 @@
  * 2026 Modern UI - 체크포인트 아이템
  * 상태 아이콘, 연결선, 터치 리플 효과
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { XStack, YStack, Text } from 'tamagui';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+} from 'react-native-reanimated';
 import type { CheckpointDTO } from '../types/patrol.types';
 
 interface CheckpointItemProps {
@@ -19,6 +25,8 @@ interface CheckpointItemProps {
   isFirst?: boolean;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 /**
  * 체크포인트 아이템
  */
@@ -28,7 +36,7 @@ export function CheckpointItem({
   isLast = false,
   isFirst = false,
 }: CheckpointItemProps) {
-  const [isPressed, setIsPressed] = useState(false);
+  const scale = useSharedValue(1);
 
   // 완료율 계산
   const completionRate =
@@ -37,8 +45,19 @@ export function CheckpointItem({
       : 0;
 
   const handlePress = () => {
+    // 터치 피드백 애니메이션
+    scale.value = withSequence(
+      withSpring(0.97, { damping: 15 }),
+      withSpring(1, { damping: 15 })
+    );
     onPress?.(checkpoint);
   };
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
 
   // 상태별 아이콘과 색상
   const statusConfig = getStatusConfig(checkpoint.status);
@@ -78,11 +97,9 @@ export function CheckpointItem({
       </YStack>
 
       {/* 체크포인트 카드 */}
-      <Pressable
+      <AnimatedPressable
         onPress={handlePress}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-        style={[styles.cardContainer, { transform: [{ scale: isPressed ? 0.97 : 1 }] }]}
+        style={[styles.cardContainer, animatedStyle]}
       >
         <YStack
           flex={1}
@@ -164,7 +181,7 @@ export function CheckpointItem({
             </YStack>
           )}
         </YStack>
-      </Pressable>
+      </AnimatedPressable>
     </XStack>
   );
 }
