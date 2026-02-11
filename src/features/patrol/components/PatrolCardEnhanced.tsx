@@ -4,10 +4,18 @@
  * 2026 Modern UI - Glassmorphism 기반 순찰 카드
  * 플로팅 섀도우, 그라디언트 액센트, 애니메이션
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { YStack, XStack, Text } from 'tamagui';
 import { Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import { Badge } from '@/components/ui/Badge';
 import type { PatrolDTO } from '../types/patrol.types';
 // 상태별 그라디언트는 로컬에서 처리
@@ -19,6 +27,8 @@ interface PatrolCardEnhancedProps {
   highlighted?: boolean;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 /**
  * 모던 순찰 카드
  */
@@ -27,7 +37,8 @@ export function PatrolCardEnhanced({
   onPress,
   highlighted = false,
 }: PatrolCardEnhancedProps) {
-  const [isPressed, setIsPressed] = useState(false);
+  const scale = useSharedValue(1);
+  const pressed = useSharedValue(0);
 
   // 완료율 계산
   const completionRate =
@@ -43,25 +54,41 @@ export function PatrolCardEnhanced({
   };
 
   const handlePressIn = () => {
-    setIsPressed(true);
+    scale.value = withSpring(0.98, { damping: 15 });
+    pressed.value = withTiming(1, { duration: 100 });
   };
 
   const handlePressOut = () => {
-    setIsPressed(false);
+    scale.value = withSpring(1, { damping: 15 });
+    pressed.value = withTiming(0, { duration: 100 });
   };
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const shadowOpacity = interpolate(
+      pressed.value,
+      [0, 1],
+      [highlighted ? 0.25 : 0.12, 0.08],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      transform: [{ scale: scale.value }],
+      shadowOpacity,
+    };
+  });
 
   // 경로 프리뷰 생성
   const routePreview = getRoutePreview(patrol);
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[
         styles.container,
+        animatedStyle,
         highlighted && styles.highlightedContainer,
-        { transform: [{ scale: isPressed ? 0.98 : 1 }] },
       ]}
     >
       {/* 하이라이트 글로우 효과 */}
@@ -223,7 +250,7 @@ export function PatrolCardEnhanced({
           </Text>
         </XStack>
       </YStack>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

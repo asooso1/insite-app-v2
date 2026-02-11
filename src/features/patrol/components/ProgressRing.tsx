@@ -2,12 +2,21 @@
  * ProgressRing 컴포넌트
  *
  * 2026 Modern UI - 원형 프로그레스 링
- * 그라디언트 스트로크
+ * 그라디언트 스트로크와 애니메이션 효과
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  withTiming,
+  Easing,
+  interpolate,
+} from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { YStack, Text } from 'tamagui';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface ProgressRingProps {
   /** 진행률 (0-100) */
@@ -35,8 +44,11 @@ export function ProgressRing({
   strokeWidth = 10,
   showText = true,
   subtitle,
+  duration = 800,
   colorType = 'primary',
 }: ProgressRingProps) {
+  const animatedProgress = useSharedValue(0);
+
   // 중심 좌표와 반지름 계산
   const center = size / 2;
   const radius = (size - strokeWidth) / 2;
@@ -52,8 +64,23 @@ export function ProgressRing({
 
   const colors = colorMap[colorType];
 
-  // Calculate stroke dash offset based on progress
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  useEffect(() => {
+    animatedProgress.value = withTiming(progress, {
+      duration,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [progress, duration, animatedProgress]);
+
+  const animatedProps = useAnimatedProps(() => {
+    const strokeDashoffset = interpolate(
+      animatedProgress.value,
+      [0, 100],
+      [circumference, 0]
+    );
+    return {
+      strokeDashoffset,
+    };
+  });
 
   return (
     <YStack alignItems="center" justifyContent="center" position="relative">
@@ -77,7 +104,7 @@ export function ProgressRing({
         />
 
         {/* 프로그레스 원 */}
-        <Circle
+        <AnimatedCircle
           cx={center}
           cy={center}
           r={radius}
@@ -85,7 +112,7 @@ export function ProgressRing({
           strokeWidth={strokeWidth}
           fill="transparent"
           strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
+          animatedProps={animatedProps}
           strokeLinecap="round"
           transform={`rotate(-90 ${center} ${center})`}
         />

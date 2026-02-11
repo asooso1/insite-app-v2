@@ -6,6 +6,7 @@
  */
 import React, { useState } from 'react';
 import { styled, YStack, XStack, Text, View } from 'tamagui';
+import { useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import { Input, InputProps } from './Input';
 
 /**
@@ -169,19 +170,28 @@ export function TextField({
   ...inputProps
 }: TextFieldProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const focusAnim = useSharedValue(0);
 
   const hasError = !!errorMessage;
   const hasSuccess = !!successMessage;
   const inputSize = size as 'sm' | 'md' | 'lg' | 'senior';
 
-  // 포커스 핸들러
+  // 포커스 애니메이션
   const handleFocus = (e: any) => {
     setIsFocused(true);
+    focusAnim.value = withTiming(1, {
+      duration: 200,
+      easing: Easing.out(Easing.cubic),
+    });
     onFocus?.(e);
   };
 
   const handleBlur = (e: any) => {
     setIsFocused(false);
+    focusAnim.value = withTiming(0, {
+      duration: 200,
+      easing: Easing.out(Easing.cubic),
+    });
     onBlur?.(e);
   };
 

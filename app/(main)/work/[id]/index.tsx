@@ -5,11 +5,12 @@
  * 상태에 따른 액션 버튼 제공
  */
 import React, { useMemo } from 'react';
-import { ScrollView, Alert, Platform, ViewStyle, Pressable, View } from 'react-native';
+import { ScrollView, Alert, Platform, ViewStyle, Pressable } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Button } from '@/components/ui/Button';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -318,7 +319,7 @@ export default function WorkDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* 기본 정보 섹션 */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(100).springify()}>
           <GlassCard floating intensity="heavy" marginBottom={16}>
             <SectionHeader title="기본 정보" size="sm" showAccent />
             <YStack gap="$3" marginTop="$2">
@@ -339,10 +340,10 @@ export default function WorkDetailScreen() {
               />
             </YStack>
           </GlassCard>
-        </View>
+        </Animated.View>
 
         {/* 일정 정보 섹션 */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(200).springify()}>
           <GlassCard intensity="medium" marginBottom={16}>
             <SectionHeader title="일정 정보" size="sm" showAccent />
             <YStack gap="$3" marginTop="$2">
@@ -359,10 +360,10 @@ export default function WorkDetailScreen() {
               <InfoRow label="작성일" value={workOrder.writeDate} />
             </YStack>
           </GlassCard>
-        </View>
+        </Animated.View>
 
         {/* 담당 정보 섹션 */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(300).springify()}>
           <GlassCard intensity="medium" marginBottom={16}>
             <SectionHeader title="담당 정보" size="sm" showAccent />
             <YStack gap="$3" marginTop="$2">
@@ -371,46 +372,48 @@ export default function WorkDetailScreen() {
               <InfoRow label="담당자 연락처" value={workOrder.managerPhone} />
             </YStack>
           </GlassCard>
-        </View>
+        </Animated.View>
 
         {/* 첨부 파일 섹션 */}
         {workOrder.attachments && workOrder.attachments.length > 0 && (
-          <View>
+          <Animated.View entering={FadeInDown.delay(400).springify()}>
             <GlassCard intensity="light" marginBottom={16}>
               <SectionHeader title="첨부 파일" size="sm" showAccent />
               <AttachmentList attachments={workOrder.attachments} />
             </GlassCard>
-          </View>
+          </Animated.View>
         )}
       </ScrollView>
 
       {/* 액션 버튼 (하단 고정) */}
       {renderActionButtons && (
-        <YStack
-          position="absolute"
-          bottom={0}
-          left={0}
-          right={0}
-          paddingHorizontal="$5"
-          paddingTop="$4"
-          paddingBottom={insets.bottom + 16}
-          backgroundColor="$surface"
-          borderTopWidth={1}
-          borderTopColor="$gray100"
-          style={Platform.select({
-            ios: {
-              shadowColor: '#0066CC',
-              shadowOffset: { width: 0, height: -4 },
-              shadowOpacity: 0.1,
-              shadowRadius: 16,
-            },
-            android: {
-              elevation: 8,
-            },
-          }) as ViewStyle}
-        >
-          {renderActionButtons}
-        </YStack>
+        <Animated.View entering={FadeInUp.springify()}>
+          <YStack
+            position="absolute"
+            bottom={0}
+            left={0}
+            right={0}
+            paddingHorizontal="$5"
+            paddingTop="$4"
+            paddingBottom={insets.bottom + 16}
+            backgroundColor="$surface"
+            borderTopWidth={1}
+            borderTopColor="$gray100"
+            style={Platform.select({
+              ios: {
+                shadowColor: '#0066CC',
+                shadowOffset: { width: 0, height: -4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 16,
+              },
+              android: {
+                elevation: 8,
+              },
+            }) as ViewStyle}
+          >
+            {renderActionButtons}
+          </YStack>
+        </Animated.View>
       )}
     </YStack>
   );

@@ -10,6 +10,7 @@ import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -102,7 +103,7 @@ export default function PatrolDetailScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* 그라디언트 헤더 */}
-      <View>
+      <Animated.View entering={FadeIn.duration(400)}>
         <LinearGradient
           colors={statusGradient}
           start={{ x: 0, y: 0 }}
@@ -168,7 +169,7 @@ export default function PatrolDetailScreen() {
             </XStack>
           </YStack>
         </LinearGradient>
-      </View>
+      </Animated.View>
 
       <ScrollView
         style={styles.scrollView}
@@ -176,7 +177,7 @@ export default function PatrolDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* 프로그레스 링 카드 */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(100).springify()}>
           <YStack
             marginHorizontal="$4"
             marginTop={-40}
@@ -217,10 +218,10 @@ export default function PatrolDetailScreen() {
               </YStack>
             </XStack>
           </YStack>
-        </View>
+        </Animated.View>
 
         {/* 층별 체크포인트 섹션 헤더 */}
-        <View>
+        <Animated.View entering={FadeInDown.delay(200).springify()}>
           <XStack
             paddingHorizontal="$5"
             paddingTop="$5"
@@ -233,24 +234,30 @@ export default function PatrolDetailScreen() {
               층별 체크포인트
             </Text>
           </XStack>
-        </View>
+        </Animated.View>
 
         {/* 층별 아코디언 목록 */}
         <YStack paddingBottom="$4">
           {patrolDetail.floors.map((floor, index) => (
-            <View key={floor.buildingFloorId}>
+            <Animated.View
+              key={floor.buildingFloorId}
+              entering={FadeInDown.delay(250 + index * 50).springify()}
+            >
               <FloorAccordion
                 floor={floor}
                 onCheckpointPress={handleCheckpointPress}
                 defaultExpanded={index === firstIncompleteFloorIndex || index === 0}
               />
-            </View>
+            </Animated.View>
           ))}
         </YStack>
       </ScrollView>
 
       {/* 하단 버튼 영역 */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
+      <Animated.View
+        entering={FadeInUp.delay(400).springify()}
+        style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}
+      >
         <LinearGradient
           colors={['rgba(248, 250, 252, 0)', 'rgba(248, 250, 252, 1)']}
           style={styles.bottomGradient}
@@ -281,7 +288,7 @@ export default function PatrolDetailScreen() {
             </LinearGradient>
           </Pressable>
         </YStack>
-      </View>
+      </Animated.View>
     </View>
   );
 }
