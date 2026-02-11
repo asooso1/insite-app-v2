@@ -12,15 +12,15 @@
  * - 업무 타입별 색상 (수시-블루, 순찰-그린, 긴급-레드, 정기-퍼플, 일상-오렌지)
  * - 미확인만 보기 토글
  */
-import React, { useState, useCallback, useMemo } from 'react';
-import { FlatList, RefreshControl, View, Alert } from 'react-native';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { RefreshControl, View, Alert, Animated } from 'react-native';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, CheckCircle, X } from '@tamagui/lucide-icons';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ApprovalCard } from '@/features/approval/components/ApprovalCard';
-import { GradientHeader } from '@/components/ui/GradientHeader';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 import { GlassSearchInput } from '@/components/ui/GlassSearchInput';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
@@ -61,6 +61,9 @@ export default function ApprovalListScreen() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { isSeniorMode } = useSeniorStyles();
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // 상태 관리
   const [searchText, setSearchText] = useState('');
@@ -506,10 +509,12 @@ export default function ApprovalListScreen() {
         <LoadingOverlay visible message="승인 처리 중..." />
       )}
 
-      {/* 그라디언트 헤더 */}
-      <GradientHeader
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
         title="승인/확인"
-        height={160}
+        expandedHeight={160}
+        collapsedHeight={80}
         bottomContent={
           <GlassSearchInput
             value={searchText}
@@ -520,12 +525,17 @@ export default function ApprovalListScreen() {
       />
 
       {/* 승인 목록 */}
-      <FlatList
+      <Animated.FlatList
         data={currentItems}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}

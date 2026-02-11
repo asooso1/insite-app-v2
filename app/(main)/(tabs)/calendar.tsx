@@ -1,6 +1,11 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+/**
+ * 캘린더 화면
+ *
+ * 2026 Modern UI - CollapsibleGradientHeader 적용
+ */
+import React, { useState, useRef } from 'react';
+import { View, Animated, Pressable } from 'react-native';
+import { YStack, XStack, Text, useTheme } from 'tamagui';
 import {
   format,
   addMonths,
@@ -12,6 +17,7 @@ import {
   isToday,
 } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 
 interface ScheduleItem {
   id: string;
@@ -29,6 +35,11 @@ const mockSchedules: Record<string, ScheduleItem[]> = {
 };
 
 export default function CalendarScreen() {
+  const theme = useTheme();
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -43,284 +54,209 @@ export default function CalendarScreen() {
   const selectedSchedules = mockSchedules[selectedDateKey] || [];
 
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-
-  // Get the first day of the month (0 = Sunday, 1 = Monday, etc.)
   const firstDayOfMonth = monthStart.getDay();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>캘린더</Text>
-      </View>
+    <YStack flex={1} backgroundColor="$gray50">
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
+        title="캘린더"
+        expandedHeight={100}
+        collapsedHeight={80}
+      />
 
-      {/* Month Navigation */}
-      <View style={styles.monthNavigation}>
-        <TouchableOpacity onPress={goToPreviousMonth} style={styles.navButton}>
-          <Text style={styles.navButtonText}>{'<'}</Text>
-        </TouchableOpacity>
-        <Text style={styles.monthTitle}>{format(currentMonth, 'yyyy년 M월', { locale: ko })}</Text>
-        <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
-          <Text style={styles.navButtonText}>{'>'}</Text>
-        </TouchableOpacity>
-      </View>
+      <Animated.ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 월 네비게이션 */}
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          paddingHorizontal="$4"
+          paddingVertical="$4"
+        >
+          <YStack
+            width={44}
+            height={44}
+            borderRadius={22}
+            backgroundColor="$white"
+            justifyContent="center"
+            alignItems="center"
+            pressStyle={{ opacity: 0.8 }}
+            onPress={goToPreviousMonth}
+          >
+            <Text fontSize={20} color="$primary" fontWeight="600">{'<'}</Text>
+          </YStack>
+          <Text fontSize={18} fontWeight="600" color="$gray900">
+            {format(currentMonth, 'yyyy년 M월', { locale: ko })}
+          </Text>
+          <YStack
+            width={44}
+            height={44}
+            borderRadius={22}
+            backgroundColor="$white"
+            justifyContent="center"
+            alignItems="center"
+            pressStyle={{ opacity: 0.8 }}
+            onPress={goToNextMonth}
+          >
+            <Text fontSize={20} color="$primary" fontWeight="600">{'>'}</Text>
+          </YStack>
+        </XStack>
 
-      {/* Calendar Grid */}
-      <View style={styles.calendarContainer}>
-        {/* Week Days Header */}
-        <View style={styles.weekDaysRow}>
-          {weekDays.map((day, index) => (
-            <View key={day} style={styles.weekDayCell}>
-              <Text
-                style={[
-                  styles.weekDayText,
-                  index === 0 && styles.sundayText,
-                  index === 6 && styles.saturdayText,
-                ]}
-              >
-                {day}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Days Grid */}
-        <View style={styles.daysGrid}>
-          {/* Empty cells for days before the first of the month */}
-          {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-            <View key={`empty-${index}`} style={styles.dayCell} />
-          ))}
-
-          {/* Actual days */}
-          {days.map((day) => {
-            const dateKey = format(day, 'yyyy-MM-dd');
-            const hasSchedule = mockSchedules[dateKey];
-            const isSelected = isSameDay(day, selectedDate);
-            const isDayToday = isToday(day);
-
-            return (
-              <TouchableOpacity
-                key={dateKey}
-                style={[
-                  styles.dayCell,
-                  isSelected && styles.dayCellSelected,
-                  isDayToday && styles.dayCellToday,
-                ]}
-                onPress={() => setSelectedDate(day)}
-              >
+        {/* 캘린더 그리드 */}
+        <YStack
+          backgroundColor="$white"
+          marginHorizontal="$4"
+          borderRadius={16}
+          padding="$3"
+          borderWidth={1}
+          borderColor="$gray200"
+        >
+          {/* 요일 헤더 */}
+          <XStack marginBottom="$2">
+            {weekDays.map((day, index) => (
+              <YStack key={day} flex={1} alignItems="center" paddingVertical="$2">
                 <Text
-                  style={[
-                    styles.dayText,
-                    isSelected && styles.dayTextSelected,
-                    isDayToday && !isSelected && styles.dayTextToday,
-                    day.getDay() === 0 && styles.sundayText,
-                    day.getDay() === 6 && styles.saturdayText,
-                  ]}
+                  fontSize={14}
+                  fontWeight="500"
+                  color={index === 0 ? '$error' : index === 6 ? '$primary' : '$gray500'}
                 >
-                  {format(day, 'd')}
+                  {day}
                 </Text>
-                {hasSchedule && <View style={styles.scheduleIndicator} />}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
+              </YStack>
+            ))}
+          </XStack>
 
-      {/* Selected Date Schedules */}
-      <View style={styles.schedulesSection}>
-        <Text style={styles.schedulesTitle}>
-          {format(selectedDate, 'M월 d일 (EEEE)', { locale: ko })}
-        </Text>
-        <ScrollView style={styles.schedulesList}>
-          {selectedSchedules.length > 0 ? (
-            selectedSchedules.map((schedule) => (
-              <View key={schedule.id} style={styles.scheduleItem}>
-                <View
-                  style={[
-                    styles.scheduleTypeBadge,
-                    { backgroundColor: schedule.type === 'work' ? '#E6F0FF' : '#E6F7F1' },
-                  ]}
+          {/* 날짜 그리드 */}
+          <XStack flexWrap="wrap">
+            {/* 빈 셀 */}
+            {Array.from({ length: firstDayOfMonth }).map((_, index) => (
+              <YStack key={`empty-${index}`} width="14.28%" aspectRatio={1} />
+            ))}
+
+            {/* 날짜 셀 */}
+            {days.map((day) => {
+              const dateKey = format(day, 'yyyy-MM-dd');
+              const hasSchedule = mockSchedules[dateKey];
+              const isSelected = isSameDay(day, selectedDate);
+              const isDayToday = isToday(day);
+
+              return (
+                <Pressable
+                  key={dateKey}
+                  style={{ width: '14.28%', aspectRatio: 1 }}
+                  onPress={() => setSelectedDate(day)}
                 >
-                  <Text
-                    style={[
-                      styles.scheduleTypeText,
-                      { color: schedule.type === 'work' ? '#0064FF' : '#12805C' },
-                    ]}
+                  <YStack
+                    flex={1}
+                    justifyContent="center"
+                    alignItems="center"
+                    borderRadius={20}
+                    backgroundColor={isSelected ? '$primary' : isDayToday ? '$primaryMuted' : 'transparent'}
                   >
-                    {schedule.type === 'work' ? '작업' : '순찰'}
-                  </Text>
-                </View>
-                <View style={styles.scheduleInfo}>
-                  <Text style={styles.scheduleTitle}>{schedule.title}</Text>
-                  <Text style={styles.scheduleTime}>{schedule.time}</Text>
-                </View>
-              </View>
-            ))
+                    <Text
+                      fontSize={16}
+                      fontWeight={isSelected || isDayToday ? '600' : '400'}
+                      color={
+                        isSelected
+                          ? '$white'
+                          : isDayToday
+                            ? '$primary'
+                            : day.getDay() === 0
+                              ? '$error'
+                              : day.getDay() === 6
+                                ? '$primary'
+                                : '$gray900'
+                      }
+                    >
+                      {format(day, 'd')}
+                    </Text>
+                    {hasSchedule && !isSelected && (
+                      <View
+                        style={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: 2,
+                          backgroundColor: theme.primary.val,
+                          marginTop: 2,
+                        }}
+                      />
+                    )}
+                  </YStack>
+                </Pressable>
+              );
+            })}
+          </XStack>
+        </YStack>
+
+        {/* 선택된 날짜의 일정 */}
+        <YStack
+          backgroundColor="$white"
+          marginHorizontal="$4"
+          marginTop="$4"
+          borderRadius={16}
+          padding="$4"
+          borderWidth={1}
+          borderColor="$gray200"
+        >
+          <Text fontSize={16} fontWeight="600" color="$gray900" marginBottom="$3">
+            {format(selectedDate, 'M월 d일 (EEEE)', { locale: ko })}
+          </Text>
+
+          {selectedSchedules.length > 0 ? (
+            <YStack gap="$2">
+              {selectedSchedules.map((schedule) => (
+                <XStack
+                  key={schedule.id}
+                  backgroundColor="$gray50"
+                  borderRadius={10}
+                  padding="$3"
+                  alignItems="center"
+                  gap="$3"
+                >
+                  <YStack
+                    paddingHorizontal="$2"
+                    paddingVertical="$1"
+                    borderRadius={6}
+                    backgroundColor={schedule.type === 'work' ? '$primaryMuted' : '$successMuted'}
+                  >
+                    <Text
+                      fontSize={12}
+                      fontWeight="600"
+                      color={schedule.type === 'work' ? '$primary' : '$success'}
+                    >
+                      {schedule.type === 'work' ? '작업' : '순찰'}
+                    </Text>
+                  </YStack>
+                  <YStack flex={1}>
+                    <Text fontSize={14} fontWeight="500" color="$gray900">
+                      {schedule.title}
+                    </Text>
+                    <Text fontSize={12} color="$gray500">
+                      {schedule.time}
+                    </Text>
+                  </YStack>
+                </XStack>
+              ))}
+            </YStack>
           ) : (
-            <View style={styles.emptySchedule}>
-              <Text style={styles.emptyScheduleText}>일정이 없습니다</Text>
-            </View>
+            <YStack alignItems="center" paddingVertical="$6">
+              <Text fontSize={14} color="$gray500">
+                일정이 없습니다
+              </Text>
+            </YStack>
           )}
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+        </YStack>
+      </Animated.ScrollView>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EAEAEA',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2C2C2C',
-  },
-  monthNavigation: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  navButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navButtonText: {
-    fontSize: 20,
-    color: '#0064FF',
-    fontWeight: '600',
-  },
-  monthTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2C2C2C',
-  },
-  calendarContainer: {
-    paddingHorizontal: 8,
-  },
-  weekDaysRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  weekDayCell: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  weekDayText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6E6E6E',
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  dayCell: {
-    width: '14.28%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 4,
-  },
-  dayCellSelected: {
-    backgroundColor: '#0064FF',
-    borderRadius: 20,
-  },
-  dayCellToday: {
-    borderWidth: 1,
-    borderColor: '#0064FF',
-    borderRadius: 20,
-  },
-  dayText: {
-    fontSize: 16,
-    color: '#2C2C2C',
-  },
-  dayTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  dayTextToday: {
-    color: '#0064FF',
-    fontWeight: '600',
-  },
-  sundayText: {
-    color: '#C9252D',
-  },
-  saturdayText: {
-    color: '#0064FF',
-  },
-  scheduleIndicator: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#0064FF',
-    marginTop: 2,
-  },
-  schedulesSection: {
-    flex: 1,
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#EAEAEA',
-    marginTop: 8,
-  },
-  schedulesTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C2C2C',
-    marginBottom: 12,
-  },
-  schedulesList: {
-    flex: 1,
-  },
-  scheduleItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  scheduleTypeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 12,
-  },
-  scheduleTypeText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  scheduleInfo: {
-    flex: 1,
-  },
-  scheduleTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#2C2C2C',
-    marginBottom: 2,
-  },
-  scheduleTime: {
-    fontSize: 12,
-    color: '#6E6E6E',
-  },
-  emptySchedule: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  emptyScheduleText: {
-    fontSize: 14,
-    color: '#6E6E6E',
-  },
-});

@@ -6,29 +6,29 @@
  * Lucide Icons 사용
  * 시니어 모드 지원: 확대된 리스트 아이템, 고대비 배지, 테두리 강조
  */
-import React, { useState, useMemo } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import React, { useState, useMemo, useRef } from 'react';
+import { StyleSheet, View, Animated } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { GlassFilterBar, PatrolCardEnhanced } from '@/features/patrol/components';
 import { mockPatrols } from '@/features/patrol/data/mockPatrols';
 import type { PatrolDTO, PatrolFilterOption } from '@/features/patrol/types/patrol.types';
-import { LAYOUT } from '@/theme/tokens';
 import { AppIcon, type IconName } from '@/components/icons';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { SeniorCardListItem, SeniorStatusBadge } from '@/components/ui/SeniorCard';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 
 /**
  * 순찰점검 목록 화면
  */
 export default function PatrolListScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [selectedFilter, setSelectedFilter] = useState<PatrolFilterOption>('ALL');
   const { isSeniorMode, fontSize } = useSeniorStyles();
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // 필터 옵션 (카운트 포함)
   const filterOptions = useMemo(() => {
@@ -195,29 +195,15 @@ export default function PatrolListScreen() {
   const todayCount = mockPatrols.filter((p) => p.isToday).length;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* 그라디언트 헤더 */}
-      <View>
-        <LinearGradient
-          colors={['#0066CC', '#00A3FF']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerGradient}
-        >
-          {/* 배경 장식 */}
-          <View style={styles.headerDecor1} />
-          <View style={styles.headerDecor2} />
-
-          <YStack paddingHorizontal="$5" paddingVertical="$4" gap="$1" zIndex={1}>
-            <Text fontSize={28} fontWeight="800" color="white" letterSpacing={-0.5}>
-              순찰점검
-            </Text>
-            <Text fontSize={15} color="$glassWhite85">
-              오늘 {todayCount}건의 순찰이 있습니다
-            </Text>
-          </YStack>
-        </LinearGradient>
-      </View>
+    <View style={styles.container}>
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
+        title="순찰점검"
+        subtitle={`오늘 ${todayCount}건의 순찰이 있습니다`}
+        expandedHeight={120}
+        collapsedHeight={80}
+      />
 
       {/* 필터 바 */}
       <GlassFilterBar
@@ -227,12 +213,17 @@ export default function PatrolListScreen() {
       />
 
       {/* 순찰 목록 */}
-      <FlatList
+      <Animated.FlatList
         data={sections}
         renderItem={renderItem}
         keyExtractor={(item, index) =>
           item.type === 'header' ? `header-${index}` : `patrol-${item.data?.id}`
         }
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmpty}
         showsVerticalScrollIndicator={false}
@@ -245,28 +236,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-  },
-  headerGradient: {
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  headerDecor1: {
-    position: 'absolute',
-    width: LAYOUT.DECOR_CIRCLE_LARGE,
-    height: LAYOUT.DECOR_CIRCLE_LARGE,
-    borderRadius: LAYOUT.DECOR_CIRCLE_LARGE / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    top: -80,
-    right: -40,
-  },
-  headerDecor2: {
-    position: 'absolute',
-    width: LAYOUT.DECOR_CIRCLE_MEDIUM,
-    height: LAYOUT.DECOR_CIRCLE_MEDIUM,
-    borderRadius: LAYOUT.DECOR_CIRCLE_MEDIUM / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    bottom: -30,
-    left: -20,
   },
   listContent: {
     paddingBottom: 24,

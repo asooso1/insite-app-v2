@@ -1,271 +1,224 @@
 /**
  * 스캔 화면
  *
+ * 2026 Modern UI - CollapsibleGradientHeader 적용
  * NFC/QR 코드 스캔 기능
- * Lucide Icons 사용
  */
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useRef } from 'react';
+import { Alert, Animated } from 'react-native';
+import { YStack, XStack, Text } from 'tamagui';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 import { AppIcon } from '@/components/icons';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 
 type ScanMode = 'nfc' | 'qr';
 
 export default function ScanScreen() {
+  const { isSeniorMode } = useSeniorStyles();
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
+
   const [scanMode, setScanMode] = useState<ScanMode>('nfc');
   const [isScanning, setIsScanning] = useState(false);
 
   const handleStartScan = () => {
     setIsScanning(true);
-
-    // TODO: Implement actual NFC/QR scanning
     setTimeout(() => {
       setIsScanning(false);
       Alert.alert('스캔 완료', '태그 ID: ABC123 (개발 중)');
     }, 2000);
   };
 
+  const recentScans = [
+    { id: '1', name: '체크포인트 A', time: '09:30', type: 'nfc' as const },
+    { id: '2', name: '설비 #1234', time: '09:15', type: 'qr' as const },
+  ];
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>스캔</Text>
-      </View>
+    <YStack flex={1} backgroundColor="$gray50">
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
+        title="스캔"
+        expandedHeight={100}
+        collapsedHeight={80}
+      />
 
-      {/* Mode Selector */}
-      <View style={styles.modeSelector}>
-        <TouchableOpacity
-          style={[styles.modeButton, scanMode === 'nfc' && styles.modeButtonActive]}
-          onPress={() => setScanMode('nfc')}
-        >
-          <Text style={[styles.modeButtonText, scanMode === 'nfc' && styles.modeButtonTextActive]}>
-            NFC
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.modeButton, scanMode === 'qr' && styles.modeButtonActive]}
-          onPress={() => setScanMode('qr')}
-        >
-          <Text style={[styles.modeButtonText, scanMode === 'qr' && styles.modeButtonTextActive]}>
-            QR 코드
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Scan Area */}
-      <View style={styles.scanArea}>
-        {scanMode === 'nfc' ? (
-          <View style={styles.nfcArea}>
-            <View style={[styles.nfcIcon, isScanning && styles.nfcIconScanning]}>
-              <Text style={styles.nfcIconText}>NFC</Text>
-            </View>
-            <Text style={styles.scanInstructions}>
-              {isScanning
-                ? 'NFC 태그를 스캔하세요...'
-                : 'NFC 태그를 스캔하려면\n아래 버튼을 누르세요'}
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.qrArea}>
-            <View style={styles.qrFrame}>
-              <Text style={styles.qrPlaceholder}>QR 카메라 뷰</Text>
-            </View>
-            <Text style={styles.scanInstructions}>QR 코드를 프레임 안에 맞춰주세요</Text>
-          </View>
+      <Animated.ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
         )}
-      </View>
-
-      {/* Action Button */}
-      {scanMode === 'nfc' && (
-        <View style={styles.actionContainer}>
-          <TouchableOpacity
-            style={[styles.scanButton, isScanning && styles.scanButtonScanning]}
-            onPress={handleStartScan}
-            disabled={isScanning}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 모드 선택 */}
+        <XStack paddingHorizontal="$4" paddingVertical="$4" gap="$3">
+          <YStack
+            flex={1}
+            paddingVertical="$3"
+            borderRadius={12}
+            backgroundColor={scanMode === 'nfc' ? '$primary' : '$white'}
+            borderWidth={1}
+            borderColor={scanMode === 'nfc' ? '$primary' : '$gray200'}
+            alignItems="center"
+            pressStyle={{ opacity: 0.8 }}
+            onPress={() => setScanMode('nfc')}
           >
-            <Text style={styles.scanButtonText}>{isScanning ? '스캔 중...' : 'NFC 스캔 시작'}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            <Text
+              fontSize={16}
+              fontWeight="600"
+              color={scanMode === 'nfc' ? '$white' : '$gray600'}
+            >
+              NFC
+            </Text>
+          </YStack>
+          <YStack
+            flex={1}
+            paddingVertical="$3"
+            borderRadius={12}
+            backgroundColor={scanMode === 'qr' ? '$primary' : '$white'}
+            borderWidth={1}
+            borderColor={scanMode === 'qr' ? '$primary' : '$gray200'}
+            alignItems="center"
+            pressStyle={{ opacity: 0.8 }}
+            onPress={() => setScanMode('qr')}
+          >
+            <Text
+              fontSize={16}
+              fontWeight="600"
+              color={scanMode === 'qr' ? '$white' : '$gray600'}
+            >
+              QR 코드
+            </Text>
+          </YStack>
+        </XStack>
 
-      {/* Recent Scans */}
-      <View style={styles.recentSection}>
-        <Text style={styles.recentTitle}>최근 스캔</Text>
-        <View style={styles.recentList}>
-          {[
-            { id: '1', name: '체크포인트 A', time: '09:30', type: 'nfc' },
-            { id: '2', name: '설비 #1234', time: '09:15', type: 'qr' },
-          ].map((item) => (
-            <View key={item.id} style={styles.recentItem}>
-              <View style={styles.recentItemLeft}>
-                <View style={styles.recentItemIcon}>
+        {/* 스캔 영역 */}
+        <YStack alignItems="center" paddingVertical="$8">
+          {scanMode === 'nfc' ? (
+            <YStack alignItems="center">
+              <YStack
+                width={140}
+                height={140}
+                borderRadius={70}
+                backgroundColor={isScanning ? '$primary' : '$primaryMuted'}
+                justifyContent="center"
+                alignItems="center"
+                marginBottom="$6"
+              >
+                <AppIcon
+                  name="nfc"
+                  size="xl"
+                  color={isScanning ? '$white' : '$primary'}
+                />
+              </YStack>
+              <Text
+                fontSize={isSeniorMode ? 18 : 16}
+                color="$gray600"
+                textAlign="center"
+              >
+                {isScanning
+                  ? 'NFC 태그를 스캔하세요...'
+                  : 'NFC 태그를 스캔하려면\n아래 버튼을 누르세요'}
+              </Text>
+            </YStack>
+          ) : (
+            <YStack alignItems="center" width="100%">
+              <YStack
+                width={250}
+                height={250}
+                borderRadius={16}
+                borderWidth={3}
+                borderColor="$primary"
+                borderStyle="dashed"
+                justifyContent="center"
+                alignItems="center"
+                marginBottom="$6"
+              >
+                <AppIcon name="qrCode" size="xl" color="$gray400" />
+                <Text fontSize={14} color="$gray400" marginTop="$2">
+                  QR 카메라 뷰
+                </Text>
+              </YStack>
+              <Text fontSize={isSeniorMode ? 18 : 16} color="$gray600">
+                QR 코드를 프레임 안에 맞춰주세요
+              </Text>
+            </YStack>
+          )}
+        </YStack>
+
+        {/* NFC 스캔 버튼 */}
+        {scanMode === 'nfc' && (
+          <YStack paddingHorizontal="$4" marginBottom="$6">
+            <YStack
+              height={56}
+              backgroundColor={isScanning ? '$gray400' : '$primary'}
+              borderRadius={12}
+              justifyContent="center"
+              alignItems="center"
+              pressStyle={!isScanning ? { opacity: 0.9, scale: 0.99 } : undefined}
+              onPress={!isScanning ? handleStartScan : undefined}
+            >
+              <Text fontSize={18} fontWeight="600" color="$white">
+                {isScanning ? '스캔 중...' : 'NFC 스캔 시작'}
+              </Text>
+            </YStack>
+          </YStack>
+        )}
+
+        {/* 최근 스캔 */}
+        <YStack
+          backgroundColor="$white"
+          marginHorizontal="$4"
+          padding="$4"
+          borderRadius={16}
+          borderWidth={1}
+          borderColor="$gray200"
+        >
+          <Text fontSize={16} fontWeight="600" color="$gray900" marginBottom="$3">
+            최근 스캔
+          </Text>
+          <YStack gap="$2">
+            {recentScans.map((item) => (
+              <XStack
+                key={item.id}
+                backgroundColor="$gray50"
+                borderRadius={10}
+                padding="$3"
+                alignItems="center"
+                gap="$3"
+              >
+                <YStack
+                  width={40}
+                  height={40}
+                  borderRadius={20}
+                  backgroundColor="$primaryMuted"
+                  justifyContent="center"
+                  alignItems="center"
+                >
                   <AppIcon
                     name={item.type === 'nfc' ? 'nfc' : 'qrCode'}
                     size="sm"
                     color="$primary"
                   />
-                </View>
-                <View>
-                  <Text style={styles.recentItemName}>{item.name}</Text>
-                  <Text style={styles.recentItemTime}>{item.time}</Text>
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
-    </SafeAreaView>
+                </YStack>
+                <YStack flex={1}>
+                  <Text fontSize={14} fontWeight="500" color="$gray900">
+                    {item.name}
+                  </Text>
+                  <Text fontSize={12} color="$gray500">
+                    {item.time}
+                  </Text>
+                </YStack>
+              </XStack>
+            ))}
+          </YStack>
+        </YStack>
+      </Animated.ScrollView>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EAEAEA',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2C2C2C',
-  },
-  modeSelector: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
-  },
-  modeButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-  },
-  modeButtonActive: {
-    backgroundColor: '#0064FF',
-  },
-  modeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6E6E6E',
-  },
-  modeButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  scanArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  nfcArea: {
-    alignItems: 'center',
-  },
-  nfcIcon: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: '#E6F0FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  nfcIconScanning: {
-    backgroundColor: '#0064FF',
-  },
-  nfcIconText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#0064FF',
-  },
-  scanInstructions: {
-    fontSize: 16,
-    color: '#6E6E6E',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  qrArea: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  qrFrame: {
-    width: 250,
-    height: 250,
-    borderRadius: 16,
-    borderWidth: 3,
-    borderColor: '#0064FF',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  qrPlaceholder: {
-    fontSize: 14,
-    color: '#8E8E8E',
-  },
-  actionContainer: {
-    padding: 16,
-  },
-  scanButton: {
-    height: 56,
-    backgroundColor: '#0064FF',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanButtonScanning: {
-    backgroundColor: '#8E8E8E',
-  },
-  scanButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  recentSection: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#EAEAEA',
-  },
-  recentTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C2C2C',
-    marginBottom: 12,
-  },
-  recentList: {
-    gap: 8,
-  },
-  recentItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    padding: 12,
-  },
-  recentItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  recentItemIcon: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  recentItemName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#2C2C2C',
-  },
-  recentItemTime: {
-    fontSize: 12,
-    color: '#6E6E6E',
-  },
-});

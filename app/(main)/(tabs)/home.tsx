@@ -11,9 +11,8 @@
  * - 아이콘 + 텍스트 라벨 조합
  * - 테두리로 클릭 가능 요소 표시
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
-  ScrollView,
   RefreshControl,
   Platform,
   ViewStyle,
@@ -21,11 +20,12 @@ import {
   Pressable,
   StyleSheet,
   TextStyle,
+  Animated,
 } from 'react-native';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { GradientHeader } from '@/components/ui/GradientHeader';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { QuickStatCard } from '@/components/ui/QuickStatCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -45,6 +45,9 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const seniorStyles = useSeniorStyles();
   const { isSeniorMode } = seniorStyles;
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -77,9 +80,37 @@ export default function HomeScreen() {
 
   return (
     <YStack flex={1} backgroundColor="$gray50">
-      <ScrollView
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
+        subtitle="안녕하세요,"
+        title={`${user?.name ?? '사용자'}님`}
+        expandedHeight={120}
+        collapsedHeight={80}
+        rightAction={
+          <YStack
+            backgroundColor="$glassWhite20"
+            paddingHorizontal="$3"
+            paddingVertical="$2"
+            borderRadius={12}
+            borderWidth={1}
+            borderColor="$glassWhite30"
+          >
+            <Text fontSize={12} fontWeight="600" color="$white">
+              {user?.siteName ?? '현장'}
+            </Text>
+          </YStack>
+        }
+      />
+
+      <Animated.ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -90,32 +121,12 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* 그라디언트 헤더 */}
-        <GradientHeader
-          subtitle="안녕하세요,"
-          title={`${user?.name ?? '사용자'}님`}
-          rightAction={
-            <YStack
-              backgroundColor="$glassWhite20"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
-              borderRadius={12}
-              borderWidth={1}
-              borderColor="$glassWhite30"
-            >
-              <Text fontSize={12} fontWeight="600" color="$white">
-                {user?.siteName ?? '현장'}
-              </Text>
-            </YStack>
-          }
-          height={LAYOUT.HEADER_HEIGHT_DEFAULT}
-        />
 
-        {/* 오늘의 요약 (Glass Card - 오버랩) */}
+        {/* 오늘의 요약 (Glass Card) */}
         <View>
           <GlassCard
             marginHorizontal={LAYOUT.CARD_SPACING}
-            marginTop={LAYOUT.HEADER_TOP_OFFSET}
+            marginTop={16}
             floating
             intensity="heavy"
           >
@@ -354,7 +365,7 @@ export default function HomeScreen() {
             )}
           </YStack>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </YStack>
   );
 }

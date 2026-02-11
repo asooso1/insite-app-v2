@@ -75,10 +75,59 @@ src/
 
 1. **태스크 확인**: TASK-TRACKER.md에서 태스크 ID 확인
 2. **화면 생성**: app/ 디렉토리에 파일 생성
-3. **시니어 모드 적용**: useSeniorStyles() 훅 사용
-4. **아이콘 사용**: AppIcon 컴포넌트 사용 (이모지 금지)
-5. **타입 체크**: `npm run typecheck`
-6. **태스크 완료**: TASK-TRACKER.md 업데이트
+3. **Collapsible 헤더 사용**: 목록 화면은 반드시 CollapsibleGradientHeader 사용
+4. **시니어 모드 적용**: useSeniorStyles() 훅 사용
+5. **아이콘 사용**: AppIcon 컴포넌트 사용 (이모지 금지)
+6. **타입 체크**: `npm run typecheck`
+7. **태스크 완료**: TASK-TRACKER.md 업데이트
+
+### 목록 화면 기본 템플릿
+
+```tsx
+import React, { useRef } from 'react';
+import { Animated, RefreshControl, View } from 'react-native';
+import { YStack } from 'tamagui';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
+import { GlassSearchInput } from '@/components/ui/GlassSearchInput';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
+
+export default function ListScreen() {
+  const { isSeniorMode } = useSeniorStyles();
+
+  // 스크롤 애니메이션 (필수)
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  return (
+    <YStack flex={1} backgroundColor="$gray50">
+      {/* Collapsible 헤더 (필수) */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
+        title="화면 제목"
+        expandedHeight={160}    // 검색창 있으면 160, subtitle 있으면 120, 타이틀만 있으면 100
+        collapsedHeight={80}    // 축소 높이 (고정)
+        bottomContent={<GlassSearchInput placeholder="검색" />}
+      />
+
+      {/* Animated.FlatList 또는 Animated.ScrollView 사용 (필수) */}
+      <Animated.FlatList
+        data={items}
+        renderItem={renderItem}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+        // ...
+      />
+    </YStack>
+  );
+}
+```
+
+**주의사항:**
+- FlatList → Animated.FlatList, ScrollView → Animated.ScrollView 사용
+- onScroll에 Animated.event 연결 필수
+- scrollEventThrottle={16} 설정 필수
 
 ### 스프린트 완료 시
 

@@ -5,8 +5,8 @@
  * 3단계 카테고리 필터 (대분류 > 중분류 > 소분류)
  * 시니어 모드 지원: 확대된 리스트 아이템, 고대비 배지, 테두리 강조
  */
-import React, { useState, useCallback, useMemo } from 'react';
-import { FlatList, RefreshControl, View, Pressable, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { RefreshControl, View, Pressable, ActivityIndicator, Animated } from 'react-native';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,11 +14,10 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { FacilityCard } from '@/features/facility/components/FacilityCard';
 import { CategoryFilter, CategorySelectorButton } from '@/features/facility/components/CategoryFilter';
 import { useFacilities } from '@/features/facility/hooks/useFacilities';
-import { GradientHeader } from '@/components/ui/GradientHeader';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 import { GlassSearchInput } from '@/components/ui/GlassSearchInput';
 import { FilterPill } from '@/components/ui/FilterPill';
 import { EmptyState } from '@/components/ui/EmptyState';
-// GlassCard not used in this file
 import type { FacilityDTO, SelectedCategories } from '@/features/facility/types';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { SeniorCardListItem, SeniorStatusBadge } from '@/components/ui/SeniorCard';
@@ -48,6 +47,9 @@ export default function FacilityListScreen() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { isSeniorMode, fontSize } = useSeniorStyles();
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // 상태 관리
   const [searchText, setSearchText] = useState('');
@@ -344,10 +346,12 @@ export default function FacilityListScreen() {
 
   return (
     <YStack flex={1} backgroundColor="$gray50">
-      {/* 그라디언트 헤더 */}
-      <GradientHeader
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
         title="설비 정보"
-        height={160}
+        expandedHeight={160}
+        collapsedHeight={80}
         bottomContent={
           <GlassSearchInput
             value={searchText}
@@ -365,12 +369,17 @@ export default function FacilityListScreen() {
       ) : (
         <>
           {/* 설비 목록 */}
-          <FlatList
+          <Animated.FlatList
             data={filteredFacilities}
             renderItem={renderItem}
             keyExtractor={(item) => item.id?.toString() ?? ''}
             ListHeaderComponent={renderHeader}
             ListEmptyComponent={renderEmpty}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )}
+            scrollEventThrottle={16}
             refreshControl={
               <RefreshControl
                 refreshing={isRefreshing}

@@ -6,16 +6,14 @@
  * Lucide Icons 사용
  * 시니어 모드 지원: 차트 라벨 크기 확대, 고대비 색상
  */
-import React, { useState, useCallback } from 'react';
-import { ScrollView, RefreshControl, StyleSheet, View } from 'react-native';
+import React, { useState, useCallback, useRef } from 'react';
+import { RefreshControl, StyleSheet, View, Animated } from 'react-native';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StatCardRow, DonutChart, BarChart } from '@/features/dashboard';
 import { mockDashboardStats } from '@/features/dashboard';
-import { SkeletonCard } from '@/components/ui';
-import { LAYOUT } from '@/theme/tokens';
+import { SkeletonCard, CollapsibleGradientHeader } from '@/components/ui';
 import type { IconName } from '@/components/icons';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 
@@ -23,11 +21,13 @@ import { useSeniorStyles } from '@/contexts/SeniorModeContext';
  * 운영 대시보드 화면
  */
 export default function OperationDashboard() {
-  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const [isLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { isSeniorMode } = useSeniorStyles();
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // 데이터 새로고침
   const handleRefresh = useCallback(async () => {
@@ -89,49 +89,40 @@ export default function OperationDashboard() {
   // 로딩 상태 UI
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
         {/* 헤더 스켈레톤 */}
         <YStack height={100} backgroundColor="$gray200" />
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Animated.ScrollView contentContainerStyle={styles.scrollContent}>
           <YStack padding="$4" gap="$4">
             <SkeletonCard />
             <SkeletonCard />
             <SkeletonCard />
             <SkeletonCard />
           </YStack>
-        </ScrollView>
+        </Animated.ScrollView>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* 그라디언트 헤더 */}
-      <View>
-        <LinearGradient
-          colors={['#0066CC', '#00A3FF']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.headerGradient, { paddingTop: insets.top + 16 }]}
-        >
-          {/* 배경 장식 */}
-          <View style={styles.headerDecor1} />
-          <View style={styles.headerDecor2} />
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
+        title="대시보드"
+        subtitle="실시간 현황을 확인하세요"
+        expandedHeight={120}
+        collapsedHeight={80}
+      />
 
-          <YStack paddingHorizontal="$5" paddingVertical="$4" gap="$1" zIndex={1}>
-            <Text fontSize={28} fontWeight="800" color="white" letterSpacing={-0.5}>
-              대시보드
-            </Text>
-            <Text fontSize={15} color="$glassWhite85">
-              실시간 현황을 확인하세요
-            </Text>
-          </YStack>
-        </LinearGradient>
-      </View>
-
-      <ScrollView
+      <Animated.ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -182,7 +173,7 @@ export default function OperationDashboard() {
 
         {/* 하단 여백 */}
         <YStack height={40} />
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -264,28 +255,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  headerGradient: {
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  headerDecor1: {
-    position: 'absolute',
-    width: LAYOUT.DECOR_CIRCLE_LARGE,
-    height: LAYOUT.DECOR_CIRCLE_LARGE,
-    borderRadius: LAYOUT.DECOR_CIRCLE_LARGE / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    top: -80,
-    right: -40,
-  },
-  headerDecor2: {
-    position: 'absolute',
-    width: LAYOUT.DECOR_CIRCLE_MEDIUM,
-    height: LAYOUT.DECOR_CIRCLE_MEDIUM,
-    borderRadius: LAYOUT.DECOR_CIRCLE_MEDIUM / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    bottom: -30,
-    left: -20,
-  },
   scrollView: {
     flex: 1,
   },
@@ -293,7 +262,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   card: {
-    shadowColor: '#0066CC', // theme.primary는 StyleSheet.create에서 사용 불가
+    shadowColor: '#0066CC',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,

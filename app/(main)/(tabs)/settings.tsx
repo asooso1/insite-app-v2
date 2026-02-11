@@ -1,11 +1,16 @@
-import { Alert, ActivityIndicator } from 'react-native';
+/**
+ * 설정 화면
+ *
+ * 2026 Modern UI - CollapsibleGradientHeader 적용
+ */
+import React, { useRef } from 'react';
+import { Alert, ActivityIndicator, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { YStack, XStack, ScrollView, Switch, Circle } from 'tamagui';
-import { SText } from '@/components/ui/SText';
+import { YStack, XStack, Switch, Circle, Text } from 'tamagui';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/auth.store';
-import { useSeniorMode } from '@/contexts/SeniorModeContext';
+import { useSeniorMode, useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { APP_NAME, APP_VERSION } from '@/constants/config';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
@@ -15,6 +20,10 @@ export default function SettingsScreen() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { isSeniorMode, toggleSeniorMode } = useSeniorMode();
+  const { fontSize } = useSeniorStyles();
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // 알림 설정
   const {
@@ -47,26 +56,38 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '$background' }} edges={['top']}>
-      {/* Header */}
-      <YStack
-        px="$4"
-        py="$3"
-        backgroundColor="$background"
-        borderBottomWidth={1}
-        borderBottomColor="$gray200"
-      >
-        <SText fontSize={24} fontWeight="700" color="$gray900">
-          설정
-        </SText>
-      </YStack>
+    <YStack flex={1} backgroundColor="$gray50">
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
+        title="설정"
+        expandedHeight={100}
+        collapsedHeight={80}
+      />
 
-      <ScrollView flex={1}>
-        {/* User Info Section */}
-        <YStack backgroundColor="$background" mt="$4" px="$4" py="$4">
-          <SText fontSize={14} fontWeight="600" color="$gray600" mb="$3">
+      <Animated.ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 내 정보 */}
+        <YStack
+          backgroundColor="$white"
+          marginHorizontal="$4"
+          marginTop="$4"
+          padding="$4"
+          borderRadius={16}
+          borderWidth={1}
+          borderColor="$gray200"
+        >
+          <Text fontSize={14} fontWeight="600" color="$gray500" marginBottom="$3">
             내 정보
-          </SText>
+          </Text>
           <XStack alignItems="center">
             <YStack
               width={60}
@@ -75,39 +96,47 @@ export default function SettingsScreen() {
               backgroundColor="$primary"
               justifyContent="center"
               alignItems="center"
-              mr="$4"
+              marginRight="$4"
             >
-              <SText fontSize={24} fontWeight="700" color="$white">
+              <Text fontSize={24} fontWeight="700" color="$white">
                 {user?.name?.charAt(0) ?? 'U'}
-              </SText>
+              </Text>
             </YStack>
             <YStack flex={1}>
-              <SText fontSize={18} fontWeight="600" color="$gray900" mb="$1">
+              <Text fontSize={isSeniorMode ? fontSize.large : 18} fontWeight="600" color="$gray900" marginBottom="$1">
                 {user?.name ?? '사용자'}
-              </SText>
-              <SText fontSize={14} color="$gray600" mb={2}>
+              </Text>
+              <Text fontSize={14} color="$gray500" marginBottom={2}>
                 {user?.email ?? ''}
-              </SText>
-              <SText fontSize={14} color="$primary">
+              </Text>
+              <Text fontSize={14} color="$primary">
                 {user?.siteName ?? ''}
-              </SText>
+              </Text>
             </YStack>
           </XStack>
         </YStack>
 
-        {/* Display Settings */}
-        <YStack backgroundColor="$background" mt="$4" px="$4" py="$4">
-          <SText fontSize={14} fontWeight="600" color="$gray600" mb="$3">
+        {/* 화면 설정 */}
+        <YStack
+          backgroundColor="$white"
+          marginHorizontal="$4"
+          marginTop="$4"
+          padding="$4"
+          borderRadius={16}
+          borderWidth={1}
+          borderColor="$gray200"
+        >
+          <Text fontSize={14} fontWeight="600" color="$gray500" marginBottom="$3">
             화면 설정
-          </SText>
-          <XStack justifyContent="space-between" alignItems="center" py="$2">
-            <YStack flex={1} mr="$4">
-              <SText fontSize={16} fontWeight="500" color="$gray900" mb="$1">
+          </Text>
+          <XStack justifyContent="space-between" alignItems="center" paddingVertical="$2">
+            <YStack flex={1} marginRight="$4">
+              <Text fontSize={16} fontWeight="500" color="$gray900" marginBottom="$1">
                 시니어 모드
-              </SText>
-              <SText fontSize={14} color="$gray600">
+              </Text>
+              <Text fontSize={14} color="$gray500">
                 글씨와 버튼을 크게 표시합니다
-              </SText>
+              </Text>
             </YStack>
             <Switch
               checked={isSeniorMode}
@@ -119,22 +148,30 @@ export default function SettingsScreen() {
           </XStack>
         </YStack>
 
-        {/* Notification Settings */}
-        <YStack backgroundColor="$background" mt="$4" px="$4" py="$4">
-          <SText fontSize={14} fontWeight="600" color="$gray600" mb="$3">
+        {/* 알림 설정 */}
+        <YStack
+          backgroundColor="$white"
+          marginHorizontal="$4"
+          marginTop="$4"
+          padding="$4"
+          borderRadius={16}
+          borderWidth={1}
+          borderColor="$gray200"
+        >
+          <Text fontSize={14} fontWeight="600" color="$gray500" marginBottom="$3">
             알림 설정
-          </SText>
-          <XStack justifyContent="space-between" alignItems="center" py="$2">
-            <YStack flex={1} mr="$4">
-              <SText fontSize={16} fontWeight="500" color="$gray900" mb="$1">
+          </Text>
+          <XStack justifyContent="space-between" alignItems="center" paddingVertical="$2">
+            <YStack flex={1} marginRight="$4">
+              <Text fontSize={16} fontWeight="500" color="$gray900" marginBottom="$1">
                 푸시 알림
-              </SText>
-              <SText fontSize={14} color="$gray600">
+              </Text>
+              <Text fontSize={14} color="$gray500">
                 {notificationEnabled ? '알림을 받고 있습니다' : '알림이 꺼져 있습니다'}
-              </SText>
+              </Text>
             </YStack>
             {notificationLoading ? (
-              <ActivityIndicator size="small" color="$primary" />
+              <ActivityIndicator size="small" />
             ) : (
               <Switch
                 checked={notificationEnabled}
@@ -147,127 +184,107 @@ export default function SettingsScreen() {
           </XStack>
         </YStack>
 
-        {/* App Info */}
-        <YStack backgroundColor="$background" mt="$4" px="$4" py="$4">
-          <SText fontSize={14} fontWeight="600" color="$gray600" mb="$3">
+        {/* 앱 정보 */}
+        <YStack
+          backgroundColor="$white"
+          marginHorizontal="$4"
+          marginTop="$4"
+          padding="$4"
+          borderRadius={16}
+          borderWidth={1}
+          borderColor="$gray200"
+        >
+          <Text fontSize={14} fontWeight="600" color="$gray500" marginBottom="$3">
             앱 정보
-          </SText>
+          </Text>
           <YStack>
             <XStack
               justifyContent="space-between"
               alignItems="center"
-              py="$3"
+              paddingVertical="$3"
               borderBottomWidth={1}
-              borderBottomColor="$gray200"
+              borderBottomColor="$gray100"
             >
-              <SText fontSize={16} color="$gray900">
-                앱 이름
-              </SText>
-              <SText fontSize={16} color="$gray600">
-                {APP_NAME}
-              </SText>
+              <Text fontSize={16} color="$gray900">앱 이름</Text>
+              <Text fontSize={16} color="$gray500">{APP_NAME}</Text>
             </XStack>
             <XStack
               justifyContent="space-between"
               alignItems="center"
-              py="$3"
+              paddingVertical="$3"
               borderBottomWidth={1}
-              borderBottomColor="$gray200"
+              borderBottomColor="$gray100"
             >
-              <SText fontSize={16} color="$gray900">
-                버전
-              </SText>
-              <SText fontSize={16} color="$gray600">
-                {APP_VERSION}
-              </SText>
+              <Text fontSize={16} color="$gray900">버전</Text>
+              <Text fontSize={16} color="$gray500">{APP_VERSION}</Text>
             </XStack>
             <XStack
               justifyContent="space-between"
               alignItems="center"
-              py="$3"
+              paddingVertical="$3"
               borderBottomWidth={1}
-              borderBottomColor="$gray200"
+              borderBottomColor="$gray100"
               pressStyle={{ opacity: 0.7 }}
-              onPress={
-                updateDownloading ? undefined : isUpdateAvailable ? applyUpdate : checkUpdate
-              }
+              onPress={updateDownloading ? undefined : isUpdateAvailable ? applyUpdate : checkUpdate}
             >
               <XStack alignItems="center" gap="$2">
-                <SText fontSize={16} color="$gray900">
-                  업데이트 확인
-                </SText>
+                <Text fontSize={16} color="$gray900">업데이트 확인</Text>
                 {isUpdateAvailable && !updateDownloading && (
                   <Circle size={8} backgroundColor="$error" />
                 )}
               </XStack>
               {updateChecking || updateDownloading ? (
-                <ActivityIndicator size="small" color="$primary" />
+                <ActivityIndicator size="small" />
               ) : (
-                <SText fontSize={16} color="$gray300">
-                  {'>'}
-                </SText>
+                <Text fontSize={16} color="$gray300">{'>'}</Text>
               )}
             </XStack>
             <XStack
               justifyContent="space-between"
               alignItems="center"
-              py="$3"
+              paddingVertical="$3"
               borderBottomWidth={1}
-              borderBottomColor="$gray200"
+              borderBottomColor="$gray100"
               pressStyle={{ opacity: 0.7 }}
             >
-              <SText fontSize={16} color="$gray900">
-                이용약관
-              </SText>
-              <SText fontSize={16} color="$gray300">
-                {'>'}
-              </SText>
+              <Text fontSize={16} color="$gray900">이용약관</Text>
+              <Text fontSize={16} color="$gray300">{'>'}</Text>
             </XStack>
             <XStack
               justifyContent="space-between"
               alignItems="center"
-              py="$3"
+              paddingVertical="$3"
               borderBottomWidth={1}
-              borderBottomColor="$gray200"
+              borderBottomColor="$gray100"
               pressStyle={{ opacity: 0.7 }}
             >
-              <SText fontSize={16} color="$gray900">
-                개인정보처리방침
-              </SText>
-              <SText fontSize={16} color="$gray300">
-                {'>'}
-              </SText>
+              <Text fontSize={16} color="$gray900">개인정보처리방침</Text>
+              <Text fontSize={16} color="$gray300">{'>'}</Text>
             </XStack>
             <XStack
               justifyContent="space-between"
               alignItems="center"
-              py="$3"
-              borderBottomWidth={1}
-              borderBottomColor="$gray200"
+              paddingVertical="$3"
               pressStyle={{ opacity: 0.7 }}
             >
-              <SText fontSize={16} color="$gray900">
-                오픈소스 라이선스
-              </SText>
-              <SText fontSize={16} color="$gray300">
-                {'>'}
-              </SText>
+              <Text fontSize={16} color="$gray900">오픈소스 라이선스</Text>
+              <Text fontSize={16} color="$gray300">{'>'}</Text>
             </XStack>
           </YStack>
         </YStack>
 
-        {/* Logout */}
-        <YStack backgroundColor="$background" mt="$4" px="$4" py="$4">
+        {/* 로그아웃 */}
+        <YStack
+          marginHorizontal="$4"
+          marginTop="$4"
+        >
           <Button variant="ghost" onPress={handleLogout}>
-            <SText fontSize={16} fontWeight="500" color="$error">
+            <Text fontSize={16} fontWeight="500" color="$error">
               로그아웃
-            </SText>
+            </Text>
           </Button>
         </YStack>
-
-        {/* Bottom Padding */}
-        <YStack height={32} />
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+    </YStack>
   );
 }
