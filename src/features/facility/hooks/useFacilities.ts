@@ -179,6 +179,18 @@ export function useFacilities(options: UseFacilitiesOptions = {}) {
     }));
   }, []);
 
+  // 키워드 설정 (메모이제이션)
+  const setKeyword = useCallback(
+    (keyword: string) => updateFilter({ keyword }),
+    [updateFilter]
+  );
+
+  // 상태 설정 (메모이제이션)
+  const setStatus = useCallback(
+    (status: FacilityFilter['status']) => updateFilter({ status }),
+    [updateFilter]
+  );
+
   // 카테고리 선택 적용
   const applyCategories = useCallback(
     (categories: SelectedCategories) => {
@@ -264,8 +276,8 @@ export function useFacilities(options: UseFacilitiesOptions = {}) {
     // 필터
     filter,
     updateFilter,
-    setKeyword: (keyword: string) => updateFilter({ keyword }),
-    setStatus: (status: FacilityFilter['status']) => updateFilter({ status }),
+    setKeyword,
+    setStatus,
 
     // 카테고리
     selectedCategories,

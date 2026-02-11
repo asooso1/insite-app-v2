@@ -4,14 +4,14 @@
  * 2026 Modern UI - 그라디언트 헤더 + Glass 필터 + Floating 카드
  * 시니어 모드 지원: 확대된 리스트 아이템, 고대비 배지, 테두리 강조
  */
-import React, { useState, useCallback, useMemo } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { RefreshControl, View, Animated } from 'react-native';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import { WorkOrderCard } from '@/features/work/components/WorkOrderCard';
-import { GradientHeader } from '@/components/ui/GradientHeader';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 import { GlassSearchInput } from '@/components/ui/GlassSearchInput';
 import { FilterPill } from '@/components/ui/FilterPill';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -50,6 +50,9 @@ export default function WorkListScreen() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { isSeniorMode } = useSeniorStyles();
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // 상태 관리
   const [searchText, setSearchText] = useState('');
@@ -230,10 +233,12 @@ export default function WorkListScreen() {
 
   return (
     <YStack flex={1} backgroundColor="$gray50">
-      {/* 그라디언트 헤더 */}
-      <GradientHeader
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
         title="작업지시"
-        height={160}
+        expandedHeight={160}
+        collapsedHeight={80}
         rightAction={
           <YStack
             backgroundColor="$glassWhite20"
@@ -260,12 +265,17 @@ export default function WorkListScreen() {
       />
 
       {/* 작업지시 목록 */}
-      <FlatList
+      <Animated.FlatList
         data={workOrders}
         renderItem={renderItem}
         keyExtractor={(item) => item.id?.toString() ?? ''}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}

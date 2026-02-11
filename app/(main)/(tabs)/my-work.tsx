@@ -1,7 +1,16 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+/**
+ * 내 작업 화면
+ *
+ * 2026 Modern UI - CollapsibleGradientHeader 적용
+ */
+import React, { useState, useRef } from 'react';
+import { Animated, RefreshControl, Pressable } from 'react-native';
+import { YStack, XStack, Text, useTheme, View } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
+import { FilterPill } from '@/components/ui/FilterPill';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 
 type WorkStatus = 'all' | 'pending' | 'in_progress' | 'completed';
 
@@ -50,23 +59,36 @@ const statusFilters: { key: WorkStatus; label: string }[] = [
 
 export default function MyWorkScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const { isSeniorMode } = useSeniorStyles();
+
+  // 스크롤 애니메이션
+  const scrollY = useRef(new Animated.Value(0)).current;
+
   const [selectedStatus, setSelectedStatus] = useState<WorkStatus>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const filteredItems =
     selectedStatus === 'all'
       ? mockWorkItems
       : mockWorkItems.filter((item) => item.status === selectedStatus);
 
-  const getStatusColor = (status: string) => {
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    setIsRefreshing(false);
+  };
+
+  const getStatusColor = (status: string): { bg: '$gray100' | '$warningMuted' | '$successMuted'; text: '$gray600' | '$warning' | '$success' } => {
     switch (status) {
       case 'pending':
-        return { bg: '#F5F5F5', text: '#6E6E6E' };
+        return { bg: '$gray100', text: '$gray600' };
       case 'in_progress':
-        return { bg: '#FFF4E6', text: '#BEA736' };
+        return { bg: '$warningMuted', text: '$warning' };
       case 'completed':
-        return { bg: '#E6F7F1', text: '#12805C' };
+        return { bg: '$successMuted', text: '$success' };
       default:
-        return { bg: '#F5F5F5', text: '#6E6E6E' };
+        return { bg: '$gray100', text: '$gray600' };
     }
   };
 
@@ -86,186 +108,127 @@ export default function MyWorkScreen() {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return '#C9252D';
+        return '$error';
       case 'medium':
-        return '#BEA736';
+        return '$warning';
       case 'low':
-        return '#12805C';
+        return '$success';
       default:
-        return '#6E6E6E';
+        return '$gray500';
     }
   };
 
-  const renderWorkItem = ({ item }: { item: WorkItem }) => {
+  const renderHeader = () => (
+    <XStack paddingHorizontal="$4" paddingVertical="$3" gap="$2" flexWrap="wrap">
+      {statusFilters.map((filter) => (
+        <FilterPill
+          key={filter.key}
+          label={filter.label}
+          selected={selectedStatus === filter.key}
+          onPress={() => setSelectedStatus(filter.key)}
+        />
+      ))}
+    </XStack>
+  );
+
+  const renderItem = ({ item }: { item: WorkItem }) => {
     const statusStyle = getStatusColor(item.status);
 
     return (
-      <TouchableOpacity
-        style={styles.workItem}
-        onPress={() => router.push(`/(main)/work/${item.id}`)}
-      >
-        <View style={styles.workItemHeader}>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>
-              {getStatusLabel(item.status)}
+      <Pressable onPress={() => router.push(`/(main)/work/${item.id}`)}>
+        <YStack
+          backgroundColor="$white"
+          marginHorizontal="$4"
+          marginBottom="$3"
+          padding="$4"
+          borderRadius={16}
+          borderWidth={1}
+          borderColor="$gray200"
+        >
+          <XStack justifyContent="space-between" alignItems="center" marginBottom="$2">
+            <YStack
+              backgroundColor={statusStyle.bg}
+              paddingHorizontal="$2"
+              paddingVertical="$1"
+              borderRadius={6}
+            >
+              <Text fontSize={12} fontWeight="600" color={statusStyle.text}>
+                {getStatusLabel(item.status)}
+              </Text>
+            </YStack>
+            <View
+              width={8}
+              height={8}
+              borderRadius={4}
+              backgroundColor={getPriorityColor(item.priority)}
+            />
+          </XStack>
+          <Text
+            fontSize={isSeniorMode ? 18 : 16}
+            fontWeight="600"
+            color="$gray900"
+            marginBottom="$2"
+          >
+            {item.title}
+          </Text>
+          <XStack justifyContent="space-between">
+            <Text fontSize={14} color="$gray500">
+              {item.location}
             </Text>
-          </View>
-          <View
-            style={[styles.priorityDot, { backgroundColor: getPriorityColor(item.priority) }]}
-          />
-        </View>
-        <Text style={styles.workTitle}>{item.title}</Text>
-        <View style={styles.workMeta}>
-          <Text style={styles.workLocation}>{item.location}</Text>
-          <Text style={styles.workDueDate}>{item.dueDate}</Text>
-        </View>
-      </TouchableOpacity>
+            <Text fontSize={14} color="$gray400">
+              {item.dueDate}
+            </Text>
+          </XStack>
+        </YStack>
+      </Pressable>
     );
   };
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>내 작업</Text>
-      </View>
-
-      {/* Status Filter */}
-      <View style={styles.filterContainer}>
-        {statusFilters.map((filter) => (
-          <TouchableOpacity
-            key={filter.key}
-            style={[
-              styles.filterButton,
-              selectedStatus === filter.key && styles.filterButtonActive,
-            ]}
-            onPress={() => setSelectedStatus(filter.key)}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                selectedStatus === filter.key && styles.filterButtonTextActive,
-              ]}
-            >
-              {filter.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Work List */}
-      <FlatList
-        data={filteredItems}
-        renderItem={renderWorkItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>배정된 작업이 없습니다</Text>
-          </View>
-        }
+  const renderEmpty = () => (
+    <YStack flex={1} justifyContent="center" alignItems="center" padding="$10">
+      <EmptyState
+        title="배정된 작업이 없습니다"
+        description={selectedStatus === 'all' ? '새 작업이 배정되면 여기에 표시됩니다' : '해당 상태의 작업이 없습니다'}
       />
-    </SafeAreaView>
+    </YStack>
+  );
+
+  return (
+    <YStack flex={1} backgroundColor="$gray50">
+      {/* Collapsible 그라디언트 헤더 */}
+      <CollapsibleGradientHeader
+        scrollY={scrollY}
+        title="내 작업"
+        expandedHeight={100}
+        collapsedHeight={80}
+      />
+
+      {/* 작업 목록 */}
+      <Animated.FlatList
+        data={filteredItems}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmpty}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.primary.val}
+            colors={[theme.primary.val]}
+          />
+        }
+        contentContainerStyle={{
+          paddingBottom: 100,
+          flexGrow: 1,
+        }}
+        showsVerticalScrollIndicator={false}
+      />
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EAEAEA',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2C2C2C',
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-  },
-  filterButtonActive: {
-    backgroundColor: '#0064FF',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6E6E6E',
-  },
-  filterButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  listContent: {
-    padding: 16,
-  },
-  separator: {
-    height: 12,
-  },
-  workItem: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
-  },
-  workItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  workTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C2C2C',
-    marginBottom: 8,
-  },
-  workMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  workLocation: {
-    fontSize: 14,
-    color: '#6E6E6E',
-  },
-  workDueDate: {
-    fontSize: 14,
-    color: '#8E8E8E',
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 48,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6E6E6E',
-  },
-});

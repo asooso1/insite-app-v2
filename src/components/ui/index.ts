@@ -79,6 +79,7 @@ export { ErrorBoundary, withErrorBoundary, type ErrorBoundaryProps } from './Err
 
 // 2026 Modern UI 컴포넌트
 export { GradientHeader } from './GradientHeader';
+export { CollapsibleGradientHeader } from './CollapsibleGradientHeader';
 export { GlassCard } from './GlassCard';
 export { QuickStatCard } from './QuickStatCard';
 export { SectionHeader } from './SectionHeader';
