@@ -137,12 +137,73 @@ export const changePasswordApi = async (
 ): Promise<ChangePasswordResponse> => {
   console.log('[Auth] 비밀번호 변경 요청');
 
-  const response = await apiClient.put<ChangePasswordResponse>(
-    '/m/api/account/password',
-    params
-  );
+  const response = await apiClient.put<ChangePasswordResponse>('/m/api/account/password', params);
 
   console.log('[Auth] 비밀번호 변경 응답:', response.data);
+  return response.data;
+};
+
+/**
+ * 토큰 갱신 요청
+ */
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+/**
+ * 토큰 갱신 응답
+ */
+export interface RefreshTokenResponse {
+  code: string;
+  message?: string;
+  authToken?: string;
+  refreshToken?: string;
+}
+
+/**
+ * 토큰 갱신 API
+ * 만료된 access token을 refresh token으로 갱신합니다.
+ */
+export const refreshTokenApi = async (refreshToken: string): Promise<RefreshTokenResponse> => {
+  console.log('[Auth] 토큰 갱신 요청');
+
+  const response = await apiClient.post<RefreshTokenResponse>('/m/api/account/refresh', {
+    refreshToken,
+  });
+
+  console.log('[Auth] 토큰 갱신 응답:', {
+    code: response.data.code,
+    hasToken: !!response.data.authToken,
+  });
+
+  return response.data;
+};
+
+/**
+ * 디바이스 승인 상태 응답
+ */
+export interface DeviceStatusResponse {
+  code: string;
+  message?: string;
+  data?: {
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    deviceId?: string;
+    userId?: string;
+    requestedAt?: string;
+    approvedAt?: string;
+    rejectedAt?: string;
+  };
+}
+
+/**
+ * 디바이스 승인 상태 확인 API
+ */
+export const checkDeviceStatus = async (): Promise<DeviceStatusResponse> => {
+  console.log('[Auth] 디바이스 승인 상태 확인 요청');
+
+  const response = await apiClient.get<DeviceStatusResponse>('/m/api/devices/status');
+
+  console.log('[Auth] 디바이스 승인 상태 응답:', response.data);
   return response.data;
 };
 
@@ -151,5 +212,7 @@ export default {
   guestLogin,
   logoutApi,
   changePasswordApi,
+  refreshTokenApi,
+  checkDeviceStatus,
   LOGIN_RESPONSE_CODES,
 };

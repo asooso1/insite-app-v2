@@ -1,210 +1,97 @@
 /**
  * 로그인 화면
  *
- * 2026 Modern UI - Premium Facility Management
- * Glassmorphism + 그라디언트 기반 현대적 로그인 경험
+ * 순수 React Native 컴포넌트 사용 (Tamagui 제거)
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
+  Text,
+  TextInput,
+  Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Dimensions,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  withDelay,
-  Easing,
-  interpolate,
-  FadeInUp,
-} from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { styled, YStack, XStack, Text } from 'tamagui';
 import { APP_NAME } from '@/constants/config';
+import { useAuthStore } from '@/stores/auth.store';
 import { useLogin } from '@/features/auth/hooks/useLogin';
-import { Button } from '@/components/ui/Button';
-import { TextField, PasswordField } from '@/components/ui/TextField';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
+import { SeniorButton } from '@/components/ui/SeniorButton';
 
 const { height } = Dimensions.get('window');
 
-// 검증 스키마
-const loginSchema = z.object({
-  userId: z.string().min(1, '아이디를 입력하세요'),
-  password: z.string().min(1, '비밀번호를 입력하세요'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-
-/**
- * 앱 로고/타이틀
- */
-const LogoText = styled(Text, {
-  fontSize: 42,
-  fontWeight: '800',
-  color: '$colorInverse',
-  letterSpacing: -1.5,
-  textShadowColor: 'rgba(0, 102, 204, 0.3)',
-  textShadowOffset: { width: 0, height: 4 },
-  textShadowRadius: 12,
-});
-
-const SubtitleText = styled(Text, {
-  fontSize: 16,
-  color: 'rgba(255, 255, 255, 0.8)',
-  marginTop: 4,
-  letterSpacing: 2,
-  textTransform: 'uppercase',
-});
-
-/**
- * 서버 상태 인디케이터
- */
-const ServerStatus = styled(XStack, {
-  alignItems: 'center',
-  gap: 8,
-  marginBottom: 16,
-  paddingVertical: 8,
-  paddingHorizontal: 16,
-  borderRadius: 20,
-  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  alignSelf: 'center',
-});
-
-const ServerDot = styled(View, {
-  width: 8,
-  height: 8,
-  borderRadius: 4,
-  backgroundColor: '#00C853',
-});
-
-const ServerText = styled(Text, {
-  fontSize: 12,
-  color: 'rgba(255, 255, 255, 0.7)',
-  fontWeight: '500',
-});
-
-/**
- * 에러 메시지 박스
- */
-const ErrorBox = styled(XStack, {
-  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-  borderWidth: 1,
-  borderColor: 'rgba(239, 68, 68, 0.3)',
-  borderRadius: 12,
-  padding: 14,
-  alignItems: 'center',
-  gap: 10,
-});
-
-const ErrorText = styled(Text, {
-  fontSize: 14,
-  color: '#FCA5A5',
-  flex: 1,
-});
-
-/**
- * 게스트 로그인 링크
- */
-const GuestLink = styled(Text, {
-  fontSize: 14,
-  color: '$colorInverse',
-  fontWeight: '500',
-  opacity: 0.9,
-});
-
 export default function LoginScreen() {
+  // ===== 모든 HOOKS를 최상단에서 호출 =====
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { login, isLoading, error } = useLogin();
+  const { isSeniorMode, fontSize, touchTarget } = useSeniorStyles();
 
-  // 애니메이션 값
-  const circleScale = useSharedValue(0);
-  const logoOpacity = useSharedValue(0);
-  const cardTranslateY = useSharedValue(50);
-  const cardOpacity = useSharedValue(0);
+  const [userId, setUserId] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  // 마운트 시 애니메이션 실행
+  /**
+   * 인증 상태 변경 시 홈 화면으로 리다이렉트
+   * requestAnimationFrame으로 래핑하여 상태 업데이트와 네비게이션이 원활하게 처리되도록 함
+   */
   useEffect(() => {
-    // 배경 원형 애니메이션
-    circleScale.value = withDelay(
-      100,
-      withSpring(1, {
-        damping: 15,
-        stiffness: 100,
-      })
-    );
+    if (isAuthenticated) {
+      console.log('[Login] 인증 성공 -> 홈 화면으로 이동');
+      requestAnimationFrame(() => {
+        router.replace('/(main)/(tabs)/home');
+      });
+    }
+  }, [isAuthenticated, router]);
 
-    // 로고 페이드인
-    logoOpacity.value = withDelay(
-      300,
-      withTiming(1, {
-        duration: 600,
-        easing: Easing.out(Easing.cubic),
-      })
-    );
+  /**
+   * 로그인 처리
+   * - 폼 검증 후 로그인 API 호출
+   * - 로그인 성공 시 useLogin 내부에서 setAuth 호출 -> isAuthenticated 변경 -> useEffect에서 네비게이션
+   */
+  const handleLogin = async () => {
+    setFormError(null);
 
-    // 카드 슬라이드 업
-    cardTranslateY.value = withDelay(
-      500,
-      withSpring(0, {
-        damping: 20,
-        stiffness: 150,
-      })
-    );
-    cardOpacity.value = withDelay(
-      500,
-      withTiming(1, {
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-      })
-    );
-  }, []);
+    if (!userId.trim()) {
+      setFormError('아이디를 입력하세요');
+      return;
+    }
+    if (!password.trim()) {
+      setFormError('비밀번호를 입력하세요');
+      return;
+    }
 
-  // 애니메이션 스타일
-  const circleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: circleScale.value }],
-  }));
-
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [
-      {
-        translateY: interpolate(logoOpacity.value, [0, 1], [20, 0]),
-      },
-    ],
-  }));
-
-  const cardStyle = useAnimatedStyle(() => ({
-    opacity: cardOpacity.value,
-    transform: [{ translateY: cardTranslateY.value }],
-  }));
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      userId: '',
-      password: '',
-    },
-  });
-
-  const onSubmit = async (data: LoginFormData) => {
+    console.log('[Login] 로그인 시도:', userId);
     await login({
-      userId: data.userId,
-      passwd: data.password,
+      userId: userId.trim(),
+      passwd: password,
     });
   };
+
+  // 인증된 상태면 로딩 화면 (리다이렉트 대기)
+  if (isAuthenticated) {
+    return (
+      <View style={styles.loadingContainer}>
+        <LinearGradient
+          colors={['#0F172A', '#1E3A5F', '#0066CC']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
+  }
+
+  const displayError = formError || error;
 
   return (
     <View style={styles.container}>
@@ -218,133 +105,189 @@ export default function LoginScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* 장식용 원형 요소들 */}
-      <Animated.View style={[styles.decorativeCircle1, circleStyle]}>
+      {/* 장식용 원형 */}
+      <View style={styles.decorativeCircle1}>
         <LinearGradient
           colors={['rgba(0, 163, 255, 0.3)', 'rgba(0, 102, 204, 0.1)']}
           style={styles.circleGradient}
         />
-      </Animated.View>
+      </View>
 
-      <Animated.View style={[styles.decorativeCircle2, circleStyle]}>
+      <View style={styles.decorativeCircle2}>
         <LinearGradient
           colors={['rgba(255, 107, 0, 0.2)', 'rgba(255, 184, 0, 0.05)']}
           style={styles.circleGradient}
         />
-      </Animated.View>
-
-      <Animated.View style={[styles.decorativeCircle3, circleStyle]}>
-        <LinearGradient
-          colors={['rgba(0, 200, 83, 0.15)', 'rgba(105, 240, 174, 0.05)']}
-          style={styles.circleGradient}
-        />
-      </Animated.View>
+      </View>
 
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* 로고 영역 */}
-        <Animated.View style={[styles.header, logoStyle]}>
-          <LogoText>{APP_NAME}</LogoText>
-          <SubtitleText>Facility Management</SubtitleText>
-        </Animated.View>
+        <View style={styles.header}>
+          <Text style={styles.logoText}>{APP_NAME}</Text>
+          <Text style={styles.subtitleText}>FACILITY MANAGEMENT</Text>
+        </View>
 
         {/* 로그인 카드 */}
-        <Animated.View style={[styles.cardWrapper, cardStyle]}>
-          {/* Glassmorphism 효과 */}
+        <View style={styles.cardWrapper}>
           <BlurView intensity={40} tint="light" style={styles.blurView}>
             <View style={styles.glassCard}>
               {/* 서버 상태 */}
-              <ServerStatus>
-                <ServerDot />
-                <ServerText>스테이징 서버 연결됨</ServerText>
-              </ServerStatus>
+              <View style={styles.serverStatus}>
+                <View style={styles.serverDot} />
+                <Text style={styles.serverText}>스테이징 서버 연결됨</Text>
+              </View>
 
-              {/* API 에러 */}
-              {error && (
-                <ErrorBox>
-                  <Text fontSize={18}>!</Text>
-                  <ErrorText>{error}</ErrorText>
-                </ErrorBox>
+              {/* 에러 메시지 - 시니어 모드 대응 */}
+              {displayError && (
+                <View
+                  style={[
+                    styles.errorBox,
+                    isSeniorMode && {
+                      paddingVertical: 18,
+                      paddingHorizontal: 20,
+                      borderWidth: 2,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.errorIcon, isSeniorMode && { fontSize: fontSize.large }]}>
+                    !
+                  </Text>
+                  <Text style={[styles.errorText, isSeniorMode && { fontSize: fontSize.small }]}>
+                    {displayError}
+                  </Text>
+                </View>
               )}
 
               {/* 로그인 폼 */}
-              <YStack gap={20}>
-                {/* 아이디 입력 */}
-                <Controller
-                  control={control}
-                  name="userId"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextField
-                      label="아이디"
-                      placeholder="아이디를 입력하세요"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      disabled={isLoading}
-                      errorMessage={errors.userId?.message}
-                      variant="glass"
-                    />
-                  )}
-                />
+              <View style={styles.form}>
+                {/* 아이디 입력 - 시니어 모드 대응 */}
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, isSeniorMode && { fontSize: fontSize.small }]}>
+                    아이디
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      isSeniorMode && {
+                        height: touchTarget.button,
+                        fontSize: fontSize.small,
+                        borderWidth: 2,
+                        paddingHorizontal: 20,
+                      },
+                    ]}
+                    placeholder="아이디를 입력하세요"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    value={userId}
+                    onChangeText={setUserId}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isLoading}
+                  />
+                </View>
 
-                {/* 비밀번호 입력 */}
-                <Controller
-                  control={control}
-                  name="password"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <PasswordField
-                      label="비밀번호"
+                {/* 비밀번호 입력 - 시니어 모드 대응 */}
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, isSeniorMode && { fontSize: fontSize.small }]}>
+                    비밀번호
+                  </Text>
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        styles.passwordInput,
+                        isSeniorMode && {
+                          height: touchTarget.button,
+                          fontSize: fontSize.small,
+                          borderWidth: 2,
+                          paddingHorizontal: 20,
+                          paddingRight: 80,
+                        },
+                      ]}
                       placeholder="비밀번호를 입력하세요"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      disabled={isLoading}
-                      errorMessage={errors.password?.message}
-                      variant="glass"
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                      editable={!isLoading}
                     />
-                  )}
-                />
+                    <Pressable
+                      style={[styles.showPasswordButton, isSeniorMode && { right: 20 }]}
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Text
+                        style={[
+                          styles.showPasswordText,
+                          isSeniorMode && { fontSize: fontSize.small },
+                        ]}
+                      >
+                        {showPassword ? '숨김' : '보기'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
 
-                {/* 로그인 버튼 */}
-                <YStack marginTop={8}>
-                  <Button
-                    fullWidth
-                    size="lg"
-                    variant="primary"
-                    onPress={handleSubmit(onSubmit)}
-                    loading={isLoading}
+                {/* 로그인 버튼 - 시니어 모드 대응 */}
+                {isSeniorMode ? (
+                  <SeniorButton
+                    label="로그인"
+                    onPress={handleLogin}
                     disabled={isLoading}
-                    glow
+                    loading={isLoading}
+                    variant="primary"
+                    fullWidth
+                  />
+                ) : (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.loginButton,
+                      pressed && styles.loginButtonPressed,
+                      isLoading && styles.loginButtonDisabled,
+                    ]}
+                    onPress={handleLogin}
+                    disabled={isLoading}
                   >
-                    로그인
-                  </Button>
-                </YStack>
-              </YStack>
+                    <LinearGradient
+                      colors={isLoading ? ['#94A3B8', '#CBD5E1'] : ['#0066CC', '#00A3FF']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.loginButtonGradient}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.loginButtonText}>로그인</Text>
+                      )}
+                    </LinearGradient>
+                  </Pressable>
+                )}
+              </View>
             </View>
           </BlurView>
-        </Animated.View>
+        </View>
 
-        {/* 하단 링크 */}
-        <Animated.View
-          entering={FadeInUp.delay(800).duration(500)}
-          style={styles.footer}
-        >
+        {/* 하단 링크 - 시니어 모드 대응 */}
+        <View style={styles.footer}>
           <Link href="/(auth)/guest-login" asChild>
-            <XStack
-              paddingVertical={12}
-              paddingHorizontal={24}
-              backgroundColor="rgba(255, 255, 255, 0.1)"
-              borderRadius={24}
-              pressStyle={{ opacity: 0.7, scale: 0.98 }}
+            <Pressable
+              style={[
+                styles.guestButton,
+                isSeniorMode && {
+                  paddingVertical: 16,
+                  paddingHorizontal: 32,
+                  borderWidth: 2,
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                },
+              ]}
             >
-              <GuestLink>NFC 게스트 로그인</GuestLink>
-            </XStack>
+              <Text style={[styles.guestText, isSeniorMode && { fontSize: fontSize.small }]}>
+                NFC 게스트 로그인
+              </Text>
+            </Pressable>
           </Link>
-        </Animated.View>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -353,6 +296,11 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     flex: 1,
@@ -365,9 +313,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 48,
   },
+  logoText: {
+    fontSize: 42,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -1.5,
+    textShadowColor: 'rgba(0, 102, 204, 0.3)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
+  },
+  subtitleText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 4,
+    letterSpacing: 2,
+  },
   cardWrapper: {
     flex: 1,
-    maxHeight: 420,
+    maxHeight: 440,
     marginVertical: 24,
   },
   blurView: {
@@ -377,18 +340,138 @@ const styles = StyleSheet.create({
   },
   glassCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // $glassWhite15 - RN StyleSheet에서는 토큰 직접 사용 불가
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.25)', // $glassWhite25
     padding: 28,
+  },
+  serverStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // $glassWhite15
+    marginBottom: 16,
+  },
+  serverDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#00C853',
+  },
+  serverText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '500',
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  errorIcon: {
+    fontSize: 18,
+    color: '#FCA5A5',
+    fontWeight: 'bold',
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FCA5A5',
+  },
+  form: {
     gap: 20,
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 2,
+  },
+  input: {
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', // $glassWhite10
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.2)', // $glassWhite20
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 60,
+  },
+  showPasswordButton: {
+    position: 'absolute',
+    right: 16,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  showPasswordText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  loginButton: {
+    marginTop: 8,
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#00A3FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  loginButtonPressed: {
+    transform: [{ scale: 0.96 }],
+    opacity: 0.9,
+  },
+  loginButtonDisabled: {
+    opacity: 0.5,
+    shadowOpacity: 0,
+  },
+  loginButtonGradient: {
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   footer: {
     alignItems: 'center',
     marginTop: 'auto',
   },
-  // 장식용 원형
+  guestButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', // $glassWhite10
+    borderRadius: 24,
+  },
+  guestText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    opacity: 0.9,
+  },
   decorativeCircle1: {
     position: 'absolute',
     top: -100,
@@ -405,15 +488,6 @@ const styles = StyleSheet.create({
     width: 400,
     height: 400,
     borderRadius: 200,
-    overflow: 'hidden',
-  },
-  decorativeCircle3: {
-    position: 'absolute',
-    top: height * 0.4,
-    right: -80,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
     overflow: 'hidden',
   },
   circleGradient: {

@@ -13,10 +13,7 @@ interface WorkOrderStatusBadgeProps {
 /**
  * 상태별 색상 매핑
  */
-const STATE_COLORS: Record<
-  WorkOrderDTOState,
-  { bg: string; text: string; label: string }
-> = {
+const STATE_COLORS: Record<WorkOrderDTOState, { bg: string; text: string; label: string }> = {
   WRITE: {
     bg: '$gray5',
     text: '$gray11',

@@ -2,17 +2,12 @@
  * ProgressBar 컴포넌트
  *
  * 2026 Modern UI - 그라디언트 프로그레스 바
- * 애니메이션 효과와 그라디언트 채우기
+ * React Native Animated API 사용 (Expo Go 호환)
  */
-import React, { useEffect } from 'react';
-import { StyleSheet, ViewStyle, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, ViewStyle, Platform, Animated } from 'react-native';
 import { YStack } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import { gradients } from '@/theme/tokens';
 
 interface ProgressBarProps {
@@ -46,18 +41,25 @@ export function ProgressBar({
   glow = false,
   rounded = true,
 }: ProgressBarProps) {
-  const animatedProgress = useSharedValue(0);
+  // React Native Animated 값 (0 ~ 100)
+  const animatedWidth = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    const targetProgress = Math.min(100, Math.max(0, progress));
+
     if (animated) {
-      animatedProgress.value = withSpring(Math.min(100, Math.max(0, progress)), {
+      // Spring 애니메이션으로 부드럽게 변경
+      Animated.spring(animatedWidth, {
+        toValue: targetProgress,
         damping: 15,
         stiffness: 80,
-      });
+        useNativeDriver: false, // width 애니메이션은 useNativeDriver false 필요
+      }).start();
     } else {
-      animatedProgress.value = Math.min(100, Math.max(0, progress));
+      // 애니메이션 없이 바로 설정
+      animatedWidth.setValue(targetProgress);
     }
-  }, [progress, animated]);
+  }, [progress, animated, animatedWidth]);
 
   const getGradientColors = (): readonly [string, string] => {
     switch (variant) {
@@ -72,10 +74,6 @@ export function ProgressBar({
         return gradients.primary;
     }
   };
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: `${animatedProgress.value}%`,
-  }));
 
   const getGlowStyle = (): ViewStyle => {
     if (!glow) return {};
@@ -92,6 +90,12 @@ export function ProgressBar({
     }) as ViewStyle;
   };
 
+  // width를 percentage string으로 변환하는 interpolation
+  const widthInterpolated = animatedWidth.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
+
   return (
     <YStack
       height={height}
@@ -105,9 +109,9 @@ export function ProgressBar({
           {
             height,
             borderRadius: rounded ? height / 2 : 2,
+            width: widthInterpolated,
           },
           getGlowStyle(),
-          animatedStyle,
         ]}
       >
         <LinearGradient

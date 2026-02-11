@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useChangePassword } from '@/features/auth/hooks/useChangePassword';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
+import { SeniorButton } from '@/components/ui/SeniorButton';
 
 /**
  * 비밀번호 변경 폼 스키마
@@ -40,6 +42,7 @@ type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 export default function ChangePasswordScreen() {
   const router = useRouter();
   const { changePassword, isLoading } = useChangePassword();
+  const { isSeniorMode, fontSize, touchTarget } = useSeniorStyles();
 
   // 비밀번호 표시/숨기기 상태
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -69,39 +72,39 @@ export default function ChangePasswordScreen() {
   return (
     <ScrollView flex={1} backgroundColor="$white">
       <YStack flex={1} padding="$6" paddingTop="$12" gap="$6">
-        {/* 헤더 */}
+        {/* 헤더 - 시니어 모드 대응 */}
         <YStack gap="$2">
-          <Text fontSize={28} fontWeight="700" color="$gray900">
+          <Text fontSize={isSeniorMode ? fontSize.title : 28} fontWeight="700" color="$gray900">
             비밀번호 변경
           </Text>
-          <Text fontSize={14} color="$gray600">
+          <Text fontSize={isSeniorMode ? fontSize.small : 14} color="$gray600">
             안전한 비밀번호로 변경해주세요
           </Text>
         </YStack>
 
-        {/* 비밀번호 규칙 안내 */}
+        {/* 비밀번호 규칙 안내 - 시니어 모드 대응 */}
         <YStack
           backgroundColor="#EBF4FF"
           borderRadius="$3"
-          padding="$4"
-          borderWidth={1}
+          padding={isSeniorMode ? '$5' : '$4'}
+          borderWidth={isSeniorMode ? 2 : 1}
           borderColor="#B3D7FF"
           gap="$2"
         >
           <XStack gap="$2" alignItems="center">
-            <Ionicons name="information-circle" size={20} color="#0064FF" />
-            <Text fontSize={14} fontWeight="600" color="#0052CC">
+            <Ionicons name="information-circle" size={isSeniorMode ? 28 : 20} color="#0064FF" />
+            <Text fontSize={isSeniorMode ? fontSize.medium : 14} fontWeight="600" color="#0052CC">
               비밀번호 규칙
             </Text>
           </XStack>
           <YStack gap="$1" paddingLeft="$6">
-            <Text fontSize={12} color="$gray700">
+            <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$gray700">
               • 8자 이상
             </Text>
-            <Text fontSize={12} color="$gray700">
+            <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$gray700">
               • 영문자 포함
             </Text>
-            <Text fontSize={12} color="$gray700">
+            <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$gray700">
               • 숫자 포함
             </Text>
           </YStack>
@@ -109,9 +112,9 @@ export default function ChangePasswordScreen() {
 
         {/* 폼 */}
         <YStack gap="$5">
-          {/* 현재 비밀번호 */}
+          {/* 현재 비밀번호 - 시니어 모드 대응 */}
           <YStack gap="$2">
-            <Text fontSize={14} fontWeight="600" color="$gray900">
+            <Text fontSize={isSeniorMode ? fontSize.small : 14} fontWeight="600" color="$gray900">
               현재 비밀번호
             </Text>
             <Controller
@@ -123,13 +126,15 @@ export default function ChangePasswordScreen() {
                     <Input
                       {...({
                         width: '100%',
-                        height: 52,
+                        height: isSeniorMode ? touchTarget.button : 52,
+                        fontSize: isSeniorMode ? fontSize.small : 16,
                         placeholder: '현재 비밀번호를 입력하세요',
                         secureTextEntry: !showCurrentPassword,
                         onBlur,
                         onChangeText: onChange,
                         value,
                         borderColor: errors.currentPassword ? '#C9252D' : '#C9C9C9',
+                        borderWidth: isSeniorMode ? 2 : 1,
                         editable: !isLoading,
                       } as any)}
                     />
@@ -145,7 +150,7 @@ export default function ChangePasswordScreen() {
                     >
                       <Ionicons
                         name={showCurrentPassword ? 'eye-off' : 'eye'}
-                        size={20}
+                        size={isSeniorMode ? 28 : 20}
                         color="#8E8E8E"
                       />
                     </Pressable>
@@ -154,15 +159,15 @@ export default function ChangePasswordScreen() {
               )}
             />
             {errors.currentPassword && (
-              <Text fontSize={12} color="$error">
+              <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$error">
                 {errors.currentPassword.message}
               </Text>
             )}
           </YStack>
 
-          {/* 새 비밀번호 */}
+          {/* 새 비밀번호 - 시니어 모드 대응 */}
           <YStack gap="$2">
-            <Text fontSize={14} fontWeight="600" color="$gray900">
+            <Text fontSize={isSeniorMode ? fontSize.small : 14} fontWeight="600" color="$gray900">
               새 비밀번호
             </Text>
             <Controller
@@ -174,13 +179,15 @@ export default function ChangePasswordScreen() {
                     <Input
                       {...({
                         width: '100%',
-                        height: 52,
+                        height: isSeniorMode ? touchTarget.button : 52,
+                        fontSize: isSeniorMode ? fontSize.small : 16,
                         placeholder: '새 비밀번호를 입력하세요',
                         secureTextEntry: !showNewPassword,
                         onBlur,
                         onChangeText: onChange,
                         value,
                         borderColor: errors.newPassword ? '#C9252D' : '#C9C9C9',
+                        borderWidth: isSeniorMode ? 2 : 1,
                         editable: !isLoading,
                       } as any)}
                     />
@@ -196,7 +203,7 @@ export default function ChangePasswordScreen() {
                     >
                       <Ionicons
                         name={showNewPassword ? 'eye-off' : 'eye'}
-                        size={20}
+                        size={isSeniorMode ? 28 : 20}
                         color="#8E8E8E"
                       />
                     </Pressable>
@@ -205,15 +212,15 @@ export default function ChangePasswordScreen() {
               )}
             />
             {errors.newPassword && (
-              <Text fontSize={12} color="$error">
+              <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$error">
                 {errors.newPassword.message}
               </Text>
             )}
           </YStack>
 
-          {/* 새 비밀번호 확인 */}
+          {/* 새 비밀번호 확인 - 시니어 모드 대응 */}
           <YStack gap="$2">
-            <Text fontSize={14} fontWeight="600" color="$gray900">
+            <Text fontSize={isSeniorMode ? fontSize.small : 14} fontWeight="600" color="$gray900">
               새 비밀번호 확인
             </Text>
             <Controller
@@ -225,13 +232,15 @@ export default function ChangePasswordScreen() {
                     <Input
                       {...({
                         width: '100%',
-                        height: 52,
+                        height: isSeniorMode ? touchTarget.button : 52,
+                        fontSize: isSeniorMode ? fontSize.small : 16,
                         placeholder: '새 비밀번호를 다시 입력하세요',
                         secureTextEntry: !showConfirmPassword,
                         onBlur,
                         onChangeText: onChange,
                         value,
                         borderColor: errors.confirmPassword ? '#C9252D' : '#C9C9C9',
+                        borderWidth: isSeniorMode ? 2 : 1,
                         editable: !isLoading,
                       } as any)}
                     />
@@ -247,7 +256,7 @@ export default function ChangePasswordScreen() {
                     >
                       <Ionicons
                         name={showConfirmPassword ? 'eye-off' : 'eye'}
-                        size={20}
+                        size={isSeniorMode ? 28 : 20}
                         color="#8E8E8E"
                       />
                     </Pressable>
@@ -256,35 +265,57 @@ export default function ChangePasswordScreen() {
               )}
             />
             {errors.confirmPassword && (
-              <Text fontSize={12} color="$error">
+              <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$error">
                 {errors.confirmPassword.message}
               </Text>
             )}
           </YStack>
         </YStack>
 
-        {/* 버튼 그룹 */}
+        {/* 버튼 그룹 - 시니어 모드 대응 */}
         <YStack gap="$3" marginTop="$4">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onPress={handleSubmit(onSubmit)}
-            disabled={isLoading}
-            loading={isLoading}
-          >
-            비밀번호 변경
-          </Button>
+          {isSeniorMode ? (
+            <>
+              <SeniorButton
+                label="비밀번호 변경"
+                onPress={handleSubmit(onSubmit)}
+                disabled={isLoading}
+                loading={isLoading}
+                variant="primary"
+                fullWidth
+              />
+              <SeniorButton
+                label="취소"
+                onPress={() => router.back()}
+                disabled={isLoading}
+                variant="outline"
+                fullWidth
+              />
+            </>
+          ) : (
+            <>
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                onPress={handleSubmit(onSubmit)}
+                disabled={isLoading}
+                loading={isLoading}
+              >
+                비밀번호 변경
+              </Button>
 
-          <Button
-            variant="ghost"
-            size="lg"
-            fullWidth
-            onPress={() => router.back()}
-            disabled={isLoading}
-          >
-            취소
-          </Button>
+              <Button
+                variant="ghost"
+                size="lg"
+                fullWidth
+                onPress={() => router.back()}
+                disabled={isLoading}
+              >
+                취소
+              </Button>
+            </>
+          )}
         </YStack>
       </YStack>
     </ScrollView>

@@ -3,14 +3,14 @@
  *
  * 2026 Modern UI - 그라디언트 헤더 + Glass 카드 섹션
  * 상태에 따른 액션 버튼 제공
+ * 시니어 모드 지원: 확대된 텍스트, 테두리 강조, 고대비 배지
  */
 import React, { useMemo } from 'react';
-import { ScrollView, Alert, Platform, ViewStyle, Pressable } from 'react-native';
+import { ScrollView, Alert, Platform, ViewStyle, Pressable, View } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Button } from '@/components/ui/Button';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -19,6 +19,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { AttachmentList } from '@/features/work/components/AttachmentList';
 import { useWorkOrderDetail } from '@/features/work/hooks/useWorkOrderDetail';
 import { gradients } from '@/theme/tokens';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 
 /**
  * 상태별 그라디언트 색상
@@ -61,19 +62,13 @@ export default function WorkDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const workOrderId = parseInt(id || '0', 10);
+  const { isSeniorMode, card: cardStyles } = useSeniorStyles();
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    addResult,
-    isAddingResult,
-  } = useWorkOrderDetail({
-    workOrderId,
-    enabled: !!workOrderId,
-  });
+  const { data, isLoading, isError, error, refetch, addResult, isAddingResult } =
+    useWorkOrderDetail({
+      workOrderId,
+      enabled: !!workOrderId,
+    });
 
   const workOrder = data?.data?.workOrderDTO;
 
@@ -175,12 +170,7 @@ export default function WorkDetailScreen() {
         return (
           <XStack gap="$3" width="100%">
             <YStack flex={1}>
-              <Button
-                onPress={handleReject}
-                variant="outline"
-                fullWidth
-                size="lg"
-              >
+              <Button onPress={handleReject} variant="outline" fullWidth size="lg">
                 반려
               </Button>
             </YStack>
@@ -254,8 +244,12 @@ export default function WorkDetailScreen() {
                 alignItems="center"
                 gap="$1"
               >
-                <Text fontSize={16} color="$white">←</Text>
-                <Text fontSize={14} fontWeight="600" color="$white">뒤로</Text>
+                <Text fontSize={16} color="$white">
+                  ←
+                </Text>
+                <Text fontSize={14} fontWeight="600" color="$white">
+                  뒤로
+                </Text>
               </XStack>
             </Pressable>
 
@@ -284,12 +278,7 @@ export default function WorkDetailScreen() {
               {workOrder.name}
             </Text>
             {workOrder.description && (
-              <Text
-                fontSize={14}
-                color="rgba(255, 255, 255, 0.8)"
-                marginTop="$2"
-                numberOfLines={2}
-              >
+              <Text fontSize={14} color="rgba(255, 255, 255, 0.8)" marginTop="$2" numberOfLines={2}>
                 {workOrder.description}
               </Text>
             )}
@@ -319,75 +308,95 @@ export default function WorkDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* 기본 정보 섹션 */}
-        <Animated.View entering={FadeInDown.delay(100).springify()}>
-          <GlassCard floating intensity="heavy" marginBottom={16}>
-            <SectionHeader title="기본 정보" size="sm" showAccent />
-            <YStack gap="$3" marginTop="$2">
-              <InfoRow
-                label="작업 분류"
-                value={
-                  workOrder.firstClassName && workOrder.secondClassName
-                    ? `${workOrder.firstClassName} > ${workOrder.secondClassName}`
-                    : workOrder.firstClassName || workOrder.secondClassName || '-'
-                }
-              />
-              <InfoRow label="빌딩" value={workOrder.buildingName} />
-              <InfoRow label="작업 위치" value={workOrder.location} />
-              <InfoRow
-                label="점검 항목 수"
-                value={workOrder.itemSize ? `${workOrder.itemSize}개` : '-'}
-                highlight
-              />
-            </YStack>
-          </GlassCard>
-        </Animated.View>
+        <View>
+          <YStack
+            marginBottom={16}
+            borderWidth={isSeniorMode ? cardStyles.borderWidth : 0}
+            borderColor={isSeniorMode ? (cardStyles.borderColor as any) : 'transparent'}
+            borderRadius={16}
+          >
+            <GlassCard floating intensity="heavy">
+              <SectionHeader title="기본 정보" size="sm" showAccent />
+              <YStack gap="$3" marginTop="$2">
+                <InfoRow
+                  label="작업 분류"
+                  value={
+                    workOrder.firstClassName && workOrder.secondClassName
+                      ? `${workOrder.firstClassName} > ${workOrder.secondClassName}`
+                      : workOrder.firstClassName || workOrder.secondClassName || '-'
+                  }
+                />
+                <InfoRow label="빌딩" value={workOrder.buildingName} />
+                <InfoRow label="작업 위치" value={workOrder.location} />
+                <InfoRow
+                  label="점검 항목 수"
+                  value={workOrder.itemSize ? `${workOrder.itemSize}개` : '-'}
+                  highlight
+                />
+              </YStack>
+            </GlassCard>
+          </YStack>
+        </View>
 
         {/* 일정 정보 섹션 */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
-          <GlassCard intensity="medium" marginBottom={16}>
-            <SectionHeader title="일정 정보" size="sm" showAccent />
-            <YStack gap="$3" marginTop="$2">
-              <InfoRow
-                label="계획 시작일"
-                value={workOrder.planStartDate}
-                highlight
-              />
-              <InfoRow
-                label="계획 종료일"
-                value={workOrder.planEndDate}
-                highlight
-              />
-              <InfoRow label="작성일" value={workOrder.writeDate} />
-            </YStack>
-          </GlassCard>
-        </Animated.View>
+        <View>
+          <YStack
+            marginBottom={16}
+            borderWidth={isSeniorMode ? cardStyles.borderWidth : 0}
+            borderColor={isSeniorMode ? (cardStyles.borderColor as any) : 'transparent'}
+            borderRadius={16}
+          >
+            <GlassCard intensity="medium">
+              <SectionHeader title="일정 정보" size="sm" showAccent />
+              <YStack gap="$3" marginTop="$2">
+                <InfoRow label="계획 시작일" value={workOrder.planStartDate} highlight />
+                <InfoRow label="계획 종료일" value={workOrder.planEndDate} highlight />
+                <InfoRow label="작성일" value={workOrder.writeDate} />
+              </YStack>
+            </GlassCard>
+          </YStack>
+        </View>
 
         {/* 담당 정보 섹션 */}
-        <Animated.View entering={FadeInDown.delay(300).springify()}>
-          <GlassCard intensity="medium" marginBottom={16}>
-            <SectionHeader title="담당 정보" size="sm" showAccent />
-            <YStack gap="$3" marginTop="$2">
-              <InfoRow label="작성자" value={workOrder.writerName} />
-              <InfoRow label="담당자" value={workOrder.managerName} />
-              <InfoRow label="담당자 연락처" value={workOrder.managerPhone} />
-            </YStack>
-          </GlassCard>
-        </Animated.View>
+        <View>
+          <YStack
+            marginBottom={16}
+            borderWidth={isSeniorMode ? cardStyles.borderWidth : 0}
+            borderColor={isSeniorMode ? (cardStyles.borderColor as any) : 'transparent'}
+            borderRadius={16}
+          >
+            <GlassCard intensity="medium">
+              <SectionHeader title="담당 정보" size="sm" showAccent />
+              <YStack gap="$3" marginTop="$2">
+                <InfoRow label="작성자" value={workOrder.writerName} />
+                <InfoRow label="담당자" value={workOrder.managerName} />
+                <InfoRow label="담당자 연락처" value={workOrder.managerPhone} />
+              </YStack>
+            </GlassCard>
+          </YStack>
+        </View>
 
         {/* 첨부 파일 섹션 */}
         {workOrder.attachments && workOrder.attachments.length > 0 && (
-          <Animated.View entering={FadeInDown.delay(400).springify()}>
-            <GlassCard intensity="light" marginBottom={16}>
-              <SectionHeader title="첨부 파일" size="sm" showAccent />
-              <AttachmentList attachments={workOrder.attachments} />
-            </GlassCard>
-          </Animated.View>
+          <View>
+            <YStack
+              marginBottom={16}
+              borderWidth={isSeniorMode ? cardStyles.borderWidth : 0}
+              borderColor={isSeniorMode ? (cardStyles.borderColor as any) : 'transparent'}
+              borderRadius={16}
+            >
+              <GlassCard intensity="light">
+                <SectionHeader title="첨부 파일" size="sm" showAccent />
+                <AttachmentList attachments={workOrder.attachments} />
+              </GlassCard>
+            </YStack>
+          </View>
         )}
       </ScrollView>
 
       {/* 액션 버튼 (하단 고정) */}
       {renderActionButtons && (
-        <Animated.View entering={FadeInUp.springify()}>
+        <View>
           <YStack
             position="absolute"
             bottom={0}
@@ -399,28 +408,30 @@ export default function WorkDetailScreen() {
             backgroundColor="$surface"
             borderTopWidth={1}
             borderTopColor="$gray100"
-            style={Platform.select({
-              ios: {
-                shadowColor: '#0066CC',
-                shadowOffset: { width: 0, height: -4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 16,
-              },
-              android: {
-                elevation: 8,
-              },
-            }) as ViewStyle}
+            style={
+              Platform.select({
+                ios: {
+                  shadowColor: '#0066CC',
+                  shadowOffset: { width: 0, height: -4 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 16,
+                },
+                android: {
+                  elevation: 8,
+                },
+              }) as ViewStyle
+            }
           >
             {renderActionButtons}
           </YStack>
-        </Animated.View>
+        </View>
       )}
     </YStack>
   );
 }
 
 /**
- * 정보 행 컴포넌트
+ * 정보 행 컴포넌트 (시니어 모드 지원)
  */
 interface InfoRowProps {
   label: string;
@@ -429,15 +440,17 @@ interface InfoRowProps {
 }
 
 function InfoRow({ label, value, highlight = false }: InfoRowProps) {
+  const { isSeniorMode, fontSize } = useSeniorStyles();
+
   if (!value) return null;
 
   return (
     <XStack justifyContent="space-between" alignItems="flex-start" gap="$3">
-      <Text fontSize={14} color="$gray500" flexShrink={0}>
+      <Text fontSize={isSeniorMode ? fontSize.small : 14} color="$gray500" flexShrink={0}>
         {label}
       </Text>
       <Text
-        fontSize={14}
+        fontSize={isSeniorMode ? fontSize.medium : 14}
         color={highlight ? '$primary' : '$gray900'}
         fontWeight={highlight ? '600' : '500'}
         flex={1}
@@ -479,17 +492,19 @@ function GradientActionButton({
       <YStack
         borderRadius={16}
         overflow="hidden"
-        style={Platform.select({
-          ios: {
-            shadowColor: colors[0],
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 12,
-          },
-          android: {
-            elevation: 6,
-          },
-        }) as ViewStyle}
+        style={
+          Platform.select({
+            ios: {
+              shadowColor: colors[0],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+            },
+            android: {
+              elevation: 6,
+            },
+          }) as ViewStyle
+        }
       >
         <LinearGradient
           colors={colors}

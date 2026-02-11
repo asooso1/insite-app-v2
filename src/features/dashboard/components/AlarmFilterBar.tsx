@@ -18,7 +18,7 @@ interface AlarmFilterBarProps {
  * 알람 심각도 필터 바
  */
 export function AlarmFilterBar({ selectedSeverity, onFilterChange }: AlarmFilterBarProps) {
-  const filters: Array<{ severity: AlarmSeverity | null; label: string; icon: string }> = [
+  const filters: { severity: AlarmSeverity | null; label: string; icon: string }[] = [
     { severity: null, label: '전체', icon: '📋' },
     { severity: 'CRITICAL', label: '심각', icon: getAlarmSeverityIcon('CRITICAL') },
     { severity: 'WARNING', label: '경고', icon: getAlarmSeverityIcon('WARNING') },

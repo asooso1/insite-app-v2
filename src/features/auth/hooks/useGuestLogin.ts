@@ -1,0 +1,152 @@
+/**
+ * 게스트 로그인 훅
+ *
+ * NFC 스캔 후 게스트 토큰 처리 로직
+ */
+
+import { useState, useCallback } from 'react';
+import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/stores/auth.store';
+import { guestLogin, LOGIN_RESPONSE_CODES, type LoginResponse } from '@/api/auth';
+
+interface NfcScanResult {
+  tagId: string;
+  buildingId?: string;
+}
+
+export function useGuestLogin() {
+  const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  /**
+   * 게스트 로그인 응답 처리
+   */
+  const handleGuestLoginResponse = useCallback(
+    (response: LoginResponse): boolean => {
+      const { code, message, authToken, data } = response;
+
+      switch (code) {
+        case LOGIN_RESPONSE_CODES.SUCCESS:
+        case 'success':
+          if (authToken && data) {
+            // 게스트 사용자 정보 저장
+            const user = {
+              id: data.id || data.userId,
+              email: data.email || data.mobile || '',
+              name: data.name || '게스트',
+              role: data.role || 'guest',
+              siteId: data.siteId,
+              siteName: data.siteName,
+            };
+
+            setAuth(user, authToken, '');
+            console.log('[GuestLogin] 게스트 로그인 성공:', {
+              userId: user.id,
+              name: user.name,
+              role: user.role,
+            });
+
+            return true;
+          }
+
+          setError('게스트 로그인 데이터가 올바르지 않습니다.');
+          return false;
+
+        case LOGIN_RESPONSE_CODES.FAIL:
+        case 'fail':
+          setError(message || '게스트 로그인에 실패했습니다.');
+          Alert.alert(
+            '로그인 실패',
+            message || '유효하지 않은 NFC 태그입니다.\n다시 시도해주세요.',
+            [{ text: '확인' }]
+          );
+          return false;
+
+        case LOGIN_RESPONSE_CODES.MOBILE_DUPLICATE:
+          setError(message || '이미 등록된 휴대폰 번호입니다.');
+          Alert.alert('로그인 실패', message || '이미 등록된 휴대폰 번호입니다.', [
+            { text: '확인' },
+          ]);
+          return false;
+
+        default:
+          setError(message || '게스트 로그인에 실패했습니다.');
+          Alert.alert('로그인 실패', message || '알 수 없는 오류가 발생했습니다.', [
+            { text: '확인' },
+          ]);
+          return false;
+      }
+    },
+    [setAuth]
+  );
+
+  /**
+   * NFC 스캔 결과로 게스트 로그인 실행
+   */
+  const performGuestLogin = useCallback(
+    async (scanResult: NfcScanResult) => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // NFC 태그 ID를 휴대폰 번호로 사용 (v1 앱 호환)
+        // 실제로는 태그에서 추출한 정보를 사용해야 함
+        const mobile = scanResult.tagId;
+        const buildingId = scanResult.buildingId || ''; // NFC 태그에서 빌딩 ID 추출
+
+        console.log('[GuestLogin] 게스트 로그인 시도:', {
+          tagId: scanResult.tagId,
+          buildingId,
+        });
+
+        const response = await guestLogin({
+          mobile,
+          buildingId,
+        });
+
+        const success = handleGuestLoginResponse(response);
+
+        if (success) {
+          // 로그인 성공 시 홈 화면으로 이동
+          // auth store의 isAuthenticated 상태 변경으로 자동 리다이렉트됨
+          console.log('[GuestLogin] 홈 화면으로 이동');
+          router.replace('/(main)/(tabs)/home');
+        }
+
+        return success;
+      } catch (err) {
+        console.error('[GuestLogin] 게스트 로그인 오류:', err);
+
+        const errorMessage = '게스트 로그인에 실패했습니다.\n네트워크 연결을 확인해주세요.';
+        setError(errorMessage);
+
+        Alert.alert('로그인 실패', errorMessage, [
+          { text: '재시도', onPress: () => performGuestLogin(scanResult) },
+          { text: '취소', style: 'cancel' },
+        ]);
+
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [handleGuestLoginResponse, router]
+  );
+
+  /**
+   * 에러 초기화
+   */
+  const clearError = useCallback(() => setError(null), []);
+
+  return {
+    isLoading,
+    error,
+    performGuestLogin,
+    clearError,
+  };
+}
+
+export default useGuestLogin;

@@ -60,11 +60,7 @@ export function ChecklistSection({ items, results, onResultChange }: ChecklistSe
         <YStack>
           {items.map((item, index) => (
             <YStack key={item.id}>
-              <ChecklistItem
-                item={item}
-                value={getItemResult(item.id)}
-                onChange={onResultChange}
-              />
+              <ChecklistItem item={item} value={getItemResult(item.id)} onChange={onResultChange} />
               {index < items.length - 1 && <Divider marginVertical="$2" />}
             </YStack>
           ))}

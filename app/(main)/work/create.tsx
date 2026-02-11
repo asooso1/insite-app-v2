@@ -151,12 +151,7 @@ export default function WorkCreateScreen() {
       >
         <YStack padding={16} gap={24}>
           {/* 기본 정보 섹션 */}
-          <YStack
-            backgroundColor="$white"
-            padding={16}
-            borderRadius={12}
-            gap={16}
-          >
+          <YStack backgroundColor="$white" padding={16} borderRadius={12} gap={16}>
             <Text fontSize={18} fontWeight="600" color="$gray900">
               기본 정보
             </Text>
@@ -204,7 +199,9 @@ export default function WorkCreateScreen() {
                     <Text fontSize={14} fontWeight="600" color="$gray700">
                       업무 분류 (대분류)
                     </Text>
-                    <Text color="$error" marginLeft={4}>*</Text>
+                    <Text color="$error" marginLeft={4}>
+                      *
+                    </Text>
                   </XStack>
                   <Select
                     options={mockCategories.map((cat) => ({
@@ -235,7 +232,9 @@ export default function WorkCreateScreen() {
                     <Text fontSize={14} fontWeight="600" color="$gray700">
                       업무 분류 (소분류)
                     </Text>
-                    <Text color="$error" marginLeft={4}>*</Text>
+                    <Text color="$error" marginLeft={4}>
+                      *
+                    </Text>
                   </XStack>
                   <Select
                     options={secondClassOptions}
@@ -257,12 +256,7 @@ export default function WorkCreateScreen() {
           </YStack>
 
           {/* 일정 섹션 */}
-          <YStack
-            backgroundColor="$white"
-            padding={16}
-            borderRadius={12}
-            gap={16}
-          >
+          <YStack backgroundColor="$white" padding={16} borderRadius={12} gap={16}>
             <Text fontSize={18} fontWeight="600" color="$gray900">
               일정
             </Text>
@@ -277,7 +271,9 @@ export default function WorkCreateScreen() {
                     <Text fontSize={14} fontWeight="600" color="$gray700">
                       계획 시작일
                     </Text>
-                    <Text color="$error" marginLeft={4}>*</Text>
+                    <Text color="$error" marginLeft={4}>
+                      *
+                    </Text>
                   </XStack>
                   <DatePicker
                     value={value}
@@ -303,7 +299,9 @@ export default function WorkCreateScreen() {
                     <Text fontSize={14} fontWeight="600" color="$gray700">
                       계획 종료일
                     </Text>
-                    <Text color="$error" marginLeft={4}>*</Text>
+                    <Text color="$error" marginLeft={4}>
+                      *
+                    </Text>
                   </XStack>
                   <DatePicker
                     value={value}
@@ -323,12 +321,7 @@ export default function WorkCreateScreen() {
           </YStack>
 
           {/* 담당 섹션 */}
-          <YStack
-            backgroundColor="$white"
-            padding={16}
-            borderRadius={12}
-            gap={16}
-          >
+          <YStack backgroundColor="$white" padding={16} borderRadius={12} gap={16}>
             <Text fontSize={18} fontWeight="600" color="$gray900">
               담당
             </Text>
@@ -343,7 +336,9 @@ export default function WorkCreateScreen() {
                     <Text fontSize={14} fontWeight="600" color="$gray700">
                       건물
                     </Text>
-                    <Text color="$error" marginLeft={4}>*</Text>
+                    <Text color="$error" marginLeft={4}>
+                      *
+                    </Text>
                   </XStack>
                   <Select
                     options={mockBuildings.map((building) => ({
@@ -370,7 +365,9 @@ export default function WorkCreateScreen() {
                 <Text fontSize={14} fontWeight="600" color="$gray700">
                   담당자
                 </Text>
-                <Text color="$error" marginLeft={4}>*</Text>
+                <Text color="$error" marginLeft={4}>
+                  *
+                </Text>
               </XStack>
               <Text fontSize={12} color="$gray500">
                 담당자는 Mock 데이터를 사용합니다. 다중 선택 기능은 추후 구현됩니다.
@@ -391,12 +388,7 @@ export default function WorkCreateScreen() {
           </YStack>
 
           {/* 첨부파일 섹션 */}
-          <YStack
-            backgroundColor="$white"
-            padding={16}
-            borderRadius={12}
-            gap={16}
-          >
+          <YStack backgroundColor="$white" padding={16} borderRadius={12} gap={16}>
             <Text fontSize={18} fontWeight="600" color="$gray900">
               첨부파일
             </Text>

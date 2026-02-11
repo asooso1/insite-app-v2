@@ -4,7 +4,11 @@
  * @description 특정 구역의 점검 결과를 조회하고 저장/수정합니다
  */
 
-import { useGetPatrolResult, useSavePatrolResult, useUpdatePatrolResult } from '@/api/generated/patrol/patrol';
+import {
+  useGetPatrolResult,
+  useSavePatrolResult,
+  useUpdatePatrolResult,
+} from '@/api/generated/patrol/patrol';
 import type { PatrolResultItemDTO } from '@/api/generated/models';
 
 interface UsePatrolResultOptions {
@@ -126,11 +130,11 @@ export function useUpdatePatrolResultMutation() {
 export function createPatrolResultFormData(data: {
   nfcRoundId: number;
   buildingFloorZoneId: number;
-  results: Array<{
+  results: {
     nfcRoundItemId: number;
     actionType: 'NONE' | 'ON_SITE' | 'NOT_POSSIBLE';
     actionTaken: string;
-  }>;
+  }[];
   images?: File[];
   deleteImageIds?: number[];
 }): FormData {

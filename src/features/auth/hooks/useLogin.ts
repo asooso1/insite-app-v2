@@ -2,18 +2,13 @@
  * 로그인 훅 (v1)
  *
  * v1 API를 사용한 로그인 처리
+ * 네비게이션은 login.tsx에서 isAuthenticated 상태를 감지하여 처리
  */
 
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { login, guestLogin, LOGIN_RESPONSE_CODES, type LoginResponse } from '@/api/auth';
-
-interface UseLoginOptions {
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
-}
 
 interface LoginParams {
   userId: string;
@@ -25,8 +20,7 @@ interface GuestLoginParams {
   buildingId: string;
 }
 
-export function useLogin(options: UseLoginOptions = {}) {
-  const router = useRouter();
+export function useLogin() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,10 +32,13 @@ export function useLogin(options: UseLoginOptions = {}) {
     (response: LoginResponse): boolean => {
       const { code, message, authToken, data } = response;
 
+      console.log('[useLogin] 로그인 응답 처리:', code);
+
       switch (code) {
         case LOGIN_RESPONSE_CODES.SUCCESS:
         case 'success':
           if (authToken && data) {
+            console.log('[useLogin] 로그인 성공:', data.name);
             const user = {
               id: data.id || data.userId,
               email: data.email || data.userId,
@@ -51,30 +48,32 @@ export function useLogin(options: UseLoginOptions = {}) {
               siteName: data.siteName,
             };
             setAuth(user, authToken, '');
-            options.onSuccess?.();
-            router.replace('/(main)/(tabs)/home');
             return true;
           }
+          console.error('[useLogin] 로그인 데이터 누락');
           setError('로그인 데이터가 올바르지 않습니다.');
           return false;
 
         case LOGIN_RESPONSE_CODES.FAIL:
         case 'fail':
+          console.log('[useLogin] 로그인 실패: 인증 오류');
           setError('아이디 또는 비밀번호가 올바르지 않습니다.');
           Alert.alert('로그인 실패', '아이디와 비밀번호를 정확히 입력해주세요.');
           return false;
 
         case LOGIN_RESPONSE_CODES.MOBILE_DUPLICATE:
+          console.log('[useLogin] 로그인 실패: 휴대폰 중복');
           setError(message || '휴대폰 번호가 중복됩니다.');
           Alert.alert('로그인 실패', message || '휴대폰 번호가 중복됩니다.');
           return false;
 
         default:
+          console.log('[useLogin] 로그인 실패: 알 수 없는 오류', code);
           setError(message || '로그인에 실패했습니다.');
           return false;
       }
     },
-    [router, setAuth, options]
+    [setAuth]
   );
 
   /**
@@ -82,6 +81,7 @@ export function useLogin(options: UseLoginOptions = {}) {
    */
   const performLogin = useCallback(
     async (params: LoginParams) => {
+      console.log('[useLogin] 로그인 시작:', params.userId);
       setIsLoading(true);
       setError(null);
 
@@ -93,16 +93,15 @@ export function useLogin(options: UseLoginOptions = {}) {
 
         handleLoginResponse(response);
       } catch (err) {
-        console.error('[Auth] 로그인 오류:', err);
+        console.error('[useLogin] 로그인 API 오류:', err);
         const errorMessage = '아이디와 비밀번호를 정확히 입력해주세요.';
         setError(errorMessage);
-        options.onError?.(err instanceof Error ? err : new Error(errorMessage));
         Alert.alert('로그인 실패', errorMessage);
       } finally {
         setIsLoading(false);
       }
     },
-    [handleLoginResponse, options]
+    [handleLoginResponse]
   );
 
   /**
@@ -124,21 +123,25 @@ export function useLogin(options: UseLoginOptions = {}) {
         console.error('[Auth] 게스트 로그인 오류:', err);
         const errorMessage = '게스트 로그인에 실패했습니다.';
         setError(errorMessage);
-        options.onError?.(err instanceof Error ? err : new Error(errorMessage));
         Alert.alert('로그인 실패', errorMessage);
       } finally {
         setIsLoading(false);
       }
     },
-    [handleLoginResponse, options]
+    [handleLoginResponse]
   );
+
+  /**
+   * 에러 초기화
+   */
+  const clearError = useCallback(() => setError(null), []);
 
   return {
     isLoading,
     error,
     login: performLogin,
     guestLogin: performGuestLogin,
-    clearError: () => setError(null),
+    clearError,
   };
 }
 

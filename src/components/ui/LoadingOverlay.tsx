@@ -66,15 +66,8 @@ export function LoadingOverlay({
   return (
     <Overlay transparent={transparent} dark={dark}>
       <LoadingContainer>
-        <ActivityIndicator
-          size={size}
-          color={color || (dark ? '#FFFFFF' : '#0066CC')}
-        />
-        {message && (
-          <LoadingText color={dark ? '$white' : '$gray600'}>
-            {message}
-          </LoadingText>
-        )}
+        <ActivityIndicator size={size} color={color || (dark ? '#FFFFFF' : '#0066CC')} />
+        {message && <LoadingText color={dark ? '$white' : '$gray600'}>{message}</LoadingText>}
       </LoadingContainer>
     </Overlay>
   );
@@ -102,7 +95,11 @@ export function LoadingSpinner({
   return (
     <InlineContainer>
       <ActivityIndicator size={size} color={color} />
-      {message && <Text color="$gray600" fontSize={14}>{message}</Text>}
+      {message && (
+        <Text color="$gray600" fontSize={14}>
+          {message}
+        </Text>
+      )}
     </InlineContainer>
   );
 }

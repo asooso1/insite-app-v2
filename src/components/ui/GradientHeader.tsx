@@ -78,29 +78,16 @@ export function GradientHeader({
         >
           <YStack flex={1} gap="$1">
             {subtitle && (
-              <Text
-                fontSize={14}
-                color="rgba(255, 255, 255, 0.8)"
-                fontWeight="400"
-              >
+              <Text fontSize={14} color="rgba(255, 255, 255, 0.8)" fontWeight="400">
                 {subtitle}
               </Text>
             )}
-            <Text
-              fontSize={28}
-              fontWeight="800"
-              color="$white"
-              letterSpacing={-0.5}
-            >
+            <Text fontSize={28} fontWeight="800" color="$white" letterSpacing={-0.5}>
               {title}
             </Text>
           </YStack>
 
-          {rightAction && (
-            <YStack alignItems="flex-end">
-              {rightAction}
-            </YStack>
-          )}
+          {rightAction && <YStack alignItems="flex-end">{rightAction}</YStack>}
         </XStack>
 
         {/* 하단 콘텐츠 (검색창 등) */}

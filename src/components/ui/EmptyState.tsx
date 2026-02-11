@@ -1,9 +1,12 @@
 /**
  * EmptyState 컴포넌트
+ *
+ * Lucide Icons 지원
  */
 import React from 'react';
 import { styled, YStack, Text } from 'tamagui';
 import { Button } from './Button';
+import { AppIcon, type IconName } from '@/components/icons';
 
 const EmptyContainer = styled(YStack, {
   name: 'EmptyState',
@@ -29,11 +32,6 @@ const IconContainer = styled(YStack, {
   justifyContent: 'center',
 });
 
-const IconText = styled(Text, {
-  name: 'EmptyStateIconText',
-  fontSize: 32,
-});
-
 const Title = styled(Text, {
   name: 'EmptyStateTitle',
   fontSize: 18,
@@ -52,7 +50,8 @@ const Description = styled(Text, {
 });
 
 interface EmptyStateProps {
-  icon?: string;
+  /** 아이콘 이름 (IconName) 또는 React 노드 */
+  icon?: IconName | React.ReactNode;
   title: string;
   description?: string;
   actionLabel?: string;
@@ -61,18 +60,24 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  icon = '📭',
+  icon = 'empty',
   title,
   description,
   actionLabel,
   onAction,
   fullHeight = false,
 }: EmptyStateProps) {
+  // 아이콘 렌더링 로직
+  const renderIcon = () => {
+    if (typeof icon === 'string') {
+      return <AppIcon name={icon as IconName} size="xl" color="$gray400" />;
+    }
+    return icon;
+  };
+
   return (
     <EmptyContainer fullHeight={fullHeight}>
-      <IconContainer>
-        <IconText>{icon}</IconText>
-      </IconContainer>
+      <IconContainer>{renderIcon()}</IconContainer>
 
       <YStack alignItems="center" gap={8}>
         <Title>{title}</Title>
@@ -88,22 +93,12 @@ export function EmptyState({
   );
 }
 
-export function NoSearchResults({
-  query,
-  onClear,
-}: {
-  query?: string;
-  onClear?: () => void;
-}) {
+export function NoSearchResults({ query, onClear }: { query?: string; onClear?: () => void }) {
   return (
     <EmptyState
-      icon="🔍"
+      icon="search"
       title="검색 결과 없음"
-      description={
-        query
-          ? `"${query}"에 대한 검색 결과가 없습니다.`
-          : '검색 결과가 없습니다.'
-      }
+      description={query ? `"${query}"에 대한 검색 결과가 없습니다.` : '검색 결과가 없습니다.'}
       actionLabel={onClear ? '검색 초기화' : undefined}
       onAction={onClear}
     />
@@ -121,7 +116,7 @@ export function NoData({
 }) {
   return (
     <EmptyState
-      icon="📋"
+      icon="work"
       title={title}
       description={description}
       actionLabel={onRefresh ? '새로고침' : undefined}
@@ -133,7 +128,7 @@ export function NoData({
 export function NetworkError({ onRetry }: { onRetry?: () => void }) {
   return (
     <EmptyState
-      icon="📡"
+      icon="offline"
       title="연결 오류"
       description="네트워크 연결을 확인해주세요."
       actionLabel={onRetry ? '다시 시도' : undefined}

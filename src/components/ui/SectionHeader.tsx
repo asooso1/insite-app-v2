@@ -3,11 +3,16 @@
  *
  * 2026 Modern UI - 섹션 제목 및 액션 버튼
  * 볼드한 타이틀 + 그라디언트 액센트 라인 + 옵션 액션
+ *
+ * 시니어 모드 지원:
+ * - 커스텀 폰트 크기 지원
+ * - 고대비 색상
  */
 import React from 'react';
 import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { gradients } from '@/theme/tokens';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 
 interface SectionHeaderProps {
   /** 섹션 제목 */
@@ -22,6 +27,8 @@ interface SectionHeaderProps {
   size?: 'sm' | 'md' | 'lg';
   /** 수평 패딩 적용 여부 */
   padded?: boolean;
+  /** 커스텀 폰트 크기 (시니어 모드용) */
+  fontSize?: number;
 }
 
 /**
@@ -44,8 +51,26 @@ export function SectionHeader({
   showAccent = true,
   size = 'md',
   padded = false,
+  fontSize: customFontSize,
 }: SectionHeaderProps) {
+  const seniorStyles = useSeniorStyles();
+  const { isSeniorMode } = seniorStyles;
+
   const getSizing = () => {
+    // 시니어 모드일 때 확대된 사이즈
+    if (isSeniorMode) {
+      switch (size) {
+        case 'sm':
+          return { fontSize: 20, accentWidth: 4, accentHeight: 22 };
+        case 'lg':
+          return { fontSize: 28, accentWidth: 5, accentHeight: 32 };
+        case 'md':
+        default:
+          return { fontSize: 24, accentWidth: 5, accentHeight: 28 };
+      }
+    }
+
+    // 일반 모드
     switch (size) {
       case 'sm':
         return { fontSize: 15, accentWidth: 3, accentHeight: 16 };
@@ -58,15 +83,22 @@ export function SectionHeader({
   };
 
   const sizing = getSizing();
+  // 커스텀 폰트 크기가 있으면 사용
+  const finalFontSize = customFontSize ?? sizing.fontSize;
+
+  // 시니어 모드용 고대비 그라디언트 색상
+  const gradientColors = isSeniorMode
+    ? (['#003366', '#004D99'] as const) // 더 진한 파란색
+    : ([...gradients.primary] as const);
 
   return (
     <XStack
       justifyContent="space-between"
       alignItems="center"
-      marginBottom="$3"
+      marginBottom={isSeniorMode ? '$4' : '$3'}
       paddingHorizontal={padded ? '$5' : 0}
     >
-      <XStack alignItems="center" gap="$2">
+      <XStack alignItems="center" gap={isSeniorMode ? '$3' : '$2'}>
         {/* 그라디언트 액센트 라인 */}
         {showAccent && (
           <YStack
@@ -76,7 +108,7 @@ export function SectionHeader({
             overflow="hidden"
           >
             <LinearGradient
-              colors={[...gradients.primary]}
+              colors={gradientColors}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
               style={{ flex: 1 }}
@@ -86,26 +118,34 @@ export function SectionHeader({
 
         {/* 제목 */}
         <Text
-          fontSize={sizing.fontSize}
+          fontSize={finalFontSize}
           fontWeight="700"
-          color="$gray900"
+          color={isSeniorMode ? (seniorStyles.colors.text as any) : '$gray900'}
           letterSpacing={-0.3}
         >
           {title}
         </Text>
       </XStack>
 
-      {/* 액션 버튼 */}
+      {/* 액션 버튼 - 시니어 모드에서 더 크게 */}
       {actionText && onAction && (
-        <Text
-          fontSize={14}
-          fontWeight="500"
-          color="$primary"
+        <XStack
+          paddingHorizontal={isSeniorMode ? '$3' : 0}
+          paddingVertical={isSeniorMode ? '$2' : 0}
+          borderRadius={isSeniorMode ? 8 : 0}
+          borderWidth={isSeniorMode ? 1 : 0}
+          borderColor={isSeniorMode ? (seniorStyles.colors.primary as any) : 'transparent'}
           pressStyle={{ opacity: 0.7 }}
           onPress={onAction}
         >
-          {actionText}
-        </Text>
+          <Text
+            fontSize={isSeniorMode ? seniorStyles.fontSize.medium : 14}
+            fontWeight={isSeniorMode ? '600' : '500'}
+            color={isSeniorMode ? (seniorStyles.colors.primary as any) : '$primary'}
+          >
+            {actionText} {isSeniorMode && '→'}
+          </Text>
+        </XStack>
       )}
     </XStack>
   );

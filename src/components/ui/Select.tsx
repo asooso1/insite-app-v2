@@ -184,7 +184,9 @@ export function Select({
             <OptionsHeader>
               <OptionsTitle>{title}</OptionsTitle>
               <Pressable onPress={() => setIsOpen(false)}>
-                <Text fontSize={16} color="$primary">닫기</Text>
+                <Text fontSize={16} color="$primary">
+                  닫기
+                </Text>
               </Pressable>
             </OptionsHeader>
 

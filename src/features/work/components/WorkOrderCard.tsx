@@ -8,11 +8,7 @@ import React from 'react';
 import { StyleSheet, Platform, ViewStyle, Pressable } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import type { WorkOrderDTO } from '@/api/generated/models';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 
@@ -29,12 +25,12 @@ interface WorkOrderCardProps {
  * 상태별 그라디언트 색상
  */
 const STATUS_GRADIENTS = {
-  WRITE: ['#64748B', '#94A3B8'] as [string, string],    // 작성 - 그레이
-  ISSUE: ['#00C853', '#69F0AE'] as [string, string],     // 발행 - 그린
+  WRITE: ['#64748B', '#94A3B8'] as [string, string], // 작성 - 그레이
+  ISSUE: ['#00C853', '#69F0AE'] as [string, string], // 발행 - 그린
   PROCESSING: ['#FF6B00', '#FFB800'] as [string, string], // 처리중 - 오렌지 (액센트)
   REQ_COMPLETE: ['#0066CC', '#00A3FF'] as [string, string], // 완료요청 - 블루
-  COMPLETE: ['#00A043', '#00C853'] as [string, string],  // 완료 - 다크그린
-  CANCEL: ['#DC2626', '#EF4444'] as [string, string],    // 취소 - 레드
+  COMPLETE: ['#00A043', '#00C853'] as [string, string], // 완료 - 다크그린
+  CANCEL: ['#DC2626', '#EF4444'] as [string, string], // 취소 - 레드
 } as const;
 
 type StatusGradientKey = keyof typeof STATUS_GRADIENTS;
@@ -109,11 +105,7 @@ export function WorkOrderCard({
   const displayProgress = workOrder.state === 'COMPLETE' ? 100 : progress;
 
   return (
-    <Pressable
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={handlePress}
-    >
+    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={handlePress}>
       <Animated.View style={animatedStyle}>
         <YStack
           marginHorizontal="$4"
@@ -121,27 +113,22 @@ export function WorkOrderCard({
           backgroundColor="$surface"
           borderRadius={20}
           overflow="hidden"
-          style={Platform.select({
-            ios: {
-              shadowColor: '#0066CC',
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.12,
-              shadowRadius: 20,
-            },
-            android: {
-              elevation: 6,
-            },
-          }) as ViewStyle}
+          style={
+            Platform.select({
+              ios: {
+                shadowColor: '#0066CC',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.12,
+                shadowRadius: 20,
+              },
+              android: {
+                elevation: 6,
+              },
+            }) as ViewStyle
+          }
         >
           {/* 그라디언트 상태 인디케이터 (좌측 보더) */}
-          <YStack
-            position="absolute"
-            left={0}
-            top={0}
-            bottom={0}
-            width={4}
-            overflow="hidden"
-          >
+          <YStack position="absolute" left={0} top={0} bottom={0} width={4} overflow="hidden">
             <LinearGradient
               colors={statusGradient}
               start={{ x: 0.5, y: 0 }}
@@ -154,10 +141,7 @@ export function WorkOrderCard({
             {/* 헤더: 상태 배지 + 날짜 */}
             <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
               {/* 상태 배지 (그라디언트) */}
-              <XStack
-                borderRadius={8}
-                overflow="hidden"
-              >
+              <XStack borderRadius={8} overflow="hidden">
                 <LinearGradient
                   colors={statusGradient}
                   start={{ x: 0, y: 0 }}
@@ -193,7 +177,9 @@ export function WorkOrderCard({
               <Text fontSize={13} color="$gray500">
                 {workOrder.buildingName}
               </Text>
-              <Text fontSize={13} color="$gray300">|</Text>
+              <Text fontSize={13} color="$gray300">
+                |
+              </Text>
               <Text fontSize={13} color="$gray500">
                 {workOrder.firstClassName}
               </Text>
@@ -202,16 +188,14 @@ export function WorkOrderCard({
             {!compact && (
               <>
                 {/* 구분선 */}
-                <YStack
-                  height={1}
-                  backgroundColor="$gray100"
-                  marginBottom="$3"
-                />
+                <YStack height={1} backgroundColor="$gray100" marginBottom="$3" />
 
                 {/* 담당자 + 항목 수 */}
                 <XStack justifyContent="space-between" alignItems="center">
                   <XStack gap="$1" alignItems="center">
-                    <Text fontSize={13} color="$gray400">담당:</Text>
+                    <Text fontSize={13} color="$gray400">
+                      담당:
+                    </Text>
                     <Text fontSize={13} fontWeight="600" color="$gray700">
                       {workOrder.writerName}
                     </Text>
@@ -219,7 +203,9 @@ export function WorkOrderCard({
 
                   {workOrder.itemSize !== undefined && workOrder.itemSize > 0 && (
                     <XStack
-                      backgroundColor={statusBg as `rgba(${number}, ${number}, ${number}, ${number})`}
+                      backgroundColor={
+                        statusBg as `rgba(${number}, ${number}, ${number}, ${number})`
+                      }
                       paddingHorizontal="$2"
                       paddingVertical="$1"
                       borderRadius={6}
@@ -234,18 +220,8 @@ export function WorkOrderCard({
                 {/* 프로그레스 바 (진행중 상태일 때) */}
                 {displayProgress !== undefined && workOrder.state === 'PROCESSING' && (
                   <YStack marginTop="$3">
-                    <ProgressBar
-                      progress={displayProgress}
-                      variant="accent"
-                      height={6}
-                      animated
-                    />
-                    <Text
-                      fontSize={11}
-                      color="$gray400"
-                      textAlign="right"
-                      marginTop="$1"
-                    >
+                    <ProgressBar progress={displayProgress} variant="accent" height={6} animated />
+                    <Text fontSize={11} color="$gray400" textAlign="right" marginTop="$1">
                       {displayProgress}% 완료
                     </Text>
                   </YStack>

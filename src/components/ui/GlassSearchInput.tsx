@@ -58,17 +58,19 @@ export function GlassSearchInput({
       paddingVertical="$3"
       alignItems="center"
       gap="$3"
-      style={Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
-        },
-        android: {
-          elevation: 2,
-        },
-      }) as ViewStyle}
+      style={
+        Platform.select({
+          ios: {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 8,
+          },
+          android: {
+            elevation: 2,
+          },
+        }) as ViewStyle
+      }
     >
       {/* 검색 아이콘 */}
       <Text fontSize={18} color="$gray400">
@@ -90,12 +92,7 @@ export function GlassSearchInput({
 
       {/* 클리어 버튼 */}
       {showClear && value.length > 0 && (
-        <Text
-          fontSize={16}
-          color="$gray400"
-          pressStyle={{ opacity: 0.6 }}
-          onPress={handleClear}
-        >
+        <Text fontSize={16} color="$gray400" pressStyle={{ opacity: 0.6 }} onPress={handleClear}>
           ✕
         </Text>
       )}

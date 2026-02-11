@@ -10,6 +10,7 @@ interface UIState {
   isSeniorMode: boolean;
   themeMode: ThemeMode;
   isOnline: boolean;
+  isHydrated: boolean; // persist 복원 완료 여부
 
   // Actions
   setLoading: (isLoading: boolean) => void;
@@ -27,13 +28,21 @@ export const useUIStore = create<UIState>()(
       isSeniorMode: false,
       themeMode: 'light',
       isOnline: true,
+      isHydrated: false,
 
       // Actions
       setLoading: (isLoading) => set({ isLoading }),
 
-      setSeniorMode: (isSeniorMode) => set({ isSeniorMode }),
+      setSeniorMode: (isSeniorMode) => {
+        console.log('[UIStore] 시니어 모드 설정:', isSeniorMode);
+        set({ isSeniorMode });
+      },
 
-      toggleSeniorMode: () => set({ isSeniorMode: !get().isSeniorMode }),
+      toggleSeniorMode: () => {
+        const newValue = !get().isSeniorMode;
+        console.log('[UIStore] 시니어 모드 토글:', newValue);
+        set({ isSeniorMode: newValue });
+      },
 
       setThemeMode: (themeMode) => set({ themeMode }),
 
@@ -46,6 +55,20 @@ export const useUIStore = create<UIState>()(
         isSeniorMode: state.isSeniorMode,
         themeMode: state.themeMode,
       }),
+      onRehydrateStorage: () => (state) => {
+        // persist 복원 완료 시 호출
+        if (state) {
+          console.log('[UIStore] Hydration 완료, 시니어 모드:', state.isSeniorMode);
+          state.isHydrated = true;
+        }
+      },
     }
   )
 );
+
+// Hydration 완료 후 상태 업데이트를 위한 리스너
+// (onRehydrateStorage가 set을 호출할 수 없으므로 별도 처리)
+useUIStore.persist.onFinishHydration(() => {
+  console.log('[UIStore] Hydration 완료 이벤트');
+  useUIStore.setState({ isHydrated: true });
+});

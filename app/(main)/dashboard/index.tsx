@@ -3,29 +3,31 @@
  *
  * 2026 Modern UI - 그라디언트 헤더, 통계 카드, 도넛/막대 차트
  * 실시간 운영 현황 및 통계 시각화
+ * Lucide Icons 사용
+ * 시니어 모드 지원: 차트 라벨 크기 확대, 고대비 색상
  */
 import React, { useState, useCallback } from 'react';
 import { ScrollView, RefreshControl, StyleSheet, View } from 'react-native';
-import { YStack, XStack, Text } from 'tamagui';
+import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
-import {
-  StatCardRow,
-  DonutChart,
-  BarChart,
-} from '@/features/dashboard';
+import { StatCardRow, DonutChart, BarChart } from '@/features/dashboard';
 import { mockDashboardStats } from '@/features/dashboard';
 import { SkeletonCard } from '@/components/ui';
+import { LAYOUT } from '@/theme/tokens';
+import type { IconName } from '@/components/icons';
+import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 
 /**
  * 운영 대시보드 화면
  */
 export default function OperationDashboard() {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const [isLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { isSeniorMode } = useSeniorStyles();
 
   // 데이터 새로고침
   const handleRefresh = useCallback(async () => {
@@ -40,19 +42,19 @@ export default function OperationDashboard() {
     {
       label: '작업',
       value: mockDashboardStats.work.total,
-      icon: '📋',
+      icon: 'work' as IconName,
       gradient: ['#0066CC', '#00A3FF'] as const,
     },
     {
       label: '순찰',
       value: mockDashboardStats.patrol.total,
-      icon: '🔍',
+      icon: 'patrol' as IconName,
       gradient: ['#FF6B00', '#FFB800'] as const,
     },
     {
       label: '알람',
       value: 3, // Mock 알람 수
-      icon: '🔔',
+      icon: 'alarm' as IconName,
       gradient: ['#EF4444', '#F87171'] as const,
     },
   ];
@@ -105,7 +107,7 @@ export default function OperationDashboard() {
   return (
     <View style={styles.container}>
       {/* 그라디언트 헤더 */}
-      <Animated.View entering={FadeIn.duration(500)}>
+      <View>
         <LinearGradient
           colors={['#0066CC', '#00A3FF']}
           start={{ x: 0, y: 0 }}
@@ -120,58 +122,63 @@ export default function OperationDashboard() {
             <Text fontSize={28} fontWeight="800" color="white" letterSpacing={-0.5}>
               대시보드
             </Text>
-            <Text fontSize={15} color="rgba(255, 255, 255, 0.85)">
+            <Text fontSize={15} color="$glassWhite85">
               실시간 현황을 확인하세요
             </Text>
           </YStack>
         </LinearGradient>
-      </Animated.View>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.primary.val}
+            colors={[theme.primary.val]}
+          />
         }
         showsVerticalScrollIndicator={false}
       >
         {/* 통계 카드 행 */}
-        <Animated.View entering={FadeInDown.delay(100).springify()}>
+        <View>
           <YStack marginTop="$4">
             <StatCardRow items={statItems} animationDelay={200} />
           </YStack>
-        </Animated.View>
+        </View>
 
-        {/* 작업 현황 도넛 차트 */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
+        {/* 작업 현황 도넛 차트 (시니어 모드: 크기 확대) */}
+        <View>
           <YStack paddingHorizontal="$4" marginTop="$4">
             <DonutChart
               title="작업 현황"
               segments={workChartSegments}
-              size={130}
-              strokeWidth={18}
+              size={isSeniorMode ? 150 : 130}
+              strokeWidth={isSeniorMode ? 20 : 18}
             />
           </YStack>
-        </Animated.View>
+        </View>
 
-        {/* 순찰 현황 막대 차트 */}
-        <Animated.View entering={FadeInDown.delay(300).springify()}>
+        {/* 순찰 현황 막대 차트 (시니어 모드: 높이 확대) */}
+        <View>
           <YStack paddingHorizontal="$4" marginTop="$4">
             <BarChart
               title="순찰 현황"
               subtitle="구역별 완료 현황"
               items={patrolBarItems}
-              barHeight={26}
+              barHeight={isSeniorMode ? 32 : 26}
             />
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 주간 추세 섹션 */}
-        <Animated.View entering={FadeInDown.delay(400).springify()}>
+        <View>
           <YStack paddingHorizontal="$4" marginTop="$4">
             <WeeklyTrendCard data={mockDashboardStats.weeklyTrend} />
           </YStack>
-        </Animated.View>
+        </View>
 
         {/* 하단 여백 */}
         <YStack height={40} />
@@ -181,39 +188,41 @@ export default function OperationDashboard() {
 }
 
 /**
- * 주간 추세 카드 컴포넌트
+ * 주간 추세 카드 컴포넌트 (시니어 모드 지원)
  */
-function WeeklyTrendCard({
-  data,
-}: {
-  data: Array<{ day: string; work: number; patrol: number }>;
-}) {
+function WeeklyTrendCard({ data }: { data: { day: string; work: number; patrol: number }[] }) {
   const maxValue = Math.max(...data.map((d) => Math.max(d.work, d.patrol)));
+  const { isSeniorMode, fontSize, card: cardStyles } = useSeniorStyles();
 
   return (
     <YStack
       backgroundColor="$white"
       borderRadius="$5"
       padding="$4"
-      borderWidth={1}
-      borderColor="rgba(226, 232, 240, 0.8)"
+      borderWidth={isSeniorMode ? cardStyles.borderWidth : 1}
+      borderColor={isSeniorMode ? (cardStyles.borderColor as any) : 'rgba(226, 232, 240, 0.8)'}
       style={styles.card}
     >
       {/* 헤더 */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
-        <Text fontSize={18} fontWeight="700" color="$gray900" letterSpacing={-0.3}>
+        <Text
+          fontSize={isSeniorMode ? fontSize.large : 18}
+          fontWeight="700"
+          color="$gray900"
+          letterSpacing={-0.3}
+        >
           주간 추세
         </Text>
         <XStack gap="$3">
           <XStack alignItems="center" gap="$1">
             <View style={[styles.legendDot, { backgroundColor: '#0066CC' }]} />
-            <Text fontSize={12} color="$gray500">
+            <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$gray500">
               작업
             </Text>
           </XStack>
           <XStack alignItems="center" gap="$1">
             <View style={[styles.legendDot, { backgroundColor: '#FF6B00' }]} />
-            <Text fontSize={12} color="$gray500">
+            <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$gray500">
               순찰
             </Text>
           </XStack>
@@ -222,35 +231,25 @@ function WeeklyTrendCard({
 
       {/* 막대 그래프 */}
       <XStack justifyContent="space-between" alignItems="flex-end" height={100}>
-        {data.map((item, index) => (
+        {data.map((item) => (
           <YStack key={item.day} alignItems="center" gap="$2" flex={1}>
             <XStack gap={3} alignItems="flex-end" height={80}>
               {/* 작업 막대 */}
-              <Animated.View
-                entering={FadeInDown.delay(500 + index * 50).springify()}
-              >
+              <View>
                 <LinearGradient
                   colors={['#0066CC', '#00A3FF']}
-                  style={[
-                    styles.trendBar,
-                    { height: (item.work / maxValue) * 70 || 4 },
-                  ]}
+                  style={[styles.trendBar, { height: (item.work / maxValue) * 70 || 4 }]}
                 />
-              </Animated.View>
+              </View>
               {/* 순찰 막대 */}
-              <Animated.View
-                entering={FadeInDown.delay(550 + index * 50).springify()}
-              >
+              <View>
                 <LinearGradient
                   colors={['#FF6B00', '#FFB800']}
-                  style={[
-                    styles.trendBar,
-                    { height: (item.patrol / maxValue) * 70 || 4 },
-                  ]}
+                  style={[styles.trendBar, { height: (item.patrol / maxValue) * 70 || 4 }]}
                 />
-              </Animated.View>
+              </View>
             </XStack>
-            <Text fontSize={12} color="$gray500">
+            <Text fontSize={isSeniorMode ? fontSize.small : 12} color="$gray500">
               {item.day}
             </Text>
           </YStack>
@@ -271,18 +270,18 @@ const styles = StyleSheet.create({
   },
   headerDecor1: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: LAYOUT.DECOR_CIRCLE_LARGE,
+    height: LAYOUT.DECOR_CIRCLE_LARGE,
+    borderRadius: LAYOUT.DECOR_CIRCLE_LARGE / 2,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     top: -80,
     right: -40,
   },
   headerDecor2: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: LAYOUT.DECOR_CIRCLE_MEDIUM,
+    height: LAYOUT.DECOR_CIRCLE_MEDIUM,
+    borderRadius: LAYOUT.DECOR_CIRCLE_MEDIUM / 2,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     bottom: -30,
     left: -20,
@@ -294,7 +293,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   card: {
-    shadowColor: '#0066CC',
+    shadowColor: '#0066CC', // theme.primary는 StyleSheet.create에서 사용 불가
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,

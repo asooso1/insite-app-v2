@@ -6,7 +6,6 @@
  */
 import React, { useState } from 'react';
 import { styled, YStack, XStack, Text, View } from 'tamagui';
-import { useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import { Input, InputProps } from './Input';
 
 /**
@@ -170,28 +169,19 @@ export function TextField({
   ...inputProps
 }: TextFieldProps) {
   const [isFocused, setIsFocused] = useState(false);
-  const focusAnim = useSharedValue(0);
 
   const hasError = !!errorMessage;
   const hasSuccess = !!successMessage;
   const inputSize = size as 'sm' | 'md' | 'lg' | 'senior';
 
-  // 포커스 애니메이션
+  // 포커스 핸들러
   const handleFocus = (e: any) => {
     setIsFocused(true);
-    focusAnim.value = withTiming(1, {
-      duration: 200,
-      easing: Easing.out(Easing.cubic),
-    });
     onFocus?.(e);
   };
 
   const handleBlur = (e: any) => {
     setIsFocused(false);
-    focusAnim.value = withTiming(0, {
-      duration: 200,
-      easing: Easing.out(Easing.cubic),
-    });
     onBlur?.(e);
   };
 
@@ -208,11 +198,7 @@ export function TextField({
       {/* 라벨 */}
       {label && (
         <XStack alignItems="center">
-          <TextFieldLabel
-            error={hasError}
-            focused={isFocused && !hasError}
-            size={inputSize}
-          >
+          <TextFieldLabel error={hasError} focused={isFocused && !hasError} size={inputSize}>
             {label}
           </TextFieldLabel>
           {required && <RequiredMark>*</RequiredMark>}
@@ -308,7 +294,9 @@ export function PasswordField({
     <TextField
       {...props}
       secureTextEntry={!showPassword}
-      rightIcon={showPassword ? hidePasswordIcon || defaultHideIcon : showPasswordIcon || defaultShowIcon}
+      rightIcon={
+        showPassword ? hidePasswordIcon || defaultHideIcon : showPasswordIcon || defaultShowIcon
+      }
       onRightIconPress={togglePasswordVisibility}
     />
   );
@@ -323,13 +311,7 @@ interface SearchFieldProps extends TextFieldProps {
   onClear?: () => void;
 }
 
-export function SearchField({
-  searchIcon,
-  clearIcon,
-  onClear,
-  value,
-  ...props
-}: SearchFieldProps) {
+export function SearchField({ searchIcon, clearIcon, onClear, value, ...props }: SearchFieldProps) {
   const hasValue = typeof value === 'string' && value.length > 0;
 
   // 기본 검색 아이콘 (텍스트 기반)

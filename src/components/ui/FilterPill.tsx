@@ -64,17 +64,19 @@ export function FilterPill({
         pressStyle={{ opacity: 0.9, scale: 0.97 }}
         onPress={disabled ? undefined : onPress}
         opacity={disabled ? 0.5 : 1}
-        style={Platform.select({
-          ios: {
-            shadowColor: '#0066CC',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 6,
-          },
-          android: {
-            elevation: 3,
-          },
-        }) as ViewStyle}
+        style={
+          Platform.select({
+            ios: {
+              shadowColor: '#0066CC',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 6,
+            },
+            android: {
+              elevation: 3,
+            },
+          }) as ViewStyle
+        }
       >
         <LinearGradient
           colors={[...gradients.primary]}
@@ -88,11 +90,7 @@ export function FilterPill({
             },
           ]}
         >
-          <Text
-            fontSize={sizing.fontSize}
-            fontWeight="600"
-            color="$white"
-          >
+          <Text fontSize={sizing.fontSize} fontWeight="600" color="$white">
             {label}
           </Text>
         </LinearGradient>
@@ -112,11 +110,7 @@ export function FilterPill({
       onPress={disabled ? undefined : onPress}
       opacity={disabled ? 0.5 : 1}
     >
-      <Text
-        fontSize={sizing.fontSize}
-        fontWeight="500"
-        color="$gray600"
-      >
+      <Text fontSize={sizing.fontSize} fontWeight="500" color="$gray600">
         {label}
       </Text>
     </XStack>

@@ -2,6 +2,7 @@
  * 알람 대시보드 화면
  *
  * Sprint 3.3 - 시스템 알람 목록, 심각도별 필터, 상세 모달 표시
+ * Lucide Icons 사용
  */
 import React, { useState, useMemo } from 'react';
 import { YStack } from 'tamagui';
@@ -17,6 +18,7 @@ import {
 } from '@/features/dashboard/components';
 import type { AlarmDTO, AlarmSeverity } from '@/features/dashboard/types/alarm.types';
 import { mockAlarms, mockAlarmStats } from '@/features/dashboard/data/mockAlarms';
+import { AppIcon } from '@/components/icons';
 
 /**
  * 알람 대시보드 화면
@@ -98,7 +100,7 @@ export default function AlarmDashboardScreen() {
             }}
             ListEmptyComponent={
               <EmptyState
-                icon="🔕"
+                icon={<AppIcon name="alarmOff" size="xl" color="$gray400" />}
                 title="알람이 없습니다"
                 description={
                   selectedSeverity

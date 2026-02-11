@@ -64,11 +64,7 @@ export function Skeleton({
 
   return (
     <Animated.View style={{ opacity }}>
-      <SkeletonBase
-        width={width as number}
-        height={height}
-        borderRadius={getRadius()}
-      />
+      <SkeletonBase width={width as number} height={height} borderRadius={getRadius()} />
     </Animated.View>
   );
 }
@@ -77,11 +73,7 @@ export function SkeletonText({ lines = 3, spacing = 8 }: { lines?: number; spaci
   return (
     <YStack gap={spacing}>
       {Array.from({ length: lines }).map((_, i) => (
-        <Skeleton
-          key={i}
-          height={16}
-          width={i === lines - 1 ? '60%' : '100%'}
-        />
+        <Skeleton key={i} height={16} width={i === lines - 1 ? '60%' : '100%'} />
       ))}
     </YStack>
   );

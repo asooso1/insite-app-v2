@@ -72,11 +72,7 @@ export function ProgressRing({
   }, [progress, duration, animatedProgress]);
 
   const animatedProps = useAnimatedProps(() => {
-    const strokeDashoffset = interpolate(
-      animatedProgress.value,
-      [0, 100],
-      [circumference, 0]
-    );
+    const strokeDashoffset = interpolate(animatedProgress.value, [0, 100], [circumference, 0]);
     return {
       strokeDashoffset,
     };
@@ -120,11 +116,7 @@ export function ProgressRing({
 
       {/* 중앙 텍스트 */}
       {showText && (
-        <YStack
-          position="absolute"
-          alignItems="center"
-          justifyContent="center"
-        >
+        <YStack position="absolute" alignItems="center" justifyContent="center">
           <Text
             fontSize={size * 0.22}
             fontWeight="700"

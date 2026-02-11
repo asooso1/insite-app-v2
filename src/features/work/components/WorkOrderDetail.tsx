@@ -110,16 +110,8 @@ export function WorkOrderDetail({ workOrder }: WorkOrderDetailProps) {
         <YStack gap="$3">
           <SectionHeader title="일정 정보" />
           <YStack gap="$2">
-            <InfoRow
-              label="계획 시작일"
-              value={workOrder.planStartDate}
-              highlight
-            />
-            <InfoRow
-              label="계획 종료일"
-              value={workOrder.planEndDate}
-              highlight
-            />
+            <InfoRow label="계획 시작일" value={workOrder.planStartDate} highlight />
+            <InfoRow label="계획 종료일" value={workOrder.planEndDate} highlight />
             <InfoRow label="작성일" value={workOrder.writeDate} />
           </YStack>
         </YStack>

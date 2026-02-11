@@ -1,7 +1,16 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
+import {
+  format,
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  isToday,
+} from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 interface ScheduleItem {
@@ -16,9 +25,7 @@ const mockSchedules: Record<string, ScheduleItem[]> = {
     { id: '1', title: '냉방기 필터 청소', type: 'work', time: '09:00' },
     { id: '2', title: '오전 순찰', type: 'patrol', time: '10:00' },
   ],
-  '2024-01-16': [
-    { id: '3', title: '전등 교체', type: 'work', time: '14:00' },
-  ],
+  '2024-01-16': [{ id: '3', title: '전등 교체', type: 'work', time: '14:00' }],
 };
 
 export default function CalendarScreen() {
@@ -52,9 +59,7 @@ export default function CalendarScreen() {
         <TouchableOpacity onPress={goToPreviousMonth} style={styles.navButton}>
           <Text style={styles.navButtonText}>{'<'}</Text>
         </TouchableOpacity>
-        <Text style={styles.monthTitle}>
-          {format(currentMonth, 'yyyy년 M월', { locale: ko })}
-        </Text>
+        <Text style={styles.monthTitle}>{format(currentMonth, 'yyyy년 M월', { locale: ko })}</Text>
         <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
           <Text style={styles.navButtonText}>{'>'}</Text>
         </TouchableOpacity>
@@ -66,11 +71,13 @@ export default function CalendarScreen() {
         <View style={styles.weekDaysRow}>
           {weekDays.map((day, index) => (
             <View key={day} style={styles.weekDayCell}>
-              <Text style={[
-                styles.weekDayText,
-                index === 0 && styles.sundayText,
-                index === 6 && styles.saturdayText,
-              ]}>
+              <Text
+                style={[
+                  styles.weekDayText,
+                  index === 0 && styles.sundayText,
+                  index === 6 && styles.saturdayText,
+                ]}
+              >
                 {day}
               </Text>
             </View>
@@ -101,13 +108,15 @@ export default function CalendarScreen() {
                 ]}
                 onPress={() => setSelectedDate(day)}
               >
-                <Text style={[
-                  styles.dayText,
-                  isSelected && styles.dayTextSelected,
-                  isDayToday && !isSelected && styles.dayTextToday,
-                  day.getDay() === 0 && styles.sundayText,
-                  day.getDay() === 6 && styles.saturdayText,
-                ]}>
+                <Text
+                  style={[
+                    styles.dayText,
+                    isSelected && styles.dayTextSelected,
+                    isDayToday && !isSelected && styles.dayTextToday,
+                    day.getDay() === 0 && styles.sundayText,
+                    day.getDay() === 6 && styles.saturdayText,
+                  ]}
+                >
                   {format(day, 'd')}
                 </Text>
                 {hasSchedule && <View style={styles.scheduleIndicator} />}
@@ -126,14 +135,18 @@ export default function CalendarScreen() {
           {selectedSchedules.length > 0 ? (
             selectedSchedules.map((schedule) => (
               <View key={schedule.id} style={styles.scheduleItem}>
-                <View style={[
-                  styles.scheduleTypeBadge,
-                  { backgroundColor: schedule.type === 'work' ? '#E6F0FF' : '#E6F7F1' }
-                ]}>
-                  <Text style={[
-                    styles.scheduleTypeText,
-                    { color: schedule.type === 'work' ? '#0064FF' : '#12805C' }
-                  ]}>
+                <View
+                  style={[
+                    styles.scheduleTypeBadge,
+                    { backgroundColor: schedule.type === 'work' ? '#E6F0FF' : '#E6F7F1' },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.scheduleTypeText,
+                      { color: schedule.type === 'work' ? '#0064FF' : '#12805C' },
+                    ]}
+                  >
                     {schedule.type === 'work' ? '작업' : '순찰'}
                   </Text>
                 </View>

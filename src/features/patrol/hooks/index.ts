@@ -6,5 +6,13 @@
 
 export { usePatrolTargets, calculatePatrolProgress } from './usePatrolTargets';
 export { usePatrolItems } from './usePatrolItems';
-export { usePatrolResult, useSavePatrolResultMutation, useUpdatePatrolResultMutation, createPatrolResultFormData } from './usePatrolResult';
-export { useUpdatePatrolZoneStateMutation, useRequestCompletePatrolMutation } from './usePatrolActions';
+export {
+  usePatrolResult,
+  useSavePatrolResultMutation,
+  useUpdatePatrolResultMutation,
+  createPatrolResultFormData,
+} from './usePatrolResult';
+export {
+  useUpdatePatrolZoneStateMutation,
+  useRequestCompletePatrolMutation,
+} from './usePatrolActions';

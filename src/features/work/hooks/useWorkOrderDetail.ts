@@ -33,10 +33,7 @@ interface UseWorkOrderDetailOptions {
  * } = useWorkOrderDetail({ workOrderId: 123 });
  * ```
  */
-export function useWorkOrderDetail({
-  workOrderId,
-  enabled = true,
-}: UseWorkOrderDetailOptions) {
+export function useWorkOrderDetail({ workOrderId, enabled = true }: UseWorkOrderDetailOptions) {
   const queryClient = useQueryClient();
 
   // 상세 정보 조회

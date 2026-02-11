@@ -55,6 +55,32 @@ const colors = {
   gray800: '#1E293B',
   gray900: '#0F172A',
 
+  // Glass 스타일용 투명도 토큰
+  glassWhite5: 'rgba(255, 255, 255, 0.05)',
+  glassWhite8: 'rgba(255, 255, 255, 0.08)',
+  glassWhite10: 'rgba(255, 255, 255, 0.1)',
+  glassWhite15: 'rgba(255, 255, 255, 0.15)',
+  glassWhite20: 'rgba(255, 255, 255, 0.2)',
+  glassWhite25: 'rgba(255, 255, 255, 0.25)',
+  glassWhite30: 'rgba(255, 255, 255, 0.3)',
+  glassWhite40: 'rgba(255, 255, 255, 0.4)',
+  glassWhite50: 'rgba(255, 255, 255, 0.5)',
+  glassWhite70: 'rgba(255, 255, 255, 0.7)',
+  glassWhite85: 'rgba(255, 255, 255, 0.85)',
+  glassWhite90: 'rgba(255, 255, 255, 0.9)',
+
+  glassBlack5: 'rgba(0, 0, 0, 0.05)',
+  glassBlack10: 'rgba(0, 0, 0, 0.1)',
+  glassBlack20: 'rgba(0, 0, 0, 0.2)',
+
+  // 그라디언트 장식용 투명 컬러
+  glassBlue10: 'rgba(0, 163, 255, 0.1)',
+  glassBlue30: 'rgba(0, 163, 255, 0.3)',
+  glassOrange5: 'rgba(255, 184, 0, 0.05)',
+  glassOrange20: 'rgba(255, 107, 0, 0.2)',
+  glassRed15: 'rgba(239, 68, 68, 0.15)',
+  glassRed30: 'rgba(239, 68, 68, 0.3)',
+
   // 기본 컬러
   white: '#FFFFFF',
   black: '#000000',
@@ -87,7 +113,11 @@ export const gradients = {
   backgroundDark: ['#0F172A', '#1E293B'] as const,
 
   // 특수 효과
-  shimmer: ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.5)', 'rgba(255, 255, 255, 0)'] as const,
+  shimmer: [
+    'rgba(255, 255, 255, 0)',
+    'rgba(255, 255, 255, 0.5)',
+    'rgba(255, 255, 255, 0)',
+  ] as const,
   glow: ['rgba(0, 102, 204, 0.3)', 'rgba(0, 163, 255, 0.1)', 'rgba(0, 163, 255, 0)'] as const,
 };
 
@@ -181,6 +211,29 @@ const spacing = {
   32: 128,
   true: 16, // 기본값
 };
+
+/**
+ * 레이아웃 상수
+ * UI 레이아웃에서 반복적으로 사용되는 값들
+ */
+export const LAYOUT = {
+  // 헤더 관련
+  HEADER_PADDING: 16,
+  HEADER_TOP_OFFSET: -32, // Glass Card 오버랩 오프셋
+  HEADER_HEIGHT_DEFAULT: 180,
+
+  // 컨텐츠 간격
+  SECTION_SPACING: 24,
+  CARD_SPACING: 20,
+
+  // 하단 탭바 안전 영역
+  TAB_BAR_BOTTOM: 100,
+
+  // 장식 요소
+  DECOR_CIRCLE_LARGE: 200,
+  DECOR_CIRCLE_MEDIUM: 120,
+  DECOR_CIRCLE_SMALL: 80,
+} as const;
 
 /**
  * 사이즈 토큰

@@ -85,11 +85,7 @@ export function PatrolCardEnhanced({
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[
-        styles.container,
-        animatedStyle,
-        highlighted && styles.highlightedContainer,
-      ]}
+      style={[styles.container, animatedStyle, highlighted && styles.highlightedContainer]}
     >
       {/* 하이라이트 글로우 효과 */}
       {highlighted && (
@@ -119,10 +115,7 @@ export function PatrolCardEnhanced({
               justifyContent="center"
               overflow="hidden"
             >
-              <LinearGradient
-                colors={['#F1F5F9', '#E2E8F0']}
-                style={StyleSheet.absoluteFill}
-              />
+              <LinearGradient colors={['#F1F5F9', '#E2E8F0']} style={StyleSheet.absoluteFill} />
               <Text fontSize={22}>🏢</Text>
             </YStack>
 
@@ -170,12 +163,7 @@ export function PatrolCardEnhanced({
         </XStack>
 
         {/* 구분선 */}
-        <YStack
-          height={1}
-          backgroundColor="$gray200"
-          marginBottom="$3"
-          opacity={0.6}
-        />
+        <YStack height={1} backgroundColor="$gray200" marginBottom="$3" opacity={0.6} />
 
         {/* 체크포인트 경로 프리뷰 */}
         {routePreview && (
@@ -183,12 +171,7 @@ export function PatrolCardEnhanced({
             <Text fontSize={13} color="$gray500">
               📍
             </Text>
-            <Text
-              fontSize={13}
-              color="$gray600"
-              numberOfLines={1}
-              flex={1}
-            >
+            <Text fontSize={13} color="$gray600" numberOfLines={1} flex={1}>
               {routePreview}
             </Text>
           </XStack>
@@ -205,12 +188,7 @@ export function PatrolCardEnhanced({
             </Text>
           </XStack>
 
-          <YStack
-            height={8}
-            backgroundColor="$gray100"
-            borderRadius="$full"
-            overflow="hidden"
-          >
+          <YStack height={8} backgroundColor="$gray100" borderRadius="$full" overflow="hidden">
             <LinearGradient
               colors={statusGradient}
               start={{ x: 0, y: 0 }}

@@ -99,15 +99,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
           <YStack alignItems="center" gap={8}>
             <ErrorTitle>문제가 발생했습니다</ErrorTitle>
-            <ErrorMessage>
-              예상치 못한 오류가 발생했습니다. 다시 시도해주세요.
-            </ErrorMessage>
+            <ErrorMessage>예상치 못한 오류가 발생했습니다. 다시 시도해주세요.</ErrorMessage>
           </YStack>
 
           {__DEV__ && this.state.error && (
-            <ErrorDetails numberOfLines={5}>
-              {this.state.error.message}
-            </ErrorDetails>
+            <ErrorDetails numberOfLines={5}>{this.state.error.message}</ErrorDetails>
           )}
 
           <Button variant="primary" onPress={this.handleReset}>
