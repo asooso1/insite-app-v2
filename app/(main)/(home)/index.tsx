@@ -137,21 +137,21 @@ export default function HomeScreen() {
                 value={todayStats.work}
                 label="작업"
                 variant="primary"
-                onPress={() => router.push('/(main)/work')}
+                onPress={() => router.push('/(main)/(home)/work')}
               />
               <QuickStatCard
                 icon="patrol"
                 value={todayStats.patrol}
                 label="순찰"
                 variant="accent"
-                onPress={() => router.push('/(main)/patrol')}
+                onPress={() => router.push('/(main)/(home)/patrol')}
               />
               <QuickStatCard
                 icon="warning"
                 value={todayStats.alarm}
                 label="알람"
                 variant="warning"
-                onPress={() => router.push('/(main)/dashboard/alarm')}
+                onPress={() => router.push('/(main)/(home)/dashboard/alarm')}
               />
               <QuickStatCard
                 icon="success"
@@ -180,13 +180,13 @@ export default function HomeScreen() {
                     icon="work"
                     label="작업지시"
                     description="작업 목록 보기"
-                    onPress={() => router.push('/(main)/work')}
+                    onPress={() => router.push('/(main)/(home)/work')}
                   />
                   <SeniorQuickActionButton
                     icon="patrol"
                     label="순찰점검"
                     description="순찰 목록 보기"
-                    onPress={() => router.push('/(main)/patrol')}
+                    onPress={() => router.push('/(main)/(home)/patrol')}
                   />
                 </XStack>
                 <XStack gap="$4">
@@ -194,13 +194,13 @@ export default function HomeScreen() {
                     icon="document"
                     label="일상업무"
                     description="일상업무 현황"
-                    onPress={() => router.push('/(main)/personal-task')}
+                    onPress={() => router.push('/(main)/(home)/personal-task')}
                   />
                   <SeniorQuickActionButton
                     icon="notice"
                     label="고객불편"
                     description="고객불편 접수"
-                    onPress={() => router.push('/(main)/claim')}
+                    onPress={() => router.push('/(main)/(home)/claim')}
                   />
                 </XStack>
                 <XStack gap="$4">
@@ -208,13 +208,13 @@ export default function HomeScreen() {
                     icon="settings"
                     label="설비정보"
                     description="설비 조회"
-                    onPress={() => router.push('/(main)/facility')}
+                    onPress={() => router.push('/(main)/(home)/facility')}
                   />
                   <SeniorQuickActionButton
                     icon="success"
                     label="승인/확인"
                     description="업무 승인"
-                    onPress={() => router.push('/(main)/approval')}
+                    onPress={() => router.push('/(main)/(home)/approval')}
                   />
                 </XStack>
                 <XStack gap="$4">
@@ -222,7 +222,7 @@ export default function HomeScreen() {
                     icon="dashboard"
                     label="대시보드"
                     description="통계 보기"
-                    onPress={() => router.push('/(main)/dashboard')}
+                    onPress={() => router.push('/(main)/(home)/dashboard')}
                   />
                   <SeniorQuickActionButton
                     icon="nfc"
@@ -239,39 +239,39 @@ export default function HomeScreen() {
                   <QuickActionButton
                     icon="work"
                     label="작업지시"
-                    onPress={() => router.push('/(main)/work')}
+                    onPress={() => router.push('/(main)/(home)/work')}
                   />
                   <QuickActionButton
                     icon="patrol"
                     label="순찰점검"
-                    onPress={() => router.push('/(main)/patrol')}
+                    onPress={() => router.push('/(main)/(home)/patrol')}
                   />
                   <QuickActionButton
                     icon="document"
                     label="일상업무"
-                    onPress={() => router.push('/(main)/personal-task')}
+                    onPress={() => router.push('/(main)/(home)/personal-task')}
                   />
                   <QuickActionButton
                     icon="notice"
                     label="고객불편"
-                    onPress={() => router.push('/(main)/claim')}
+                    onPress={() => router.push('/(main)/(home)/claim')}
                   />
                 </XStack>
                 <XStack gap="$3">
                   <QuickActionButton
                     icon="settings"
                     label="설비정보"
-                    onPress={() => router.push('/(main)/facility')}
+                    onPress={() => router.push('/(main)/(home)/facility')}
                   />
                   <QuickActionButton
                     icon="success"
                     label="승인/확인"
-                    onPress={() => router.push('/(main)/approval')}
+                    onPress={() => router.push('/(main)/(home)/approval')}
                   />
                   <QuickActionButton
                     icon="dashboard"
                     label="대시보드"
-                    onPress={() => router.push('/(main)/dashboard')}
+                    onPress={() => router.push('/(main)/(home)/dashboard')}
                   />
                   <QuickActionButton
                     icon="nfc"
@@ -290,7 +290,7 @@ export default function HomeScreen() {
             <SectionHeader
               title="진행 중인 작업"
               actionText="전체보기"
-              onAction={() => router.push('/(main)/work')}
+              onAction={() => router.push('/(main)/(home)/work')}
               showAccent
               fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
             />
@@ -318,7 +318,7 @@ export default function HomeScreen() {
             <SectionHeader
               title="오늘의 순찰"
               actionText="전체보기"
-              onAction={() => router.push('/(main)/patrol')}
+              onAction={() => router.push('/(main)/(home)/patrol')}
               showAccent
               fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
             />

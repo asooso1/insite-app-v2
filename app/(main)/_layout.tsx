@@ -58,6 +58,7 @@ export default function MainLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        // @ts-expect-error expo-router href 타입 이슈
         href: null, // 기본적으로 모든 라우트를 탭에서 숨김
         tabBarActiveTintColor: activeTintColor,
         tabBarInactiveTintColor: inactiveTintColor,
