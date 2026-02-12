@@ -1,7 +1,7 @@
 /**
  * 로그인 화면
  *
- * 순수 React Native 컴포넌트 사용 (Tamagui 제거)
+ * 시니어 친화적 디자인 (따뜻한 색상, 고대비, 큰 터치 영역)
  */
 import React, { useEffect, useState } from 'react';
 import {
@@ -12,23 +12,48 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
   StatusBar,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
-import { Link, useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { useRouter } from 'expo-router';
+import { User, Lock, Check, Eye, EyeOff } from '@tamagui/lucide-icons';
 import { APP_NAME } from '@/constants/config';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLogin } from '@/features/auth/hooks/useLogin';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
-import { SeniorButton } from '@/components/ui/SeniorButton';
 
-const { height } = Dimensions.get('window');
+// 시니어 친화적 색상 팔레트
+const COLORS = {
+  // 배경
+  background: '#F5F0E8', // 따뜻한 아이보리
+  backgroundDark: '#E8E0D4', // 살짝 어두운 아이보리
+
+  // 주요 색상
+  primary: '#D35400', // 주황 (버튼)
+  primaryDark: '#A84300', // 눌렸을 때
+  primaryLight: '#E67E22', // 호버
+
+  // 텍스트
+  textPrimary: '#2C2C2C', // 진한 회색
+  textSecondary: '#5C5C5C', // 중간 회색
+  textMuted: '#8C8C8C', // 연한 회색
+
+  // 입력 필드
+  inputBackground: '#FFFFFF',
+  inputBorder: '#CCCCCC',
+  inputBorderFocus: '#D35400',
+
+  // 상태
+  error: '#C0392B',
+  errorBg: '#FADBD8',
+  success: '#27AE60',
+
+  // 서버 상태
+  serverDot: '#27AE60',
+};
 
 export default function LoginScreen() {
-  // ===== 모든 HOOKS를 최상단에서 호출 =====
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { login, isLoading, error } = useLogin();
@@ -37,12 +62,9 @@ export default function LoginScreen() {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [autoLogin, setAutoLogin] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
 
-  /**
-   * 인증 상태 변경 시 홈 화면으로 리다이렉트
-   * requestAnimationFrame으로 래핑하여 상태 업데이트와 네비게이션이 원활하게 처리되도록 함
-   */
   useEffect(() => {
     if (isAuthenticated) {
       console.log('[Login] 인증 성공 -> 홈 화면으로 이동');
@@ -52,11 +74,6 @@ export default function LoginScreen() {
     }
   }, [isAuthenticated, router]);
 
-  /**
-   * 로그인 처리
-   * - 폼 검증 후 로그인 API 호출
-   * - 로그인 성공 시 useLogin 내부에서 setAuth 호출 -> isAuthenticated 변경 -> useEffect에서 네비게이션
-   */
   const handleLogin = async () => {
     setFormError(null);
 
@@ -76,49 +93,27 @@ export default function LoginScreen() {
     });
   };
 
-  // 인증된 상태면 로딩 화면 (리다이렉트 대기)
   if (isAuthenticated) {
     return (
-      <View style={styles.loadingContainer}>
-        <LinearGradient
-          colors={['#0F172A', '#1E3A5F', '#0066CC']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <ActivityIndicator size="large" color="#FFFFFF" />
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>로그인 중...</Text>
       </View>
     );
   }
 
   const displayError = formError || error;
 
+  // 시니어 모드 스타일 계산
+  const inputHeight = isSeniorMode ? touchTarget.button : 56;
+  const buttonHeight = isSeniorMode ? touchTarget.button + 8 : 56;
+  const labelSize = isSeniorMode ? fontSize.medium : 16;
+  const inputFontSize = isSeniorMode ? fontSize.medium : 17;
+  const buttonFontSize = isSeniorMode ? fontSize.large : 18;
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-
-      {/* 그라디언트 배경 */}
-      <LinearGradient
-        colors={['#0F172A', '#1E3A5F', '#0066CC']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* 장식용 원형 */}
-      <View style={styles.decorativeCircle1}>
-        <LinearGradient
-          colors={['rgba(0, 163, 255, 0.3)', 'rgba(0, 102, 204, 0.1)']}
-          style={styles.circleGradient}
-        />
-      </View>
-
-      <View style={styles.decorativeCircle2}>
-        <LinearGradient
-          colors={['rgba(255, 107, 0, 0.2)', 'rgba(255, 184, 0, 0.05)']}
-          style={styles.circleGradient}
-        />
-      </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
 
       <KeyboardAvoidingView
         style={styles.content}
@@ -126,372 +121,403 @@ export default function LoginScreen() {
       >
         {/* 로고 영역 */}
         <View style={styles.header}>
-          <Text style={styles.logoText}>{APP_NAME}</Text>
-          <Text style={styles.subtitleText}>FACILITY MANAGEMENT</Text>
+          <View style={styles.logoContainer}>
+            <Text style={[styles.logoText, isSeniorMode && { fontSize: 44 }]}>{APP_NAME}</Text>
+            <Text style={[styles.subtitleText, isSeniorMode && { fontSize: 16 }]}>
+              시설관리 시스템
+            </Text>
+          </View>
+
+          {/* 서버 상태 */}
+          <View style={styles.serverStatus}>
+            <View style={styles.serverDot} />
+            <Text style={[styles.serverText, isSeniorMode && { fontSize: 14 }]}>서버 연결됨</Text>
+          </View>
         </View>
 
         {/* 로그인 카드 */}
-        <View style={styles.cardWrapper}>
-          <BlurView intensity={40} tint="light" style={styles.blurView}>
-            <View style={styles.glassCard}>
-              {/* 서버 상태 */}
-              <View style={styles.serverStatus}>
-                <View style={styles.serverDot} />
-                <Text style={styles.serverText}>스테이징 서버 연결됨</Text>
-              </View>
-
-              {/* 에러 메시지 - 시니어 모드 대응 */}
-              {displayError && (
-                <View
-                  style={[
-                    styles.errorBox,
-                    isSeniorMode && {
-                      paddingVertical: 18,
-                      paddingHorizontal: 20,
-                      borderWidth: 2,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.errorIcon, isSeniorMode && { fontSize: fontSize.large }]}>
-                    !
-                  </Text>
-                  <Text style={[styles.errorText, isSeniorMode && { fontSize: fontSize.small }]}>
-                    {displayError}
-                  </Text>
-                </View>
-              )}
-
-              {/* 로그인 폼 */}
-              <View style={styles.form}>
-                {/* 아이디 입력 - 시니어 모드 대응 */}
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.label, isSeniorMode && { fontSize: fontSize.small }]}>
-                    아이디
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      isSeniorMode && {
-                        height: touchTarget.button,
-                        fontSize: fontSize.small,
-                        borderWidth: 2,
-                        paddingHorizontal: 20,
-                      },
-                    ]}
-                    placeholder="아이디를 입력하세요"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                    value={userId}
-                    onChangeText={setUserId}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    editable={!isLoading}
-                  />
-                </View>
-
-                {/* 비밀번호 입력 - 시니어 모드 대응 */}
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.label, isSeniorMode && { fontSize: fontSize.small }]}>
-                    비밀번호
-                  </Text>
-                  <View style={styles.passwordContainer}>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        styles.passwordInput,
-                        isSeniorMode && {
-                          height: touchTarget.button,
-                          fontSize: fontSize.small,
-                          borderWidth: 2,
-                          paddingHorizontal: 20,
-                          paddingRight: 80,
-                        },
-                      ]}
-                      placeholder="비밀번호를 입력하세요"
-                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry={!showPassword}
-                      editable={!isLoading}
-                    />
-                    <Pressable
-                      style={[styles.showPasswordButton, isSeniorMode && { right: 20 }]}
-                      onPress={() => setShowPassword(!showPassword)}
-                    >
-                      <Text
-                        style={[
-                          styles.showPasswordText,
-                          isSeniorMode && { fontSize: fontSize.small },
-                        ]}
-                      >
-                        {showPassword ? '숨김' : '보기'}
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-
-                {/* 로그인 버튼 - 시니어 모드 대응 */}
-                {isSeniorMode ? (
-                  <SeniorButton
-                    label="로그인"
-                    onPress={handleLogin}
-                    disabled={isLoading}
-                    loading={isLoading}
-                    variant="primary"
-                    fullWidth
-                  />
-                ) : (
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.loginButton,
-                      pressed && styles.loginButtonPressed,
-                      isLoading && styles.loginButtonDisabled,
-                    ]}
-                    onPress={handleLogin}
-                    disabled={isLoading}
-                  >
-                    <LinearGradient
-                      colors={isLoading ? ['#94A3B8', '#CBD5E1'] : ['#0066CC', '#00A3FF']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.loginButtonGradient}
-                    >
-                      {isLoading ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Text style={styles.loginButtonText}>로그인</Text>
-                      )}
-                    </LinearGradient>
-                  </Pressable>
-                )}
-              </View>
+        <View style={styles.card}>
+          {/* 에러 메시지 */}
+          {displayError && (
+            <View style={[styles.errorBox, isSeniorMode && { padding: 18, borderWidth: 2 }]}>
+              <Text style={[styles.errorText, isSeniorMode && { fontSize: fontSize.medium }]}>
+                ⚠️ {displayError}
+              </Text>
             </View>
-          </BlurView>
-        </View>
+          )}
 
-        {/* 하단 링크 - 시니어 모드 대응 */}
-        <View style={styles.footer}>
-          <Link href="/(auth)/guest-login" asChild>
-            <Pressable
+          {/* 아이디 입력 */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { fontSize: labelSize }]}>아이디</Text>
+            <View
               style={[
-                styles.guestButton,
-                isSeniorMode && {
-                  paddingVertical: 16,
-                  paddingHorizontal: 32,
-                  borderWidth: 2,
-                  borderColor: 'rgba(255, 255, 255, 0.3)',
-                },
+                styles.inputContainer,
+                { height: inputHeight },
+                isSeniorMode && styles.inputContainerSenior,
               ]}
             >
-              <Text style={[styles.guestText, isSeniorMode && { fontSize: fontSize.small }]}>
-                NFC 게스트 로그인
+              <User
+                size={isSeniorMode ? 26 : 22}
+                color={COLORS.textSecondary as never}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={[
+                  styles.input,
+                  { fontSize: inputFontSize },
+                  isSeniorMode && styles.inputSenior,
+                ]}
+                placeholder="아이디를 입력하세요"
+                placeholderTextColor={COLORS.textMuted}
+                value={userId}
+                onChangeText={setUserId}
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!isLoading}
+              />
+            </View>
+          </View>
+
+          {/* 비밀번호 입력 */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { fontSize: labelSize }]}>비밀번호</Text>
+            <View
+              style={[
+                styles.inputContainer,
+                { height: inputHeight },
+                isSeniorMode && styles.inputContainerSenior,
+              ]}
+            >
+              <Lock
+                size={isSeniorMode ? 26 : 22}
+                color={COLORS.textSecondary as never}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={[
+                  styles.input,
+                  { fontSize: inputFontSize, paddingRight: 50 },
+                  isSeniorMode && styles.inputSenior,
+                ]}
+                placeholder="비밀번호를 입력하세요"
+                placeholderTextColor={COLORS.textMuted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                editable={!isLoading}
+              />
+              <Pressable
+                style={styles.showPasswordButton}
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                {showPassword ? (
+                  <EyeOff size={isSeniorMode ? 24 : 20} color={COLORS.textSecondary as never} />
+                ) : (
+                  <Eye size={isSeniorMode ? 24 : 20} color={COLORS.textSecondary as never} />
+                )}
+              </Pressable>
+            </View>
+          </View>
+
+          {/* 옵션 행 */}
+          <View style={styles.optionsRow}>
+            {/* 자동 로그인 */}
+            <Pressable style={styles.checkboxContainer} onPress={() => setAutoLogin(!autoLogin)}>
+              <View
+                style={[
+                  styles.checkbox,
+                  autoLogin && styles.checkboxChecked,
+                  isSeniorMode && { width: 28, height: 28 },
+                ]}
+              >
+                {autoLogin && <Check size={isSeniorMode ? 20 : 16} color="#FFFFFF" />}
+              </View>
+              <Text style={[styles.checkboxLabel, isSeniorMode && { fontSize: fontSize.medium }]}>
+                자동 로그인
               </Text>
             </Pressable>
-          </Link>
+
+            {/* 개인정보처리방침 */}
+            <Pressable style={styles.privacyLink}>
+              <Text style={[styles.privacyText, isSeniorMode && { fontSize: fontSize.small }]}>
+                개인정보처리방침
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* 로그인 버튼 */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.loginButton,
+              { height: buttonHeight },
+              pressed && styles.loginButtonPressed,
+              isLoading && styles.loginButtonDisabled,
+            ]}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={[styles.loginButtonText, { fontSize: buttonFontSize }]}>로그인</Text>
+            )}
+          </Pressable>
+
+          {/* 구분선 */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={[styles.dividerText, isSeniorMode && { fontSize: 16 }]}>또는</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* 기간제 근로자 로그인 */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.guestButton,
+              { height: buttonHeight },
+              pressed && styles.guestButtonPressed,
+            ]}
+            onPress={() => router.push('/(auth)/guest-login')}
+          >
+            <Text style={[styles.guestButtonText, { fontSize: buttonFontSize }]}>
+              기간제 근로자 로그인
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* 하단 정보 */}
+        <View style={styles.footer}>
+          <Text style={[styles.footerText, isSeniorMode && { fontSize: 14 }]}>HDC Labs</Text>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: COLORS.textSecondary,
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: height * 0.12,
-    paddingBottom: 40,
-    justifyContent: 'space-between',
+    paddingTop: 24,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 32,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
   },
   logoText: {
-    fontSize: 42,
+    fontSize: 36,
     fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -1.5,
-    textShadowColor: 'rgba(0, 102, 204, 0.3)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 12,
+    color: COLORS.primary,
+    letterSpacing: -1,
   },
   subtitleText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    color: COLORS.textSecondary,
     marginTop: 4,
-    letterSpacing: 2,
-  },
-  cardWrapper: {
-    flex: 1,
-    maxHeight: 440,
-    marginVertical: 24,
-  },
-  blurView: {
-    flex: 1,
-    borderRadius: 28,
-    overflow: 'hidden',
-  },
-  glassCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // $glassWhite15 - RN StyleSheet에서는 토큰 직접 사용 불가
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)', // $glassWhite25
-    padding: 28,
   },
   serverStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    alignSelf: 'center',
+    backgroundColor: COLORS.inputBackground,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // $glassWhite15
-    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   serverDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#00C853',
+    backgroundColor: COLORS.serverDot,
+    marginRight: 8,
   },
   serverText: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: COLORS.textSecondary,
     fontWeight: '500',
   },
+  card: {
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
   errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: COLORS.errorBg,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: COLORS.error,
     borderRadius: 12,
     padding: 14,
-    marginBottom: 16,
-  },
-  errorIcon: {
-    fontSize: 18,
-    color: '#FCA5A5',
-    fontWeight: 'bold',
+    marginBottom: 20,
   },
   errorText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#FCA5A5',
-  },
-  form: {
-    gap: 20,
+    fontSize: 15,
+    color: COLORS.error,
+    fontWeight: '500',
   },
   inputGroup: {
-    gap: 6,
+    marginBottom: 20,
   },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 2,
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.inputBackground,
+    borderWidth: 2,
+    borderColor: COLORS.inputBorder,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+  },
+  inputContainerSenior: {
+    borderWidth: 3,
+    borderRadius: 16,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    height: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', // $glassWhite10
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.2)', // $glassWhite20
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#FFFFFF',
+    flex: 1,
+    fontSize: 17,
+    color: COLORS.textPrimary,
+    paddingLeft: 12,
   },
-  passwordContainer: {
-    position: 'relative',
-  },
-  passwordInput: {
-    paddingRight: 60,
+  inputSenior: {
+    fontWeight: '500',
   },
   showPasswordButton: {
     position: 'absolute',
     right: 16,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
+    padding: 4,
   },
-  showPasswordText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
+  optionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: COLORS.inputBorder,
+    backgroundColor: COLORS.inputBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  checkboxChecked: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  checkboxLabel: {
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  privacyLink: {
+    paddingVertical: 4,
+  },
+  privacyText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textDecorationLine: 'underline',
   },
   loginButton: {
-    marginTop: 8,
+    backgroundColor: COLORS.primary,
     borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#00A3FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   loginButtonPressed: {
-    transform: [{ scale: 0.96 }],
-    opacity: 0.9,
+    backgroundColor: COLORS.primaryDark,
+    transform: [{ scale: 0.98 }],
   },
   loginButtonDisabled: {
-    opacity: 0.5,
-    shadowOpacity: 0,
+    opacity: 0.6,
   },
-  loginButtonGradient: {
-    height: 56,
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.inputBorder,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: COLORS.textMuted,
+    fontWeight: '500',
+  },
+  guestButton: {
+    backgroundColor: '#E67E22',
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loginButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
+  guestButtonPressed: {
+    backgroundColor: '#D35400',
+  },
+  guestButtonText: {
     color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
   footer: {
     alignItems: 'center',
     marginTop: 'auto',
+    paddingTop: 24,
   },
-  guestButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', // $glassWhite10
-    borderRadius: 24,
-  },
-  guestText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '500',
-    opacity: 0.9,
-  },
-  decorativeCircle1: {
-    position: 'absolute',
-    top: -100,
-    right: -100,
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    overflow: 'hidden',
-  },
-  decorativeCircle2: {
-    position: 'absolute',
-    bottom: 100,
-    left: -150,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    overflow: 'hidden',
-  },
-  circleGradient: {
-    width: '100%',
-    height: '100%',
+  footerText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
   },
 });

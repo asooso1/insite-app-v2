@@ -140,7 +140,7 @@ export default function MyWorkScreen() {
     const statusStyle = getStatusColor(item.status);
 
     return (
-      <Pressable onPress={() => router.push(`/(main)/work/${item.id}`)}>
+      <Pressable onPress={() => router.push(`/(main)/(home)/work/${item.id}`)}>
         <YStack
           backgroundColor="$white"
           marginHorizontal="$4"
