@@ -36,9 +36,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: getUniqueIdentifier(),
     infoPlist: {
       NFCReaderUsageDescription: '순찰 체크포인트 및 설비 태그 스캔을 위해 NFC가 필요합니다.',
-      NSCameraUsageDescription: '작업 결과 사진 촬영을 위해 카메라 접근 권한이 필요합니다.',
+      NSCameraUsageDescription: 'QR 코드 스캔 및 사진 촬영을 위해 카메라 접근 권한이 필요합니다.',
+      NSMicrophoneUsageDescription: '동영상 촬영을 위해 마이크 접근 권한이 필요합니다.',
       NSPhotoLibraryUsageDescription:
         '작업 결과 사진 첨부를 위해 사진 라이브러리 접근 권한이 필요합니다.',
+      NSLocationWhenInUseUsageDescription: '출퇴근 위치 확인을 위해 위치 접근 권한이 필요합니다.',
+      NSLocationAlwaysAndWhenInUseUsageDescription:
+        '출퇴근 위치 확인을 위해 위치 접근 권한이 필요합니다.',
       ITSAppUsesNonExemptEncryption: false,
     },
   },
@@ -56,6 +60,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.READ_MEDIA_IMAGES',
       'android.permission.RECEIVE_BOOT_COMPLETED',
       'android.permission.VIBRATE',
+      'android.permission.ACCESS_FINE_LOCATION',
+      'android.permission.ACCESS_COARSE_LOCATION',
+      'android.permission.ACCESS_BACKGROUND_LOCATION',
+      'android.permission.RECORD_AUDIO',
     ],
   },
   web: {
@@ -65,18 +73,37 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    'expo-video',
     'expo-dev-client',
     'expo-secure-store',
     [
+      'react-native-nfc-manager',
+      {
+        nfcPermission: '순찰 체크포인트 및 설비 태그 스캔을 위해 NFC가 필요합니다.',
+        selectIdentifiers: ['NDEF'],
+        includeNdefEntitlement: true,
+      },
+    ],
+    [
       'expo-camera',
       {
-        cameraPermission: '작업 결과 사진 촬영을 위해 카메라 접근 권한이 필요합니다.',
+        cameraPermission: 'QR 코드 스캔 및 사진 촬영을 위해 카메라 접근 권한이 필요합니다.',
+        microphonePermission: '동영상 촬영을 위해 마이크 접근 권한이 필요합니다.',
+        recordAudioAndroid: true,
       },
     ],
     [
       'expo-image-picker',
       {
         photosPermission: '작업 결과 사진 첨부를 위해 사진 라이브러리 접근 권한이 필요합니다.',
+      },
+    ],
+    [
+      'expo-location',
+      {
+        locationAlwaysAndWhenInUsePermission: '출퇴근 위치 확인을 위해 위치 접근 권한이 필요합니다.',
+        locationAlwaysPermission: '백그라운드 위치 확인을 위해 항상 위치 접근 권한이 필요합니다.',
+        locationWhenInUsePermission: '출퇴근 위치 확인을 위해 위치 접근 권한이 필요합니다.',
       },
     ],
     [

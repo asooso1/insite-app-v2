@@ -11,7 +11,7 @@
  * - 아이콘 + 텍스트 라벨 조합
  * - 테두리로 클릭 가능 요소 표시
  */
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   RefreshControl,
   Platform,
@@ -25,6 +25,7 @@ import {
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
+import { useNetworkStore } from '@/stores/network.store';
 import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { QuickStatCard } from '@/components/ui/QuickStatCard';
@@ -34,6 +35,11 @@ import { LAYOUT } from '@/theme/tokens';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { SeniorStatusBadge } from '@/components/ui/SeniorCard';
 import { AppIcon, type IconName } from '@/components/icons';
+import { AttendanceCard, useAttendance } from '@/features/attendance';
+import { startAutoSync } from '@/services/syncService';
+import { useTabBarHeight } from '@/hooks/useTabBarHeight';
+import { usePermission } from '@/hooks/usePermission';
+import type { Permission } from '@/types/permission.types';
 
 /**
  * 홈 화면
@@ -45,16 +51,50 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const seniorStyles = useSeniorStyles();
   const { isSeniorMode } = seniorStyles;
+  const { hasPermission, canShowQrAttendance } = usePermission();
+
+  // 출퇴근 기능
+  const {
+    attendanceFlag,
+    todayCheckIn,
+    todayCheckOut,
+    isProcessing,
+    checkIn,
+    checkOut,
+    refreshAttendanceStatus,
+  } = useAttendance();
+
+  // 탭바 높이 (컨텐츠 하단 패딩용)
+  const { contentPaddingBottom } = useTabBarHeight();
+
+  // 네트워크 모니터링 시작
+  const startMonitoring = useNetworkStore((state) => state.startMonitoring);
+
+  useEffect(() => {
+    // 네트워크 모니터링 시작
+    const unsubscribeNetwork = startMonitoring();
+    // 자동 동기화 시작
+    const unsubscribeSync = startAutoSync();
+    // 출퇴근 상태 새로고침
+    refreshAttendanceStatus();
+
+    return () => {
+      unsubscribeNetwork();
+      unsubscribeSync();
+    };
+  }, [startMonitoring, refreshAttendanceStatus]);
 
   // 스크롤 애니메이션
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    // 출퇴근 상태 새로고침
+    await refreshAttendanceStatus();
     // TODO: 실제 데이터 갱신
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setRefreshing(false);
-  }, []);
+  }, [refreshAttendanceStatus]);
 
   // Mock 데이터 (실제로는 API에서 가져옴)
   const todayStats = {
@@ -77,6 +117,27 @@ export default function HomeScreen() {
     floorsTotal: 5,
     floorsCompleted: 2,
   };
+
+  // 권한 기반 빠른 실행 메뉴 정의
+  const allQuickActions: Array<{
+    icon: IconName;
+    label: string;
+    description?: string;
+    route: string;
+    permission: Permission;
+  }> = [
+    { icon: 'work', label: '작업지시', description: '작업 목록 보기', route: '/(main)/(home)/work', permission: 'workOrder' },
+    { icon: 'patrol', label: '순찰점검', description: '순찰 목록 보기', route: '/(main)/(home)/patrol', permission: 'patrol' },
+    { icon: 'document', label: '일상업무', description: '일상업무 현황', route: '/(main)/(home)/personal-task', permission: 'personalTask' },
+    { icon: 'notice', label: '고객불편', description: '고객불편 접수', route: '/(main)/(home)/claim', permission: 'claim' },
+    { icon: 'settings', label: '설비정보', description: '설비 조회', route: '/(main)/(home)/facility', permission: 'facility' },
+    { icon: 'success', label: '승인/확인', description: '업무 승인', route: '/(main)/(home)/approval', permission: 'approval' },
+    { icon: 'dashboard', label: '대시보드', description: '통계 보기', route: '/(main)/(home)/dashboard', permission: 'dashboard' },
+    { icon: 'warning', label: '경보현황', description: '경보 확인', route: '/(main)/(home)/dashboard/alarm', permission: 'dashboardAlarm' },
+  ];
+
+  // 권한에 따라 필터링된 메뉴
+  const filteredQuickActions = allQuickActions.filter((action) => hasPermission(action.permission));
 
   return (
     <YStack flex={1} backgroundColor="$gray50">
@@ -105,7 +166,7 @@ export default function HomeScreen() {
 
       <Animated.ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
           useNativeDriver: false,
         })}
@@ -120,11 +181,25 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
+        {/* 출퇴근 카드 - 출퇴근 QR 권한 있는 사용자만 표시 */}
+        {canShowQrAttendance && (
+          <View style={{ marginTop: 16 }}>
+            <AttendanceCard
+              todayCheckIn={todayCheckIn}
+              todayCheckOut={todayCheckOut}
+              canCheckIn={attendanceFlag.login}
+              canCheckOut={attendanceFlag.logOut}
+              isProcessing={isProcessing}
+              onCheckIn={() => checkIn('QR')}
+              onCheckOut={() => checkOut('QR')}
+            />
+          </View>
+        )}
+
         {/* 오늘의 요약 (Glass Card) */}
         <View>
           <GlassCard
             marginHorizontal={LAYOUT.CARD_SPACING}
-            marginTop={16}
             floating
             intensity="heavy"
           >
@@ -163,7 +238,7 @@ export default function HomeScreen() {
           </GlassCard>
         </View>
 
-        {/* 빠른 실행 */}
+        {/* 빠른 실행 - 권한 기반 메뉴 표시 */}
         <View>
           <YStack paddingHorizontal="$5" marginTop="$6">
             <SectionHeader
@@ -173,172 +248,112 @@ export default function HomeScreen() {
               fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
             />
             {isSeniorMode ? (
-              // 시니어 모드: 2x2 그리드로 더 큰 버튼
+              // 시니어 모드: 2열 그리드로 더 큰 버튼
               <YStack gap="$4">
-                <XStack gap="$4">
-                  <SeniorQuickActionButton
-                    icon="work"
-                    label="작업지시"
-                    description="작업 목록 보기"
-                    onPress={() => router.push('/(main)/(home)/work')}
-                  />
-                  <SeniorQuickActionButton
-                    icon="patrol"
-                    label="순찰점검"
-                    description="순찰 목록 보기"
-                    onPress={() => router.push('/(main)/(home)/patrol')}
-                  />
-                </XStack>
-                <XStack gap="$4">
-                  <SeniorQuickActionButton
-                    icon="document"
-                    label="일상업무"
-                    description="일상업무 현황"
-                    onPress={() => router.push('/(main)/(home)/personal-task')}
-                  />
-                  <SeniorQuickActionButton
-                    icon="notice"
-                    label="고객불편"
-                    description="고객불편 접수"
-                    onPress={() => router.push('/(main)/(home)/claim')}
-                  />
-                </XStack>
-                <XStack gap="$4">
-                  <SeniorQuickActionButton
-                    icon="settings"
-                    label="설비정보"
-                    description="설비 조회"
-                    onPress={() => router.push('/(main)/(home)/facility')}
-                  />
-                  <SeniorQuickActionButton
-                    icon="success"
-                    label="승인/확인"
-                    description="업무 승인"
-                    onPress={() => router.push('/(main)/(home)/approval')}
-                  />
-                </XStack>
-                <XStack gap="$4">
-                  <SeniorQuickActionButton
-                    icon="dashboard"
-                    label="대시보드"
-                    description="통계 보기"
-                    onPress={() => router.push('/(main)/(home)/dashboard')}
-                  />
-                  <SeniorQuickActionButton
-                    icon="nfc"
-                    label="NFC 태그"
-                    description="태그 스캔하기"
-                    onPress={() => router.push('/(main)/(scan)')}
-                  />
-                </XStack>
+                {/* 2개씩 그룹핑하여 행으로 표시 */}
+                {Array.from({ length: Math.ceil(filteredQuickActions.length / 2) }, (_, rowIndex) => (
+                  <XStack key={rowIndex} gap="$4">
+                    {filteredQuickActions.slice(rowIndex * 2, rowIndex * 2 + 2).map((action) => (
+                      <SeniorQuickActionButton
+                        key={action.label}
+                        icon={action.icon}
+                        label={action.label}
+                        description={action.description || ''}
+                        onPress={() => router.push(action.route as never)}
+                      />
+                    ))}
+                    {/* 홀수개일 때 빈 공간 채우기 */}
+                    {rowIndex === Math.ceil(filteredQuickActions.length / 2) - 1 &&
+                      filteredQuickActions.length % 2 === 1 && <View style={{ flex: 1 }} />}
+                  </XStack>
+                ))}
               </YStack>
             ) : (
-              // 일반 모드: 4열 그리드 2행
+              // 일반 모드: 4열 그리드
               <YStack gap="$3">
-                <XStack gap="$3">
-                  <QuickActionButton
-                    icon="work"
-                    label="작업지시"
-                    onPress={() => router.push('/(main)/(home)/work')}
-                  />
-                  <QuickActionButton
-                    icon="patrol"
-                    label="순찰점검"
-                    onPress={() => router.push('/(main)/(home)/patrol')}
-                  />
-                  <QuickActionButton
-                    icon="document"
-                    label="일상업무"
-                    onPress={() => router.push('/(main)/(home)/personal-task')}
-                  />
-                  <QuickActionButton
-                    icon="notice"
-                    label="고객불편"
-                    onPress={() => router.push('/(main)/(home)/claim')}
-                  />
-                </XStack>
-                <XStack gap="$3">
-                  <QuickActionButton
-                    icon="settings"
-                    label="설비정보"
-                    onPress={() => router.push('/(main)/(home)/facility')}
-                  />
-                  <QuickActionButton
-                    icon="success"
-                    label="승인/확인"
-                    onPress={() => router.push('/(main)/(home)/approval')}
-                  />
-                  <QuickActionButton
-                    icon="dashboard"
-                    label="대시보드"
-                    onPress={() => router.push('/(main)/(home)/dashboard')}
-                  />
-                  <QuickActionButton
-                    icon="nfc"
-                    label="NFC 스캔"
-                    onPress={() => router.push('/(main)/(scan)')}
-                  />
-                </XStack>
+                {/* 4개씩 그룹핑하여 행으로 표시 */}
+                {Array.from({ length: Math.ceil(filteredQuickActions.length / 4) }, (_, rowIndex) => (
+                  <XStack key={rowIndex} gap="$3">
+                    {filteredQuickActions.slice(rowIndex * 4, rowIndex * 4 + 4).map((action) => (
+                      <QuickActionButton
+                        key={action.label}
+                        icon={action.icon}
+                        label={action.label}
+                        onPress={() => router.push(action.route as never)}
+                      />
+                    ))}
+                    {/* 빈 공간 채우기 */}
+                    {Array.from({
+                      length: Math.max(0, 4 - (filteredQuickActions.length - rowIndex * 4)),
+                    }).map((_, idx) => (
+                      <View key={`empty-${idx}`} style={{ flex: 1 }} />
+                    ))}
+                  </XStack>
+                ))}
               </YStack>
             )}
           </YStack>
         </View>
 
-        {/* 진행 중인 작업 */}
-        <View>
-          <YStack paddingHorizontal="$5" marginTop="$6">
-            <SectionHeader
-              title="진행 중인 작업"
-              actionText="전체보기"
-              onAction={() => router.push('/(main)/(home)/work')}
-              showAccent
-              fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
-            />
-            {isSeniorMode ? (
-              <SeniorWorkInProgressCard
-                title={inProgressWork.title}
-                location={inProgressWork.location}
-                progress={inProgressWork.progress}
-                onPress={() => router.push(`/work/${inProgressWork.id}`)}
+        {/* 진행 중인 작업 - 작업권한 있는 사용자만 표시 */}
+        {hasPermission('workOrder') && (
+          <View>
+            <YStack paddingHorizontal="$5" marginTop="$6">
+              <SectionHeader
+                title="진행 중인 작업"
+                actionText="전체보기"
+                onAction={() => router.push('/(main)/(home)/work')}
+                showAccent
+                fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
               />
-            ) : (
-              <WorkInProgressCard
-                title={inProgressWork.title}
-                location={inProgressWork.location}
-                progress={inProgressWork.progress}
-                onPress={() => router.push(`/work/${inProgressWork.id}`)}
-              />
-            )}
-          </YStack>
-        </View>
+              {isSeniorMode ? (
+                <SeniorWorkInProgressCard
+                  title={inProgressWork.title}
+                  location={inProgressWork.location}
+                  progress={inProgressWork.progress}
+                  onPress={() => router.push(`/work/${inProgressWork.id}`)}
+                />
+              ) : (
+                <WorkInProgressCard
+                  title={inProgressWork.title}
+                  location={inProgressWork.location}
+                  progress={inProgressWork.progress}
+                  onPress={() => router.push(`/work/${inProgressWork.id}`)}
+                />
+              )}
+            </YStack>
+          </View>
+        )}
 
-        {/* 오늘의 순찰 */}
-        <View>
-          <YStack paddingHorizontal="$5" marginTop="$6">
-            <SectionHeader
-              title="오늘의 순찰"
-              actionText="전체보기"
-              onAction={() => router.push('/(main)/(home)/patrol')}
-              showAccent
-              fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
-            />
-            {isSeniorMode ? (
-              <SeniorPatrolStatusCard
-                title={todayPatrol.title}
-                floorsTotal={todayPatrol.floorsTotal}
-                floorsCompleted={todayPatrol.floorsCompleted}
-                onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
+        {/* 오늘의 순찰 - 순찰권한 있는 사용자만 표시 */}
+        {hasPermission('patrol') && (
+          <View>
+            <YStack paddingHorizontal="$5" marginTop="$6">
+              <SectionHeader
+                title="오늘의 순찰"
+                actionText="전체보기"
+                onAction={() => router.push('/(main)/(home)/patrol')}
+                showAccent
+                fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
               />
-            ) : (
-              <PatrolStatusCard
-                title={todayPatrol.title}
-                floorsTotal={todayPatrol.floorsTotal}
-                floorsCompleted={todayPatrol.floorsCompleted}
-                onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
-              />
-            )}
-          </YStack>
-        </View>
+              {isSeniorMode ? (
+                <SeniorPatrolStatusCard
+                  title={todayPatrol.title}
+                  floorsTotal={todayPatrol.floorsTotal}
+                  floorsCompleted={todayPatrol.floorsCompleted}
+                  onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
+                />
+              ) : (
+                <PatrolStatusCard
+                  title={todayPatrol.title}
+                  floorsTotal={todayPatrol.floorsTotal}
+                  floorsCompleted={todayPatrol.floorsCompleted}
+                  onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
+                />
+              )}
+            </YStack>
+          </View>
+        )}
 
         {/* 공지사항 */}
         <View>

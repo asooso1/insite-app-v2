@@ -2,6 +2,7 @@
  * 권한 체크 훅
  *
  * 사용자 역할에 따른 권한 확인
+ * V1 호환 권한 시스템
  */
 import { useMemo } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
@@ -10,12 +11,15 @@ import {
   type RoleGroup,
   type Permission,
   type TabConfig,
+  type HomeMenuItem,
   ROLE_MAP,
   ADMIN_ROLE_IDS,
   WORKER_ROLE_IDS,
   PARTNER_ROLE_IDS,
   ROLE_PERMISSIONS,
   ROLE_TABS,
+  HOME_MENU_ITEMS,
+  QR_ATTENDANCE_ROLE_IDS,
 } from '@/types/permission.types';
 
 /**
@@ -95,6 +99,37 @@ export function usePermission() {
    */
   const canAccessDashboard = hasPermission('dashboard');
 
+  /**
+   * 출퇴근 QR 표시 여부
+   * V1 HomePage.js 기반
+   */
+  const canShowQrAttendance = useMemo(() => {
+    if (!roleId) return false;
+    return QR_ATTENDANCE_ROLE_IDS.includes(roleId);
+  }, [roleId]);
+
+  /**
+   * 탭 접근 가능 여부 확인
+   */
+  const canAccessTab = (tabName: string): boolean => {
+    return tabs.some((tab) => tab.name === tabName);
+  };
+
+  /**
+   * 내 작업 탭 접근 가능 여부
+   */
+  const canAccessMyWorkTab = hasPermission('tabMyWork');
+
+  /**
+   * 스캔 탭 접근 가능 여부
+   */
+  const canAccessScanTab = hasPermission('tabScan');
+
+  /**
+   * 캘린더 탭 접근 가능 여부
+   */
+  const canAccessCalendarTab = hasPermission('tabCalendar');
+
   return {
     // 기본 정보
     roleId,
@@ -116,6 +151,13 @@ export function usePermission() {
     canApprove,
     canAccessMyTask,
     canAccessDashboard,
+    canShowQrAttendance,
+
+    // 탭 접근
+    canAccessTab,
+    canAccessMyWorkTab,
+    canAccessScanTab,
+    canAccessCalendarTab,
   };
 }
 
@@ -133,6 +175,25 @@ export function useCanShow(permission: Permission): boolean {
 export function useRoleTabs(): TabConfig[] {
   const { tabs } = usePermission();
   return tabs;
+}
+
+/**
+ * 권한 기반 홈 메뉴 필터링
+ */
+export function useHomeMenuItems(): HomeMenuItem[] {
+  const { permissions } = usePermission();
+
+  return useMemo(() => {
+    return HOME_MENU_ITEMS.filter((item) => permissions.includes(item.permission));
+  }, [permissions]);
+}
+
+/**
+ * 특정 탭이 현재 역할에서 접근 가능한지 확인
+ */
+export function useTabAccessible(tabName: string): boolean {
+  const { tabs } = usePermission();
+  return tabs.some((tab) => tab.name === tabName);
 }
 
 export default usePermission;
