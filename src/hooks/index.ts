@@ -7,3 +7,5 @@
 export * from './useDebounce';
 export * from './useNotifications';
 export * from './useUpdates';
+export * from './useNFC';
+export * from './useNFCSync';

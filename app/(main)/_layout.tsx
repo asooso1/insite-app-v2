@@ -1,24 +1,44 @@
 /**
  * Main Layout - Tab Navigator
  *
- * 5개 탭 (모든 화면에서 탭바 유지):
- * - 홈 (home) - 작업/순찰/대시보드 등 서브화면 포함
- * - 내 작업 (my-work)
- * - 스캔 (scan)
- * - 캘린더 (calendar)
- * - 설정 (settings)
+ * 역할별 탭 구성:
+ * - ADMIN/WORKER: 5개 탭 (홈, 내 작업, 스캔, 캘린더, 설정)
+ * - PARTNER/EXTERNAL: 2개 탭 (홈, 설정)
+ *
+ * V1 MainContainer.js 참조
  */
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUIStore } from '@/stores/ui.store';
 import { SENIOR_STYLES } from '@/theme/seniorMode';
 import { TabIcon } from '@/components/icons';
+import { usePermission } from '@/hooks/usePermission';
 
 /**
  * 커스텀 탭바 배경 (글래스모피즘)
+ * Android는 BlurView가 약해서 불투명 배경 사용
  */
 function TabBarBackground() {
+  if (Platform.OS === 'android') {
+    // Android: 불투명 배경
+    return (
+      <BlurView
+        intensity={100}
+        tint="light"
+        style={{
+          ...StyleSheet.absoluteFillObject,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          overflow: 'hidden',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        }}
+      />
+    );
+  }
+
+  // iOS: 글래스모피즘
   return (
     <BlurView
       intensity={80}
@@ -38,17 +58,29 @@ function TabBarBackground() {
  */
 export default function MainLayout() {
   const isSeniorMode = useUIStore((state) => state.isSeniorMode);
+  const insets = useSafeAreaInsets();
+  const { canAccessMyWorkTab, canAccessScanTab, canAccessCalendarTab } = usePermission();
 
+  // Android 네비게이션 바 높이 반영 (최소값 설정)
+  const androidBottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 16) : 0;
+
+  // 탭바 높이 계산
   const tabBarHeight = isSeniorMode
     ? Platform.select({
         ios: SENIOR_STYLES.tabBar.heightIOS,
-        android: SENIOR_STYLES.tabBar.heightAndroid,
+        android: 60 + androidBottomInset, // Android 탭바 높이 줄임
       })
-    : Platform.select({ ios: 84, android: 64 });
+    : Platform.select({ ios: 84, android: 56 + androidBottomInset }); // 64 -> 56
 
+  // 탭바 하단 패딩 (Android 네비게이션 바 영역)
   const tabBarPaddingBottom = isSeniorMode
-    ? Platform.select({ ios: 28, android: 16 })
-    : Platform.select({ ios: 24, android: 12 });
+    ? Platform.select({ ios: 28, android: 8 + androidBottomInset }) // 16 -> 8
+    : Platform.select({ ios: 24, android: 6 + androidBottomInset }); // 12 -> 6
+
+  // 탭바 상단 패딩 (아이콘 위 여백)
+  const tabBarPaddingTop = isSeniorMode
+    ? Platform.select({ ios: 12, android: 6 }) // Android: 12 -> 6
+    : Platform.select({ ios: 8, android: 4 }); // Android: 8 -> 4
 
   const tabBarLabelSize = isSeniorMode ? SENIOR_STYLES.tabBar.labelSize : 11;
   const activeTintColor = isSeniorMode ? SENIOR_STYLES.colors.primary : '#0066CC';
@@ -66,7 +98,7 @@ export default function MainLayout() {
           ...styles.tabBar,
           height: tabBarHeight,
           paddingBottom: tabBarPaddingBottom,
-          paddingTop: isSeniorMode ? 12 : 8,
+          paddingTop: tabBarPaddingTop,
         },
         tabBarLabelStyle: {
           ...styles.tabBarLabel,
@@ -76,7 +108,7 @@ export default function MainLayout() {
         tabBarBackground: TabBarBackground,
       }}
     >
-      {/* ===== 표시할 5개 탭 ===== */}
+      {/* ===== 홈 탭 - 모든 역할 접근 가능 ===== */}
       <Tabs.Screen
         name="(home)"
         options={{
@@ -85,30 +117,38 @@ export default function MainLayout() {
           tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
         }}
       />
+
+      {/* ===== 내 작업 탭 - ADMIN/WORKER만 ===== */}
       <Tabs.Screen
         name="(my-work)"
         options={{
-          href: '/(main)/(my-work)',
+          href: canAccessMyWorkTab ? '/(main)/(my-work)' : null,
           title: '내 작업',
           tabBarIcon: ({ focused }) => <TabIcon name="work" focused={focused} />,
         }}
       />
+
+      {/* ===== 스캔 탭 - ADMIN/WORKER만 ===== */}
       <Tabs.Screen
         name="(scan)"
         options={{
-          href: '/(main)/(scan)',
+          href: canAccessScanTab ? '/(main)/(scan)' : null,
           title: '스캔',
           tabBarIcon: ({ focused }) => <TabIcon name="scan" focused={focused} />,
         }}
       />
+
+      {/* ===== 캘린더 탭 - ADMIN/WORKER만 ===== */}
       <Tabs.Screen
         name="(calendar)"
         options={{
-          href: '/(main)/(calendar)',
+          href: canAccessCalendarTab ? '/(main)/(calendar)' : null,
           title: '캘린더',
           tabBarIcon: ({ focused }) => <TabIcon name="calendar" focused={focused} />,
         }}
       />
+
+      {/* ===== 설정 탭 - 모든 역할 접근 가능 ===== */}
       <Tabs.Screen
         name="(settings)"
         options={{
