@@ -3,10 +3,10 @@
  *
  * 2026 Modern UI - CollapsibleGradientHeader 적용
  */
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Alert, ActivityIndicator, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
-import { YStack, XStack, Switch, Circle, Text } from 'tamagui';
+import { YStack, XStack, Circle, Text, Switch } from 'tamagui';
 import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/auth.store';
@@ -14,6 +14,7 @@ import { useSeniorMode, useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { APP_NAME, APP_VERSION } from '@/constants/config';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
+import { useTabBarHeight } from '@/hooks/useTabBarHeight';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -21,6 +22,21 @@ export default function SettingsScreen() {
   const logout = useAuthStore((state) => state.logout);
   const { isSeniorMode, toggleSeniorMode } = useSeniorMode();
   const { fontSize } = useSeniorStyles();
+  const [seniorModeLoading, setSeniorModeLoading] = useState(false);
+
+  // 탭바 높이
+  const { contentPaddingBottom } = useTabBarHeight();
+
+  // 시니어 모드 토글 (스피너 표시)
+  const handleToggleSeniorMode = async () => {
+    setSeniorModeLoading(true);
+    // UI 업데이트를 위한 짧은 딜레이
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    toggleSeniorMode();
+    // 변경 적용 후 추가 딜레이
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    setSeniorModeLoading(false);
+  };
 
   // 스크롤 애니메이션
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -67,7 +83,7 @@ export default function SettingsScreen() {
 
       <Animated.ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
           useNativeDriver: false,
         })}
@@ -142,13 +158,35 @@ export default function SettingsScreen() {
                 글씨와 버튼을 크게 표시합니다
               </Text>
             </YStack>
-            <Switch
-              checked={isSeniorMode}
-              onCheckedChange={toggleSeniorMode}
-              backgroundColor={isSeniorMode ? '$primary' : '$gray300'}
-            >
-              <Switch.Thumb backgroundColor="$white" />
-            </Switch>
+            {seniorModeLoading ? (
+              <ActivityIndicator size="small" color="#0066CC" />
+            ) : (
+              <XStack
+                backgroundColor={isSeniorMode ? '$primary' : '$gray200'}
+                width={56}
+                height={32}
+                borderRadius={16}
+                padding={3}
+                justifyContent={isSeniorMode ? 'flex-end' : 'flex-start'}
+                alignItems="center"
+                borderWidth={2}
+                borderColor={isSeniorMode ? '$primary' : '$gray400'}
+                pressStyle={{ opacity: 0.8 }}
+                onPress={handleToggleSeniorMode}
+              >
+                <YStack
+                  width={24}
+                  height={24}
+                  borderRadius={12}
+                  backgroundColor="$white"
+                  shadowColor="$gray900"
+                  shadowOffset={{ width: 0, height: 2 }}
+                  shadowOpacity={0.2}
+                  shadowRadius={2}
+                  elevation={3}
+                />
+              </XStack>
+            )}
           </XStack>
         </YStack>
 

@@ -2,16 +2,28 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
 import { isTokenExpired } from '@/utils/jwt';
-import { refreshTokenApi } from '@/api/auth';
+import { refreshTokenApi, type BuildingAccountDTO, type AttendanceFlag } from '@/api/auth';
 
+/**
+ * 사용자 정보 (V1 호환)
+ * myInfoView API 응답 기반
+ */
 interface User {
   id: string;
-  email: string;
+  userId: string;
+  email?: string;
   name: string;
-  role: string;
-  roleId?: number; // V1 호환 역할 ID (1~21)
+  role?: string;
+  roleId: number; // V1 호환 역할 ID (1~21)
+  roleName?: string;
+  type?: string; // '본사인력' 등
+  companyId?: string;
+  companyName?: string;
   siteId?: string;
   siteName?: string;
+  buildingCnt: number;
+  buildingAccountDTO: BuildingAccountDTO[];
+  selectedBuildingAccountDTO?: BuildingAccountDTO;
 }
 
 interface AuthState {
@@ -19,12 +31,15 @@ interface AuthState {
   user: User | null;
   token: string | null;
   refreshToken: string | null;
+  attendanceFlag: AttendanceFlag;
   isAuthenticated: boolean;
   isHydrated: boolean;
 
   // Actions
   setAuth: (user: User, token: string, refreshToken: string) => void;
+  setUser: (user: User) => void;
   setToken: (token: string) => void;
+  setAttendanceFlag: (flag: AttendanceFlag) => void;
   logout: () => void;
   hydrate: () => void;
   checkAuth: () => Promise<void>;
@@ -62,12 +77,13 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       refreshToken: null,
+      attendanceFlag: { login: false, logOut: false },
       isAuthenticated: false,
       isHydrated: false,
 
       // Actions
       setAuth: (user, token, refreshToken) => {
-        console.log('[AuthStore] setAuth 호출:', user.name);
+        console.log('[AuthStore] setAuth 호출:', user.name, 'roleId:', user.roleId);
         set({
           user,
           token,
@@ -76,9 +92,19 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
+      setUser: (user) => {
+        console.log('[AuthStore] setUser 호출:', user.name, 'roleId:', user.roleId);
+        set({ user });
+      },
+
       setToken: (token) => {
         console.log('[AuthStore] setToken 호출');
         set({ token });
+      },
+
+      setAttendanceFlag: (flag) => {
+        console.log('[AuthStore] setAttendanceFlag 호출:', flag);
+        set({ attendanceFlag: flag });
       },
 
       logout: () => {
@@ -87,6 +113,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           token: null,
           refreshToken: null,
+          attendanceFlag: { login: false, logOut: false },
           isAuthenticated: false,
         });
       },
@@ -162,6 +189,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         token: state.token,
         refreshToken: state.refreshToken,
+        attendanceFlag: state.attendanceFlag,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

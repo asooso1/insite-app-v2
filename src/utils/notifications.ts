@@ -101,14 +101,14 @@ export const getExpoPushToken = async (projectId: string): Promise<string | null
   try {
     // 실제 디바이스에서만 푸시 토큰 발급 가능
     if (!Device.isDevice) {
-      console.warn('Push notifications only work on physical devices');
+      console.log('[Notifications] 시뮬레이터에서는 푸시 토큰 발급 불가');
       return null;
     }
 
     // 권한 확인
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') {
-      console.warn('Notification permission not granted');
+      console.log('[Notifications] 알림 권한 없음');
       return null;
     }
 
@@ -117,9 +117,16 @@ export const getExpoPushToken = async (projectId: string): Promise<string | null
       projectId,
     });
 
+    console.log('[Notifications] 푸시 토큰 발급 성공');
     return tokenData.data;
   } catch (error) {
-    console.error('Failed to get Expo Push Token:', error);
+    // Firebase 미설정 등의 에러는 조용히 처리
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('Firebase') || errorMessage.includes('FCM')) {
+      console.log('[Notifications] Firebase/FCM 미설정 - 푸시 알림 비활성화');
+    } else {
+      console.warn('[Notifications] 푸시 토큰 발급 실패:', errorMessage);
+    }
     return null;
   }
 };

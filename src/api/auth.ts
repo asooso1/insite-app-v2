@@ -35,6 +35,59 @@ export interface UserInfo {
   mobile?: string;
 }
 
+/**
+ * 건물 정보 (V1 호환)
+ */
+export interface BuildingAccountDTO {
+  buildingId: string;
+  buildingName: string;
+  buildingUserGroupId?: string;
+  siteId?: string;
+  siteName?: string;
+}
+
+/**
+ * 출퇴근 플래그 (V1 호환)
+ */
+export interface AttendanceFlag {
+  login: boolean;
+  logOut: boolean;
+}
+
+/**
+ * 내 정보 (myInfoView 응답 account)
+ * V1 호환
+ */
+export interface MyInfoAccount {
+  id?: string;
+  userId: string;
+  name: string;
+  email?: string;
+  mobile?: string;
+  roleId: number;
+  roleName?: string;
+  type?: string; // '본사인력' 등
+  companyId?: string;
+  companyName?: string;
+  siteId?: string;
+  siteName?: string;
+  buildingCnt: number;
+  buildingAccountDTO: BuildingAccountDTO[];
+  selectedBuildingAccountDTO?: BuildingAccountDTO;
+}
+
+/**
+ * myInfoView API 응답
+ */
+export interface MyInfoViewResponse {
+  code: string;
+  message?: string;
+  data: {
+    account: MyInfoAccount;
+    attendanceFlag: AttendanceFlag;
+  };
+}
+
 export interface LoginResponse {
   code: LoginResponseCode;
   message?: string;
@@ -207,6 +260,33 @@ export const checkDeviceStatus = async (): Promise<DeviceStatusResponse> => {
   return response.data;
 };
 
+/**
+ * 내 정보 조회 API (myInfoView)
+ * 로그인 후 사용자 상세 정보 및 출퇴근 플래그 조회
+ * V1 호환
+ */
+export const myInfoView = async (buildingId?: string): Promise<MyInfoViewResponse> => {
+  console.log('[Auth] myInfoView 요청');
+
+  const headers: Record<string, string> = {};
+  if (buildingId) {
+    headers['X-Current-Building-Id'] = buildingId;
+  }
+
+  const response = await apiClient.get<MyInfoViewResponse>('/m/api/mypage/myInfoView', {
+    headers,
+  });
+
+  console.log('[Auth] myInfoView 응답:', {
+    code: response.data.code,
+    userId: response.data.data?.account?.userId,
+    roleId: response.data.data?.account?.roleId,
+    buildingCnt: response.data.data?.account?.buildingCnt,
+  });
+
+  return response.data;
+};
+
 export default {
   login,
   guestLogin,
@@ -214,5 +294,6 @@ export default {
   changePasswordApi,
   refreshTokenApi,
   checkDeviceStatus,
+  myInfoView,
   LOGIN_RESPONSE_CODES,
 };

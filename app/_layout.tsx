@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -9,6 +9,7 @@ import Constants from 'expo-constants';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
 import { SplashScreen as AppSplashScreen } from '@/components/SplashScreen';
+import { VideoIntroScreen } from '@/components/VideoIntroScreen';
 import { SeniorModeProvider } from '@/contexts/SeniorModeContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import config from '@/theme/tamagui.config';
@@ -59,6 +60,7 @@ export default function RootLayout() {
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const currentTheme = useCurrentTheme();
+  const [showIntro, setShowIntro] = useState(true);
 
   // Expo 프로젝트 ID 가져오기
   const projectId = Constants.expoConfig?.extra?.eas?.projectId || '';
@@ -79,25 +81,23 @@ export default function RootLayout() {
    * 1. Zustand persist middleware가 자동으로 인증 상태 복원 (hydrate)
    * 2. 토큰 유효성 검증 (checkAuth)
    * 3. 알림 초기화 (useNotifications 훅이 자동 처리)
-   * 4. 스플래시 화면 숨김
    */
   const initializeApp = useCallback(async () => {
     try {
       console.log('[RootLayout] 앱 초기화 시작');
-
-      // 토큰 유효성 검증 (필요 시 refresh)
       await checkAuth();
-
       console.log('[RootLayout] 앱 초기화 완료');
-
-      // 스플래시 화면 숨김
-      await SplashScreen.hideAsync();
     } catch (error) {
       console.error('[RootLayout] 앱 초기화 오류:', error);
-      // 오류가 있어도 스플래시 화면은 숨김
-      await SplashScreen.hideAsync();
     }
   }, [checkAuth]);
+
+  /**
+   * 3D 인트로 완료 후 메인 앱 표시
+   */
+  const handleIntroComplete = useCallback(() => {
+    setShowIntro(false);
+  }, []);
 
   useEffect(() => {
     if (isHydrated) {
@@ -105,6 +105,16 @@ export default function RootLayout() {
       initializeApp();
     }
   }, [isHydrated, initializeApp]);
+
+  /**
+   * 인트로 화면 표시 시 네이티브 스플래시 숨김
+   * (React 렌더가 준비되면 즉시 3D 인트로가 보이도록)
+   */
+  useEffect(() => {
+    if (isHydrated && showIntro) {
+      SplashScreen.hideAsync();
+    }
+  }, [isHydrated, showIntro]);
 
   /**
    * 푸시 토큰 등록
@@ -136,6 +146,18 @@ export default function RootLayout() {
       <TamaguiProvider config={config} defaultTheme="light">
         <Theme name={currentTheme}>
           <AppSplashScreen showMessage message="앱을 준비하고 있습니다..." />
+        </Theme>
+      </TamaguiProvider>
+    );
+  }
+
+  // 3D 로고 인트로 표시 (앱 킬 시 첫 화면)
+  if (showIntro) {
+    return (
+      <TamaguiProvider config={config} defaultTheme="light">
+        <Theme name={currentTheme}>
+          <StatusBar style="light" />
+          <VideoIntroScreen onComplete={handleIntroComplete} />
         </Theme>
       </TamaguiProvider>
     );
