@@ -2,13 +2,21 @@
  * 로그인 훅 (v1)
  *
  * v1 API를 사용한 로그인 처리
+ * 로그인 성공 후 myInfoView 호출하여 사용자 상세 정보 설정
  * 네비게이션은 login.tsx에서 isAuthenticated 상태를 감지하여 처리
  */
 
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useAuthStore } from '@/stores/auth.store';
-import { login, guestLogin, LOGIN_RESPONSE_CODES, type LoginResponse } from '@/api/auth';
+import {
+  login,
+  guestLogin,
+  myInfoView,
+  LOGIN_RESPONSE_CODES,
+  type LoginResponse,
+  type MyInfoAccount,
+} from '@/api/auth';
 
 interface LoginParams {
   userId: string;
@@ -22,14 +30,55 @@ interface GuestLoginParams {
 
 export function useLogin() {
   const setAuth = useAuthStore((state) => state.setAuth);
+  const setUser = useAuthStore((state) => state.setUser);
+  const setAttendanceFlag = useAuthStore((state) => state.setAttendanceFlag);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * myInfoView 호출하여 사용자 상세 정보 설정
+   */
+  const fetchMyInfo = useCallback(
+    async (buildingId?: string) => {
+      try {
+        console.log('[useLogin] myInfoView 호출');
+        const response = await myInfoView(buildingId);
+
+        if (response.code === 'success' && response.data) {
+          const account = response.data.account;
+          const attendanceFlag = response.data.attendanceFlag;
+
+          // 사용자 정보 업데이트
+          const user = mapAccountToUser(account);
+          setUser(user);
+
+          // 출퇴근 플래그 업데이트
+          setAttendanceFlag(attendanceFlag);
+
+          console.log('[useLogin] myInfoView 성공:', {
+            userId: user.userId,
+            roleId: user.roleId,
+            buildingCnt: user.buildingCnt,
+          });
+
+          return { account, attendanceFlag };
+        } else {
+          console.error('[useLogin] myInfoView 실패:', response.message);
+          return null;
+        }
+      } catch (err) {
+        console.error('[useLogin] myInfoView 오류:', err);
+        return null;
+      }
+    },
+    [setUser, setAttendanceFlag]
+  );
 
   /**
    * 로그인 응답 처리
    */
   const handleLoginResponse = useCallback(
-    (response: LoginResponse): boolean => {
+    async (response: LoginResponse): Promise<boolean> => {
       const { code, message, authToken, data } = response;
 
       console.log('[useLogin] 로그인 응답 처리:', code);
@@ -38,16 +87,30 @@ export function useLogin() {
         case LOGIN_RESPONSE_CODES.SUCCESS:
         case 'success':
           if (authToken && data) {
-            console.log('[useLogin] 로그인 성공:', data.name);
-            const user = {
+            console.log('[useLogin] 로그인 성공 - 기본 정보:', data.name);
+
+            // 기본 인증 정보 설정 (임시 - myInfoView에서 업데이트됨)
+            const tempUser = {
               id: data.id || data.userId,
+              userId: data.userId,
               email: data.email || data.userId,
               name: data.name,
               role: data.role,
+              roleId: 0, // myInfoView에서 업데이트
               siteId: data.siteId,
               siteName: data.siteName,
+              buildingCnt: 0,
+              buildingAccountDTO: [],
             };
-            setAuth(user, authToken, '');
+            setAuth(tempUser, authToken, '');
+
+            // myInfoView 호출하여 상세 정보 설정
+            const myInfoResult = await fetchMyInfo();
+
+            if (!myInfoResult) {
+              console.warn('[useLogin] myInfoView 실패 - 기본 정보로 진행');
+            }
+
             return true;
           }
           console.error('[useLogin] 로그인 데이터 누락');
@@ -73,7 +136,7 @@ export function useLogin() {
           return false;
       }
     },
-    [setAuth]
+    [setAuth, fetchMyInfo]
   );
 
   /**
@@ -91,7 +154,7 @@ export function useLogin() {
           passwd: params.passwd,
         });
 
-        handleLoginResponse(response);
+        await handleLoginResponse(response);
       } catch (err) {
         console.error('[useLogin] 로그인 API 오류:', err);
         const errorMessage = '아이디와 비밀번호를 정확히 입력해주세요.';
@@ -118,7 +181,12 @@ export function useLogin() {
           buildingId: params.buildingId,
         });
 
-        handleLoginResponse(response);
+        const success = await handleLoginResponse(response);
+
+        // 게스트 로그인 성공 시 건물 ID로 myInfoView 재호출
+        if (success) {
+          await fetchMyInfo(params.buildingId);
+        }
       } catch (err) {
         console.error('[Auth] 게스트 로그인 오류:', err);
         const errorMessage = '게스트 로그인에 실패했습니다.';
@@ -128,7 +196,7 @@ export function useLogin() {
         setIsLoading(false);
       }
     },
-    [handleLoginResponse]
+    [handleLoginResponse, fetchMyInfo]
   );
 
   /**
@@ -136,12 +204,46 @@ export function useLogin() {
    */
   const clearError = useCallback(() => setError(null), []);
 
+  /**
+   * 내 정보 새로고침 (외부에서 호출 가능)
+   */
+  const refreshMyInfo = useCallback(
+    async (buildingId?: string) => {
+      return await fetchMyInfo(buildingId);
+    },
+    [fetchMyInfo]
+  );
+
   return {
     isLoading,
     error,
     login: performLogin,
     guestLogin: performGuestLogin,
+    refreshMyInfo,
     clearError,
+  };
+}
+
+/**
+ * MyInfoAccount를 User로 매핑
+ */
+function mapAccountToUser(account: MyInfoAccount) {
+  return {
+    id: account.id || account.userId,
+    userId: account.userId,
+    email: account.email,
+    name: account.name,
+    role: account.roleName,
+    roleId: account.roleId,
+    roleName: account.roleName,
+    type: account.type,
+    companyId: account.companyId,
+    companyName: account.companyName,
+    siteId: account.siteId,
+    siteName: account.siteName,
+    buildingCnt: account.buildingCnt,
+    buildingAccountDTO: account.buildingAccountDTO || [],
+    selectedBuildingAccountDTO: account.selectedBuildingAccountDTO,
   };
 }
 

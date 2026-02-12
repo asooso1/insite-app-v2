@@ -1,91 +1,144 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { APP_NAME } from '@/constants/config';
 import { useGuestLogin } from '@/features/auth/hooks/useGuestLogin';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { SeniorButton } from '@/components/ui/SeniorButton';
+import { useGuestNFC } from '@/hooks/useNFC';
+import { showNFCDisabledAlert, showNFCNotSupportedAlert, openNFCSettings } from '@/services/nfc';
 
 export default function GuestLoginScreen() {
   const router = useRouter();
   const { isLoading, performGuestLogin } = useGuestLogin();
   const { isSeniorMode, fontSize } = useSeniorStyles();
-  const [isScanning, setIsScanning] = useState(false);
-  const [nfcSupported, setNfcSupported] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    // TODO: Check NFC support
-    // NfcManager.isSupported().then(setNfcSupported);
-    setNfcSupported(true); // Mock for now
-  }, []);
+  const {
+    isSupported,
+    isEnabled,
+    status,
+    buildingId,
+    error,
+    startScan,
+    cancelScan,
+    reset,
+    refresh,
+  } = useGuestNFC({
+    scanAlertMessage: '게스트 로그인을 위해 NFC 태그를 스캔해주세요',
+    scanTimeout: 60000, // 60초
+  });
+
+  const isScanning = status === 'scanning';
+  const isInitializing = status === 'initializing';
 
   /**
    * NFC 스캔 시작
    */
-  const startNfcScan = async () => {
-    setIsScanning(true);
-
-    try {
-      // TODO: Implement NFC scanning
-      // ============================================================
-      // NFC 라이브러리 통합 시 아래 코드로 교체:
-      //
-      // import NfcManager, { NfcTech } from 'react-native-nfc-manager';
-      //
-      // await NfcManager.requestTechnology(NfcTech.Ndef);
-      // const tag = await NfcManager.getTag();
-      //
-      // if (!tag || !tag.id) {
-      //   throw new Error('유효하지 않은 NFC 태그입니다');
-      // }
-      //
-      // const tagId = tag.id;
-      // const buildingId = extractBuildingIdFromTag(tag); // 태그에서 빌딩 ID 추출
-      //
-      // await performGuestLogin({
-      //   tagId,
-      //   buildingId,
-      // });
-      // ============================================================
-
-      // Mock: 개발 중에는 더미 데이터로 테스트
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Mock 게스트 로그인 실행
-      await performGuestLogin({
-        tagId: 'MOCK_NFC_TAG_12345',
-        buildingId: 'MOCK_BUILDING_001',
-      });
-    } catch (error) {
-      console.error('[GuestLogin] NFC 스캔 오류:', error);
-      Alert.alert('NFC 스캔 실패', 'NFC 태그를 읽는 데 실패했습니다.\n다시 시도해주세요.', [
-        { text: '확인' },
-      ]);
-    } finally {
-      setIsScanning(false);
-      // TODO: Cancel NFC technology request
-      // await NfcManager.cancelTechnologyRequest();
+  const handleStartScan = useCallback(async () => {
+    // NFC 비활성화 시 설정 안내
+    if (isSupported && !isEnabled) {
+      showNFCDisabledAlert();
+      return;
     }
-  };
+
+    // NFC 미지원 시 안내
+    if (!isSupported) {
+      showNFCNotSupportedAlert();
+      return;
+    }
+
+    reset(); // 이전 상태 초기화
+
+    const tag = await startScan();
+
+    if (tag) {
+      // 스캔 성공 - 게스트 로그인 실행
+      try {
+        // NDEF 메시지 또는 파싱된 빌딩 ID 사용
+        const extractedBuildingId = tag.ndefMessage || buildingId || 'DEFAULT_BUILDING';
+
+        await performGuestLogin({
+          tagId: tag.tagId,
+          buildingId: extractedBuildingId,
+        });
+      } catch (loginError) {
+        console.error('[GuestLogin] 로그인 오류:', loginError);
+        Alert.alert(
+          '로그인 실패',
+          '게스트 로그인에 실패했습니다.\n다시 시도해주세요.',
+          [{ text: '확인' }]
+        );
+      }
+    }
+  }, [isSupported, isEnabled, reset, startScan, buildingId, performGuestLogin]);
 
   /**
    * NFC 스캔 취소
    */
-  const cancelScan = () => {
-    setIsScanning(false);
-    // TODO: Cancel NFC scan
-    // NfcManager.cancelTechnologyRequest().catch(console.error);
-  };
+  const handleCancelScan = useCallback(async () => {
+    await cancelScan();
+  }, [cancelScan]);
 
-  if (nfcSupported === null) {
+  /**
+   * NFC 에러 처리
+   */
+  useEffect(() => {
+    if (error && status === 'error') {
+      let title = 'NFC 오류';
+      let message = '알 수 없는 오류가 발생했습니다.';
+
+      switch (error.code) {
+        case 'NOT_SUPPORTED':
+          title = 'NFC 미지원';
+          message = '이 기기는 NFC를 지원하지 않습니다.';
+          break;
+        case 'NOT_ENABLED':
+          title = 'NFC 비활성화';
+          message = 'NFC가 비활성화되어 있습니다.\n설정에서 NFC를 켜주세요.';
+          break;
+        case 'TIMEOUT':
+          title = '스캔 시간 초과';
+          message = 'NFC 스캔 시간이 초과되었습니다.\n다시 시도해주세요.';
+          break;
+        case 'TAG_LOST':
+          title = '태그 읽기 실패';
+          message = 'NFC 태그를 읽을 수 없습니다.\n태그를 다시 스캔해주세요.';
+          break;
+        case 'CANCELLED':
+          // 사용자 취소는 알림 표시 안 함
+          return;
+        default:
+          message = error.message || '알 수 없는 오류가 발생했습니다.';
+      }
+
+      Alert.alert(title, message, [
+        { text: '확인', onPress: reset },
+        ...(error.code === 'NOT_ENABLED'
+          ? [{ text: '설정 열기', onPress: openNFCSettings }]
+          : []),
+      ]);
+    }
+  }, [error, status, reset]);
+
+  // 화면 진입 시 NFC 상태 새로고침
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  // 초기화 중 표시
+  if (isInitializing) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#0064FF" />
+        <Text style={[styles.loadingText, isSeniorMode && { fontSize: fontSize.medium }]}>
+          NFC 초기화 중...
+        </Text>
       </View>
     );
   }
 
-  if (!nfcSupported) {
+  // NFC 미지원 표시
+  if (isSupported === false) {
     return (
       <View style={styles.container}>
         <View style={styles.content}>
@@ -120,6 +173,15 @@ export default function GuestLoginScreen() {
           NFC 게스트 로그인
         </Text>
 
+        {/* NFC 비활성화 경고 */}
+        {isSupported && !isEnabled && (
+          <TouchableOpacity style={styles.warningBanner} onPress={openNFCSettings}>
+            <Text style={[styles.warningText, isSeniorMode && { fontSize: fontSize.small }]}>
+              NFC가 비활성화되어 있습니다. 탭하여 설정 열기
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.nfcArea}>
           {isScanning || isLoading ? (
             <>
@@ -137,9 +199,16 @@ export default function GuestLoginScreen() {
                 style={[
                   styles.nfcIcon,
                   isSeniorMode && { width: 160, height: 160, borderRadius: 80 },
+                  !isEnabled && styles.nfcIconDisabled,
                 ]}
               >
-                <Text style={[styles.nfcIconText, isSeniorMode && { fontSize: fontSize.title }]}>
+                <Text
+                  style={[
+                    styles.nfcIconText,
+                    isSeniorMode && { fontSize: fontSize.title },
+                    !isEnabled && styles.nfcIconTextDisabled,
+                  ]}
+                >
                   NFC
                 </Text>
               </View>
@@ -155,20 +224,24 @@ export default function GuestLoginScreen() {
           isSeniorMode ? (
             <SeniorButton
               label="취소"
-              onPress={cancelScan}
+              onPress={handleCancelScan}
               disabled={isLoading}
               variant="outline"
               fullWidth
             />
           ) : (
-            <TouchableOpacity style={styles.cancelButton} onPress={cancelScan} disabled={isLoading}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancelScan}
+              disabled={isLoading}
+            >
               <Text style={styles.cancelButtonText}>취소</Text>
             </TouchableOpacity>
           )
         ) : isSeniorMode ? (
           <SeniorButton
-            label="NFC 스캔 시작"
-            onPress={startNfcScan}
+            label={isEnabled ? 'NFC 스캔 시작' : 'NFC 설정 열기'}
+            onPress={isEnabled ? handleStartScan : openNFCSettings}
             disabled={isLoading}
             variant="primary"
             fullWidth
@@ -176,10 +249,12 @@ export default function GuestLoginScreen() {
         ) : (
           <TouchableOpacity
             style={[styles.scanButton, isLoading && styles.scanButtonDisabled]}
-            onPress={startNfcScan}
+            onPress={isEnabled ? handleStartScan : openNFCSettings}
             disabled={isLoading}
           >
-            <Text style={styles.scanButtonText}>NFC 스캔 시작</Text>
+            <Text style={styles.scanButtonText}>
+              {isEnabled ? 'NFC 스캔 시작' : 'NFC 설정 열기'}
+            </Text>
           </TouchableOpacity>
         )}
 
@@ -216,9 +291,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     flex: 1,
+    width: '100%',
     paddingHorizontal: 24,
     paddingTop: 80,
     paddingBottom: 40,
@@ -233,7 +311,24 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#6E6E6E',
-    marginBottom: 48,
+    marginBottom: 24,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: '#6E6E6E',
+  },
+  warningBanner: {
+    width: '100%',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 24,
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#E65100',
+    textAlign: 'center',
   },
   nfcArea: {
     flex: 1,
@@ -249,10 +344,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
+  nfcIconDisabled: {
+    backgroundColor: '#F5F5F5',
+  },
   nfcIconText: {
     fontSize: 24,
     fontWeight: '700',
     color: '#0064FF',
+  },
+  nfcIconTextDisabled: {
+    color: '#B3B3B3',
   },
   description: {
     fontSize: 16,

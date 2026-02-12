@@ -8,7 +8,7 @@ import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { guestLogin, LOGIN_RESPONSE_CODES, type LoginResponse } from '@/api/auth';
+import { guestLogin, myInfoView, LOGIN_RESPONSE_CODES, type LoginResponse } from '@/api/auth';
 
 interface NfcScanResult {
   tagId: string;
@@ -18,6 +18,8 @@ interface NfcScanResult {
 export function useGuestLogin() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const setUser = useAuthStore((state) => state.setUser);
+  const setAttendanceFlag = useAuthStore((state) => state.setAttendanceFlag);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,26 +27,32 @@ export function useGuestLogin() {
    * 게스트 로그인 응답 처리
    */
   const handleGuestLoginResponse = useCallback(
-    (response: LoginResponse): boolean => {
+    (response: LoginResponse, buildingId: string): boolean => {
       const { code, message, authToken, data } = response;
 
       switch (code) {
         case LOGIN_RESPONSE_CODES.SUCCESS:
         case 'success':
           if (authToken && data) {
-            // 게스트 사용자 정보 저장
+            // 게스트 사용자 정보 저장 (임시 - myInfoView에서 업데이트됨)
             const user = {
               id: data.id || data.userId,
+              userId: data.userId,
               email: data.email || data.mobile || '',
               name: data.name || '게스트',
               role: data.role || 'guest',
+              roleId: 21, // 일일계정 (게스트) - myInfoView에서 업데이트됨
               siteId: data.siteId,
               siteName: data.siteName,
+              buildingCnt: 1,
+              buildingAccountDTO: buildingId
+                ? [{ buildingId, buildingName: '' }]
+                : [],
             };
 
             setAuth(user, authToken, '');
             console.log('[GuestLogin] 게스트 로그인 성공:', {
-              userId: user.id,
+              userId: user.userId,
               name: user.name,
               role: user.role,
             });
@@ -84,6 +92,62 @@ export function useGuestLogin() {
   );
 
   /**
+   * myInfoView 호출하여 사용자 상세 정보 설정
+   */
+  const fetchMyInfo = useCallback(
+    async (buildingId: string) => {
+      try {
+        console.log('[GuestLogin] myInfoView 호출');
+        const response = await myInfoView(buildingId);
+
+        if (response.code === 'success' && response.data) {
+          const account = response.data.account;
+          const attendanceFlag = response.data.attendanceFlag;
+
+          // 사용자 정보 업데이트
+          const user = {
+            id: account.id || account.userId,
+            userId: account.userId,
+            email: account.email,
+            name: account.name,
+            role: account.roleName,
+            roleId: account.roleId,
+            roleName: account.roleName,
+            type: account.type,
+            companyId: account.companyId,
+            companyName: account.companyName,
+            siteId: account.siteId,
+            siteName: account.siteName,
+            buildingCnt: account.buildingCnt,
+            buildingAccountDTO: account.buildingAccountDTO || [],
+            selectedBuildingAccountDTO: {
+              buildingId,
+              buildingName: account.buildingAccountDTO?.[0]?.buildingName || '',
+            },
+          };
+
+          setUser(user);
+          setAttendanceFlag(attendanceFlag);
+
+          console.log('[GuestLogin] myInfoView 성공:', {
+            userId: user.userId,
+            roleId: user.roleId,
+          });
+
+          return true;
+        } else {
+          console.error('[GuestLogin] myInfoView 실패:', response.message);
+          return false;
+        }
+      } catch (err) {
+        console.error('[GuestLogin] myInfoView 오류:', err);
+        return false;
+      }
+    },
+    [setUser, setAttendanceFlag]
+  );
+
+  /**
    * NFC 스캔 결과로 게스트 로그인 실행
    */
   const performGuestLogin = useCallback(
@@ -107,9 +171,12 @@ export function useGuestLogin() {
           buildingId,
         });
 
-        const success = handleGuestLoginResponse(response);
+        const success = handleGuestLoginResponse(response, buildingId);
 
         if (success) {
+          // myInfoView 호출하여 상세 정보 설정
+          await fetchMyInfo(buildingId);
+
           // 로그인 성공 시 홈 화면으로 이동
           // auth store의 isAuthenticated 상태 변경으로 자동 리다이렉트됨
           console.log('[GuestLogin] 홈 화면으로 이동');
@@ -133,7 +200,7 @@ export function useGuestLogin() {
         setIsLoading(false);
       }
     },
-    [handleGuestLoginResponse, router]
+    [handleGuestLoginResponse, fetchMyInfo, router]
   );
 
   /**

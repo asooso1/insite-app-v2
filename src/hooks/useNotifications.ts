@@ -127,7 +127,9 @@ export function useNotifications(options: UseNotificationsOptions): UseNotificat
         setupNotificationHandlers();
 
         // 2. Android 알림 채널 설정
-        await setupDefaultChannels();
+        await setupDefaultChannels().catch(() => {
+          console.log('[useNotifications] 알림 채널 설정 스킵');
+        });
 
         // 3. 권한 상태 확인
         const status = await requestNotificationPermissions();
@@ -137,13 +139,19 @@ export function useNotifications(options: UseNotificationsOptions): UseNotificat
 
         // 4. Push Token 발급 (권한이 있는 경우)
         if (status.status === 'granted') {
-          const token = await getExpoPushToken(projectId);
-          if (isMounted) {
-            setExpoPushToken(token);
+          try {
+            const token = await getExpoPushToken(projectId);
+            if (isMounted) {
+              setExpoPushToken(token);
+            }
+          } catch {
+            // Firebase 미설정 시 조용히 무시
+            console.log('[useNotifications] 푸시 토큰 발급 실패 (Firebase 미설정)');
           }
         }
       } catch (error) {
-        console.error('[useNotifications] 초기화 실패:', error);
+        // 알림 초기화 실패해도 앱은 계속 동작
+        console.log('[useNotifications] 초기화 실패 (무시됨):', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -209,9 +217,13 @@ export function useNotifications(options: UseNotificationsOptions): UseNotificat
 
     const updateToken = async () => {
       if (permissionStatus?.status === 'granted' && !expoPushToken) {
-        const token = await getExpoPushToken(projectId);
-        if (isMounted) {
-          setExpoPushToken(token);
+        try {
+          const token = await getExpoPushToken(projectId);
+          if (isMounted) {
+            setExpoPushToken(token);
+          }
+        } catch {
+          // Firebase 미설정 시 조용히 무시
         }
       }
     };
