@@ -74,6 +74,7 @@ export const ICONS = {
   inProgress: CircleDot,
 
   // 기타
+  close: X,
   empty: Inbox,
   offline: WifiOff,
   fire: Flame,

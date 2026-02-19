@@ -201,6 +201,23 @@ export const seniorFont = createFont({
 });
 
 /**
+ * 타이포그래피 계층 (제목/본문/캡션)
+ * 컴포넌트에서 일관된 시각 언어 적용용
+ */
+export const typographyScale = {
+  /** 대제목 (화면 타이틀) */
+  title: { size: '2xl' as const, weight: 'semibold' as const, lineHeight: '2xl' as const },
+  /** 소제목 (섹션 헤더) */
+  subtitle: { size: 'lg' as const, weight: 'medium' as const, lineHeight: 'lg' as const },
+  /** 본문 */
+  body: { size: 'md' as const, weight: 'normal' as const, lineHeight: 'md' as const },
+  /** 보조 텍스트 */
+  caption: { size: 'sm' as const, weight: 'normal' as const, lineHeight: 'sm' as const },
+  /** 캡션 (라벨, 힌트) */
+  label: { size: 'xs' as const, weight: 'normal' as const, lineHeight: 'xs' as const },
+} as const;
+
+/**
  * 폰트 크기 내보내기 (유틸리티)
  */
 export { fontSizes, fontWeights, lineHeights };

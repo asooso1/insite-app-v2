@@ -4,6 +4,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
 import { styled, YStack, XStack } from 'tamagui';
+import { durations } from '@/theme/tokens';
 
 const SkeletonBase = styled(YStack, {
   name: 'Skeleton',
@@ -27,16 +28,17 @@ export function Skeleton({
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    const pulseDuration = durations.slower; // 500ms - 토큰 기반
     const pulseAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(animatedValue, {
           toValue: 1,
-          duration: 1000,
+          duration: pulseDuration,
           useNativeDriver: true,
         }),
         Animated.timing(animatedValue, {
           toValue: 0,
-          duration: 1000,
+          duration: pulseDuration,
           useNativeDriver: true,
         }),
       ])

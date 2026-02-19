@@ -44,6 +44,7 @@ const colors = {
   infoMuted: '#E0F2FE',
 
   // 그레이 스케일 (50-900) - 쿨 그레이
+  // WCAG AA: gray500(#64748B) 대비 white 4.54:1, gray900(#0F172A) 대비 white 15.8:1
   gray50: '#F8FAFC',
   gray100: '#F1F5F9',
   gray200: '#E2E8F0',
@@ -86,6 +87,12 @@ const colors = {
   black: '#000000',
   transparent: 'transparent',
 };
+
+/** 컴포넌트에서 사용할 hex 값 (TextInput 등 비-Tamagui) */
+export const COLOR_HEX = {
+  gray400: colors.gray400,
+  gray900: colors.gray900,
+} as const;
 
 /**
  * 그라디언트 정의
@@ -353,12 +360,15 @@ export const glassStyle = {
 
 /**
  * 애니메이션 듀레이션 토큰
+ * Phase 3 화면 전환: screenTransition 250-350ms 권장
  */
 export const durations = {
   fast: 150,
   normal: 250,
   slow: 350,
   slower: 500,
+  /** 화면 전환용 (expo-router, 모달) */
+  screenTransition: 300,
 } as const;
 
 /**

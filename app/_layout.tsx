@@ -14,6 +14,7 @@ import { SeniorModeProvider } from '@/contexts/SeniorModeContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import config from '@/theme/tamagui.config';
 import type { ThemeName } from '@/theme/themes';
+import { durations } from '@/theme/tokens';
 import { asyncStoragePersister } from '@/api/queryPersister';
 
 // 앱이 로드되는 동안 네이티브 스플래시 화면 유지
@@ -177,6 +178,7 @@ export default function RootLayout() {
               screenOptions={{
                 headerShown: false,
                 animation: 'slide_from_right',
+                animationDuration: durations.screenTransition,
               }}
             >
               <Stack.Screen name="index" />

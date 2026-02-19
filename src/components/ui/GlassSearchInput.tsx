@@ -5,8 +5,10 @@
  * 반투명 배경과 아이콘 검색창
  */
 import React from 'react';
-import { StyleSheet, Platform, ViewStyle, TextInput } from 'react-native';
-import { XStack, Text } from 'tamagui';
+import { Platform, ViewStyle, TextStyle, TextInput } from 'react-native';
+import { XStack } from 'tamagui';
+import { AppIcon } from '@/components/icons';
+import { shadows, COLOR_HEX } from '@/theme/tokens';
 
 interface GlassSearchInputProps {
   /** 값 */
@@ -60,30 +62,21 @@ export function GlassSearchInput({
       gap="$3"
       style={
         Platform.select({
-          ios: {
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-          },
-          android: {
-            elevation: 2,
-          },
+          ios: shadows.sm as ViewStyle,
+          android: { elevation: 2 },
         }) as ViewStyle
       }
     >
       {/* 검색 아이콘 */}
-      <Text fontSize={18} color="$gray400">
-        🔍
-      </Text>
+      <AppIcon name="search" size="md" color="$gray400" />
 
       {/* 입력 필드 */}
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#94A3B8"
-        style={styles.input}
+        placeholderTextColor={COLOR_HEX.gray400}
+        style={inputStyle}
         autoFocus={autoFocus}
         returnKeyType="search"
         autoCapitalize="none"
@@ -92,22 +85,25 @@ export function GlassSearchInput({
 
       {/* 클리어 버튼 */}
       {showClear && value.length > 0 && (
-        <Text fontSize={16} color="$gray400" pressStyle={{ opacity: 0.6 }} onPress={handleClear}>
-          ✕
-        </Text>
+        <XStack
+          padding="$1"
+          pressStyle={{ opacity: 0.6 }}
+          onPress={handleClear}
+          cursor="pointer"
+        >
+          <AppIcon name="close" size="sm" color="$gray400" />
+        </XStack>
       )}
     </XStack>
   );
 }
 
-const styles = StyleSheet.create({
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: '#0F172A',
-    padding: 0,
-    margin: 0,
-  },
-});
+const inputStyle: TextStyle = {
+  flex: 1,
+  fontSize: 15,
+  color: COLOR_HEX.gray900,
+  padding: 0,
+  margin: 0,
+};
 
 export default GlassSearchInput;

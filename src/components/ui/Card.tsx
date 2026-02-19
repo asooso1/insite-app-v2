@@ -5,6 +5,7 @@
  * 플로팅 효과와 부드러운 그림자로 깊이감 표현
  */
 import { styled, GetProps, YStack, XStack, Text } from 'tamagui';
+import { fontSizes } from '@/theme/fonts';
 
 /**
  * 카드 컨테이너 - Glassmorphism 스타일
@@ -191,7 +192,7 @@ export const CardHeader = styled(XStack, {
  */
 export const CardTitle = styled(Text, {
   name: 'CardTitle',
-  fontSize: 20,
+  fontSize: fontSizes.lg,
   fontWeight: '700',
   color: '$color',
   letterSpacing: -0.5,
@@ -199,15 +200,15 @@ export const CardTitle = styled(Text, {
   variants: {
     size: {
       sm: {
-        fontSize: 16,
+        fontSize: fontSizes.md,
         fontWeight: '600',
       },
       md: {
-        fontSize: 20,
+        fontSize: fontSizes.lg,
         fontWeight: '700',
       },
       lg: {
-        fontSize: 24,
+        fontSize: fontSizes['2xl'],
         fontWeight: '700',
         letterSpacing: -0.75,
       },
@@ -224,7 +225,7 @@ export const CardTitle = styled(Text, {
  */
 export const CardDescription = styled(Text, {
   name: 'CardDescription',
-  fontSize: 14,
+  fontSize: fontSizes.sm,
   color: '$colorSecondary',
   marginTop: '$1',
   lineHeight: 20,
@@ -232,15 +233,15 @@ export const CardDescription = styled(Text, {
   variants: {
     size: {
       sm: {
-        fontSize: 12,
+        fontSize: fontSizes.xs,
         lineHeight: 16,
       },
       md: {
-        fontSize: 14,
+        fontSize: fontSizes.sm,
         lineHeight: 20,
       },
       lg: {
-        fontSize: 16,
+        fontSize: fontSizes.md,
         lineHeight: 24,
       },
     },

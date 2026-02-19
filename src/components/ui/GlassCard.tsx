@@ -7,6 +7,7 @@
 import React from 'react';
 import { Platform, ViewStyle } from 'react-native';
 import { YStack, GetProps } from 'tamagui';
+import { shadows } from '@/theme/tokens';
 
 interface GlassCardProps {
   /** 자식 컴포넌트 */
@@ -91,34 +92,16 @@ export function GlassCard({
   };
 
   const getShadowStyle = (): ViewStyle => {
-    if (glow) {
-      return {
-        shadowColor: '#00A3FF',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-      };
-    }
-    if (floating) {
-      return {
-        shadowColor: '#0066CC',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.18,
-        shadowRadius: 24,
-      };
-    }
-    return {
-      shadowColor: '#0066CC',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-    };
+    if (glow) return shadows.glow as ViewStyle;
+    if (floating) return shadows.floating as ViewStyle;
+    return shadows.md as ViewStyle;
   };
 
   return (
     <YStack
       backgroundColor={getBackgroundColor() as `rgba(${number}, ${number}, ${number}, ${number})`}
       borderRadius={20}
+      // radius.$5 (20px) - tokens.ts
       borderWidth={1}
       borderColor={getBorderColor() as `rgba(${number}, ${number}, ${number}, ${number})`}
       padding={padding}

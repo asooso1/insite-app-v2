@@ -4,6 +4,7 @@
 import React from 'react';
 import { ActivityIndicator } from 'react-native';
 import { styled, YStack, Text, XStack } from 'tamagui';
+import { fontSizes } from '@/theme/fonts';
 
 const Overlay = styled(YStack, {
   name: 'LoadingOverlay',
@@ -39,7 +40,7 @@ const LoadingContainer = styled(YStack, {
 
 const LoadingText = styled(Text, {
   name: 'LoadingText',
-  fontSize: 14,
+  fontSize: fontSizes.sm,
   color: '$gray600',
   marginTop: 8,
 });
@@ -66,7 +67,10 @@ export function LoadingOverlay({
   return (
     <Overlay transparent={transparent} dark={dark}>
       <LoadingContainer>
-        <ActivityIndicator size={size} color={color || (dark ? '#FFFFFF' : '#0066CC')} />
+        <ActivityIndicator
+          size={size}
+          color={color || (dark ? '#FFFFFF' : '#0066CC')}
+        />
         {message && <LoadingText color={dark ? '$white' : '$gray600'}>{message}</LoadingText>}
       </LoadingContainer>
     </Overlay>
@@ -96,7 +100,7 @@ export function LoadingSpinner({
     <InlineContainer>
       <ActivityIndicator size={size} color={color} />
       {message && (
-        <Text color="$gray600" fontSize={14}>
+        <Text color="$gray600" fontSize={fontSizes.sm}>
           {message}
         </Text>
       )}

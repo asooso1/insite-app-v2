@@ -4,6 +4,8 @@
  * 2026 Modern UI - Premium Facility Management
  * Light Theme (기본) 및 Senior Light Theme (시니어 모드)
  * Glassmorphism + 그라디언트 기반 현대적 테마
+ *
+ * 애니메이션: durations.screenTransition (300ms) - src/theme/tokens.ts
  */
 import { tokens, SENIOR_SCALE_FACTOR, SENIOR_TOUCH_TARGET } from './tokens';
 
