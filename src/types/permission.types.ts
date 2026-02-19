@@ -82,7 +82,6 @@ export type Permission =
   | 'dashboard' // 운영 대시보드
   | 'dashboardAlarm' // 경보 대시보드
   | 'dashboardSite' // 현장 대시보드
-  | 'dashboardBems' // BEMS 대시보드 (v2 제외)
   | 'dashboardNcp' // NCP 대시보드
   // 탭 접근 권한
   | 'tabMyWork' // 내 작업 탭

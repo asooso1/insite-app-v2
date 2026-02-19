@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import { XStack, Text } from 'tamagui';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
@@ -88,14 +88,14 @@ function FilterPill({ option, isSelected, onPress }: FilterPillProps) {
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[styles.pill, animatedStyle]}
+      style={[{ flex: 1, borderRadius: 999, overflow: 'hidden' }, animatedStyle]}
     >
       {isSelected ? (
         <LinearGradient
           colors={['#0066CC', '#00A3FF']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.gradientBackground}
+          style={{ borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}
         >
           <XStack paddingVertical="$2" paddingHorizontal="$4" gap="$1" alignItems="center">
             <Text fontSize={14} fontWeight="600" color="white">
@@ -148,18 +148,5 @@ function FilterPill({ option, isSelected, onPress }: FilterPillProps) {
     </AnimatedPressable>
   );
 }
-
-const styles = StyleSheet.create({
-  pill: {
-    flex: 1,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  gradientBackground: {
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
 
 export default GlassFilterBar;

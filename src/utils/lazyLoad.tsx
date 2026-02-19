@@ -12,7 +12,7 @@
  */
 
 import React, { ComponentType, Suspense, ReactNode } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { YStack, Text } from 'tamagui';
 
 /**
@@ -171,9 +171,9 @@ class LazyErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundar
  */
 export function InlineLoadingFallback(): React.ReactElement {
   return (
-    <View style={styles.inlineLoading}>
+    <YStack flex={1} alignItems="center" justifyContent="center" padding="$4">
       <ActivityIndicator size="small" color="#0066CC" />
-    </View>
+    </YStack>
   );
 }
 
@@ -190,33 +190,14 @@ export function CardSkeletonFallback(): React.ReactElement {
       borderColor="$gray200"
       gap="$3"
     >
-      <View style={[styles.skeleton, styles.skeletonTitle]} />
-      <View style={[styles.skeleton, styles.skeletonLine]} />
-      <View style={[styles.skeleton, styles.skeletonLine, { width: '60%' }]} />
+      {/* 스켈레톤 타이틀 */}
+      <View style={{ backgroundColor: '#F1F5F9', borderRadius: 8, height: 24, width: '40%' }} />
+      {/* 스켈레톤 라인 */}
+      <View style={{ backgroundColor: '#F1F5F9', borderRadius: 8, height: 16, width: '100%' }} />
+      <View style={{ backgroundColor: '#F1F5F9', borderRadius: 8, height: 16, width: '60%' }} />
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  inlineLoading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-  },
-  skeleton: {
-    backgroundColor: '#F1F5F9',
-    borderRadius: 8,
-  },
-  skeletonTitle: {
-    height: 24,
-    width: '40%',
-  },
-  skeletonLine: {
-    height: 16,
-    width: '100%',
-  },
-});
 
 /**
  * 사용 예시 타입 (참고용)

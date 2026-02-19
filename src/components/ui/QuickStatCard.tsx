@@ -11,7 +11,7 @@
  * - 테두리로 클릭 가능 표시
  */
 import React from 'react';
-import { StyleSheet, Platform, ViewStyle } from 'react-native';
+import { Platform, ViewStyle } from 'react-native';
 import { YStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { gradients } from '@/theme/tokens';
@@ -211,7 +211,7 @@ export function QuickStatCard({
           colors={[...getGradientColors()]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.iconGradient}
+          style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}
         >
           {typeof icon === 'string' ? (
             <AppIcon name={icon as IconName} size={sizing.iconTextSize} color="$white" />
@@ -243,14 +243,5 @@ export function QuickStatCard({
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  iconGradient: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
 
 export default QuickStatCard;

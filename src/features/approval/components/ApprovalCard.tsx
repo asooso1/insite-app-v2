@@ -146,7 +146,7 @@ export function ApprovalCard({
                     colors={typeGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={styles.typeBadge}
+                    style={{ paddingHorizontal: 10, paddingVertical: 5 }}
                   >
                     <Text fontSize={12} fontWeight="700" color="$white">
                       {item.typeName}
@@ -277,12 +277,5 @@ export function ApprovalCard({
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  typeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-});
 
 export default ApprovalCard;

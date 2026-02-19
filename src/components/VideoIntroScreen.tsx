@@ -7,7 +7,7 @@
  * - 비디오 사용 시: assets/splash-intro.mp4 추가 후 VideoIntro 주석 해제
  */
 import React, { useEffect, useCallback } from 'react';
-import { Image, Platform, StyleSheet } from 'react-native';
+import { Image, Platform } from 'react-native';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -96,10 +96,10 @@ function Logo3DAnimation({ onComplete }: { onComplete: () => void }) {
   });
 
   return (
-    <Animated.View style={[styles.logoContainer, animatedStyle]}>
+    <Animated.View style={[{ alignItems: 'center', justifyContent: 'center' }, animatedStyle]}>
       <Image
         source={require('../../assets/AppSymbol.png')}
-        style={styles.logo}
+        style={{ width: 180, height: 180 }}
         resizeMode="contain"
       />
     </Animated.View>
@@ -120,13 +120,3 @@ export function VideoIntroScreen({ onComplete }: VideoIntroScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  logoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    width: 180,
-    height: 180,
-  },
-});

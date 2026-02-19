@@ -122,7 +122,7 @@ export function PersonalTaskCard({ task, onPress, compact = false }: PersonalTas
                   colors={statusGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.statusBadge}
+                  style={{ paddingHorizontal: 10, paddingVertical: 5 }}
                 >
                   <Text fontSize={12} fontWeight="700" color="$white">
                     {statusName}
@@ -208,12 +208,5 @@ export function PersonalTaskCard({ task, onPress, compact = false }: PersonalTas
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-});
 
 export default PersonalTaskCard;

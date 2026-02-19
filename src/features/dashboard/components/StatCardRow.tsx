@@ -6,7 +6,6 @@
  */
 import React from 'react';
 import { XStack, YStack, Text } from 'tamagui';
-import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppIcon, type IconName } from '@/components/icons';
 
@@ -49,7 +48,16 @@ interface StatCardProps {
 
 function StatCard({ item }: StatCardProps) {
   return (
-    <View style={styles.cardContainer}>
+    <YStack
+      flex={1}
+      style={{
+        shadowColor: '#0066CC',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      }}
+    >
       <YStack
         flex={1}
         backgroundColor="$white"
@@ -62,16 +70,21 @@ function StatCard({ item }: StatCardProps) {
         borderColor="rgba(226, 232, 240, 0.8)"
       >
         {/* 아이콘 */}
-        <View style={styles.iconContainer}>
+        <YStack
+          width={44}
+          height={44}
+          borderRadius={12}
+          overflow="hidden"
+        >
           <LinearGradient
             colors={item.gradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.iconGradient}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
           >
             <AppIcon name={item.icon} size="sm" color="$white" />
           </LinearGradient>
-        </View>
+        </YStack>
 
         {/* 숫자 */}
         <Text
@@ -88,30 +101,8 @@ function StatCard({ item }: StatCardProps) {
           {item.label}
         </Text>
       </YStack>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  cardContainer: {
-    flex: 1,
-    shadowColor: '#0066CC',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  iconGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
 
 export default StatCardRow;

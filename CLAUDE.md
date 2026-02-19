@@ -22,7 +22,7 @@
 
 ## 제외 기능
 
-- BEMS API (빌딩 에너지 관리)
+- BEMS API (빌딩 에너지 관리) - v2.0 범위 외, v2.1에서 검토
 - PC API (PC 연동)
 
 ## 빠른 참조
@@ -31,6 +31,7 @@
 npm start          # 개발 서버
 npm run typecheck  # 타입 체크
 npm run lint       # 린트
+npm run api:generate  # Orval API 코드 생성
 ```
 
 ## 커밋 규칙

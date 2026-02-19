@@ -5,7 +5,6 @@
  * 그라디언트 스트로크와 애니메이션 효과
  */
 import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -80,7 +79,7 @@ export function ProgressRing({
 
   return (
     <YStack alignItems="center" justifyContent="center" position="relative">
-      <Svg width={size} height={size} style={styles.svg}>
+      <Svg width={size} height={size} style={{ transform: [{ rotateZ: '0deg' }] }}>
         <Defs>
           <LinearGradient id={`gradient-${colorType}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <Stop offset="0%" stopColor={colors.start} />
@@ -135,11 +134,5 @@ export function ProgressRing({
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  svg: {
-    transform: [{ rotateZ: '0deg' }],
-  },
-});
 
 export default ProgressRing;

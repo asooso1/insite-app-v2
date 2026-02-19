@@ -15,6 +15,7 @@ import { useUIStore } from '@/stores/ui.store';
 import { SENIOR_STYLES } from '@/theme/seniorMode';
 import { TabIcon } from '@/components/icons';
 import { usePermission } from '@/hooks/usePermission';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
 /**
  * 커스텀 탭바 배경 (글래스모피즘)
@@ -60,6 +61,9 @@ export default function MainLayout() {
   const isSeniorMode = useUIStore((state) => state.isSeniorMode);
   const insets = useSafeAreaInsets();
   const { canAccessMyWorkTab, canAccessScanTab, canAccessCalendarTab } = usePermission();
+
+  // 30분 미사용 시 자동 로그아웃
+  useSessionTimeout();
 
   // Android 네비게이션 바 높이 반영 (최소값 설정)
   const androidBottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 16) : 0;

@@ -65,6 +65,19 @@ export interface NFCError {
 // NFC 지원 여부 캐시
 let isNFCSupported: boolean | null = null;
 
+// NDEF 파싱 결과 캐시 (태그 ID -> 파싱 결과)
+const ndefCache = new Map<string, string | undefined>();
+
+// 마지막으로 스캔한 태그 ID와 타임스탬프 (중복 스캔 디바운싱용)
+let lastScannedTagId: string | null = null;
+let lastScannedAt: number = 0;
+
+/** 동일 태그 중복 스캔 방지 최소 간격 (ms) */
+const DUPLICATE_SCAN_DEBOUNCE_MS = 1500;
+
+/** 연속 스캔 사이 대기 시간 (ms) - 500ms -> 200ms로 단축 */
+const CONTINUOUS_SCAN_DELAY_MS = 200;
+
 /**
  * NFC 지원 여부 확인
  */
@@ -215,16 +228,26 @@ export const tagIdToHex = (tagId: number[] | string | undefined): string => {
 };
 
 /**
- * NDEF 메시지에서 텍스트 추출
+ * NDEF 메시지에서 텍스트 추출 (캐싱 적용)
+ *
+ * 동일한 태그 ID에 대한 NDEF 파싱 결과를 캐싱하여 반복 파싱 비용 절감
  */
 export const extractNdefText = (tag: TagEvent): string | undefined => {
+  // 태그 ID 기반 캐시 키 생성
+  const cacheKey = tagIdToHex(tag.id);
+  if (cacheKey && ndefCache.has(cacheKey)) {
+    return ndefCache.get(cacheKey);
+  }
+
   try {
     if (!tag.ndefMessage || tag.ndefMessage.length === 0) {
+      if (cacheKey) ndefCache.set(cacheKey, undefined);
       return undefined;
     }
 
     const record = tag.ndefMessage[0];
     if (!record || !record.payload) {
+      if (cacheKey) ndefCache.set(cacheKey, undefined);
       return undefined;
     }
 
@@ -233,12 +256,16 @@ export const extractNdefText = (tag: TagEvent): string | undefined => {
     const payload = record.payload;
     const firstByte = payload[0];
     if (firstByte === undefined) {
+      if (cacheKey) ndefCache.set(cacheKey, undefined);
       return undefined;
     }
     const languageCodeLength = firstByte & 0x3f;
     const textBytes = payload.slice(1 + languageCodeLength);
 
-    return String.fromCharCode(...textBytes);
+    const result = String.fromCharCode(...textBytes);
+    // 파싱 결과 캐싱
+    if (cacheKey) ndefCache.set(cacheKey, result);
+    return result;
   } catch (error) {
     console.error('[NFC] NDEF 텍스트 추출 실패:', error);
     return undefined;
@@ -291,7 +318,7 @@ export const readNFCTag = async (options?: {
     const nfcManager = NfcManager;
     const nfcTech = NfcTech;
     const scanPromise = (async (): Promise<NFCTagData> => {
-      // NDEF 기술 요청
+      // NDEF 기술 요청 (세션 재사용: 이미 활성화된 세션은 재요청 없이 재활용)
       await nfcManager.requestTechnology(nfcTech.Ndef, {
         alertMessage,
       });
@@ -302,11 +329,25 @@ export const readNFCTag = async (options?: {
         throw { code: 'TAG_LOST', message: '태그를 읽을 수 없습니다.' } as NFCError;
       }
 
-      console.log('[NFC] 태그 읽기 성공:', tag.id);
+      const tagId = tagIdToHex(tag.id);
+
+      // 동일 태그 중복 스캔 디바운싱
+      const now = Date.now();
+      if (tagId === lastScannedTagId && now - lastScannedAt < DUPLICATE_SCAN_DEBOUNCE_MS) {
+        console.log('[NFC] 동일 태그 중복 스캔 무시:', tagId);
+        throw { code: 'CANCELLED', message: '동일 태그 중복 스캔' } as NFCError;
+      }
+
+      // 마지막 스캔 정보 갱신
+      lastScannedTagId = tagId;
+      lastScannedAt = now;
+
+      console.log('[NFC] 태그 읽기 성공:', tagId);
 
       const tagData: NFCTagData = {
-        tagId: tagIdToHex(tag.id),
+        tagId,
         techTypes: tag.techTypes || [],
+        // NDEF 캐시 활용: 동일 태그 재스캔 시 파싱 생략
         ndefMessage: extractNdefText(tag),
         rawTag: tag,
       };
@@ -386,9 +427,9 @@ export const startContinuousScan = (
         }
       }
 
-      // 다음 스캔 전 잠시 대기
+      // 다음 스캔 전 잠시 대기 (최적화된 딜레이 사용)
       if (isScanning) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, CONTINUOUS_SCAN_DELAY_MS));
       }
     }
   };
@@ -439,12 +480,25 @@ export const parseTagId = (tagId: string): {
 };
 
 /**
+ * NFC 스캔 상태 초기화 (디바운싱 상태 리셋)
+ *
+ * 새 순찰 시작 시 호출하여 이전 스캔 이력을 초기화
+ */
+export const clearNFCScanState = (): void => {
+  lastScannedTagId = null;
+  lastScannedAt = 0;
+  ndefCache.clear();
+  console.log('[NFC] 스캔 상태 초기화');
+};
+
+/**
  * NFC Manager 정리
  */
 export const cleanupNFC = async (): Promise<void> => {
   try {
     await cancelNFCScan();
-    // NfcManager.unregisterTagEvent는 필요 시 호출
+    // 스캔 상태 및 캐시 초기화
+    clearNFCScanState();
     console.log('[NFC] 정리 완료');
   } catch (error) {
     console.error('[NFC] 정리 실패:', error);

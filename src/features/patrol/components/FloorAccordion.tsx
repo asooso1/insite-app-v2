@@ -6,7 +6,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import { XStack, YStack, Text } from 'tamagui';
-import { Pressable, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { Pressable, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -94,7 +94,18 @@ export function FloorAccordion({
         onPress={handleToggle}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={[styles.headerContainer, headerStyle]}
+        style={[
+          {
+            marginHorizontal: 16,
+            borderRadius: 16,
+            shadowColor: '#0066CC',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 2,
+          },
+          headerStyle,
+        ]}
       >
         <YStack
           backgroundColor={expanded ? '$gray50' : '$white'}
@@ -140,7 +151,7 @@ export function FloorAccordion({
                     colors={progressGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
-                    style={[styles.progressBar, { width: `${floor.completionRate}%` }]}
+                    style={{ height: '100%', borderRadius: 999, width: `${floor.completionRate}%` }}
                   />
                 </YStack>
               </YStack>
@@ -210,21 +221,5 @@ export function FloorAccordion({
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    marginHorizontal: 16,
-    borderRadius: 16,
-    shadowColor: '#0066CC',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 999,
-  },
-});
 
 export default FloorAccordion;

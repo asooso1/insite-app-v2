@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
   Platform,
 } from 'react-native';
+import { YStack, XStack, Text } from 'tamagui';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { useAuthStore } from '@/stores/auth.store';
@@ -134,49 +132,99 @@ export default function DevicePendingScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={[styles.title, isSeniorMode && { fontSize: fontSize.title }]}>{APP_NAME}</Text>
+    <YStack flex={1} backgroundColor="$white">
+      <YStack flex={1} paddingHorizontal={24} paddingTop={80} paddingBottom={40}>
+        {/* 앱 이름 */}
+        <Text
+          style={{
+            fontSize: isSeniorMode ? fontSize.title : 32,
+            fontWeight: '700',
+            color: '#0064FF',
+            textAlign: 'center',
+            marginBottom: 48,
+          }}
+        >
+          {APP_NAME}
+        </Text>
 
-        <View style={styles.statusArea}>
-          {isPolling && <ActivityIndicator size="large" color="#0064FF" style={styles.spinner} />}
-          <Text style={[styles.statusTitle, isSeniorMode && { fontSize: fontSize.large }]}>
+        {/* 상태 영역 */}
+        <YStack alignItems="center" marginBottom={48}>
+          {isPolling && (
+            <ActivityIndicator size="large" color="#0064FF" style={{ marginBottom: 24 }} />
+          )}
+          <Text
+            style={{
+              fontSize: isSeniorMode ? fontSize.large : 20,
+              fontWeight: '600',
+              color: '#2C2C2C',
+              marginBottom: 8,
+            }}
+          >
             기기 승인 대기 중
           </Text>
-          <Text style={[styles.statusDescription, isSeniorMode && { fontSize: fontSize.small }]}>
+          <Text
+            style={{
+              fontSize: isSeniorMode ? fontSize.small : 14,
+              color: '#6E6E6E',
+              textAlign: 'center',
+              lineHeight: 22,
+            }}
+          >
             관리자가 기기를 승인하면{'\n'}자동으로 로그인됩니다
           </Text>
-        </View>
+        </YStack>
 
-        <View
-          style={[
-            styles.infoBox,
-            isSeniorMode && {
-              padding: 24,
-              borderWidth: 2,
-            },
-          ]}
+        {/* 승인 요청 정보 */}
+        <YStack
+          backgroundColor="#F5F5F5"
+          borderRadius={12}
+          padding={isSeniorMode ? 24 : 20}
+          borderWidth={isSeniorMode ? 2 : 0}
+          marginBottom={32}
         >
-          <Text style={[styles.infoTitle, isSeniorMode && { fontSize: fontSize.small }]}>
+          <Text
+            style={{
+              fontSize: isSeniorMode ? fontSize.small : 14,
+              fontWeight: '600',
+              color: '#6E6E6E',
+              marginBottom: 16,
+            }}
+          >
             승인 요청 정보
           </Text>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, isSeniorMode && { fontSize: fontSize.small }]}>
+          <XStack justifyContent="space-between" marginBottom={12}>
+            <Text
+              style={{ fontSize: isSeniorMode ? fontSize.small : 14, color: '#6E6E6E' }}
+            >
               기기
             </Text>
-            <Text style={[styles.infoValue, isSeniorMode && { fontSize: fontSize.small }]}>
+            <Text
+              style={{
+                fontSize: isSeniorMode ? fontSize.small : 14,
+                fontWeight: '500',
+                color: '#2C2C2C',
+              }}
+            >
               {getDeviceInfo()}
             </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, isSeniorMode && { fontSize: fontSize.small }]}>
+          </XStack>
+          <XStack justifyContent="space-between" marginBottom={12}>
+            <Text
+              style={{ fontSize: isSeniorMode ? fontSize.small : 14, color: '#6E6E6E' }}
+            >
               요청 시간
             </Text>
-            <Text style={[styles.infoValue, isSeniorMode && { fontSize: fontSize.small }]}>
+            <Text
+              style={{
+                fontSize: isSeniorMode ? fontSize.small : 14,
+                fontWeight: '500',
+                color: '#2C2C2C',
+              }}
+            >
               {formatDateTime(requestedAt) || '확인 중...'}
             </Text>
-          </View>
-        </View>
+          </XStack>
+        </YStack>
 
         {/* 로그아웃 버튼 - 시니어 모드 대응 */}
         {isSeniorMode ? (
@@ -187,85 +235,14 @@ export default function DevicePendingScreen() {
             fullWidth
           />
         ) : (
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>다른 계정으로 로그인</Text>
+          <TouchableOpacity
+            style={{ marginTop: 'auto', alignItems: 'center', paddingVertical: 12 }}
+            onPress={handleLogout}
+          >
+            <Text style={{ fontSize: 14, color: '#0064FF' }}>다른 계정으로 로그인</Text>
           </TouchableOpacity>
         )}
-      </View>
-    </View>
+      </YStack>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#0064FF',
-    textAlign: 'center',
-    marginBottom: 48,
-  },
-  statusArea: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  spinner: {
-    marginBottom: 24,
-  },
-  statusTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#2C2C2C',
-    marginBottom: 8,
-  },
-  statusDescription: {
-    fontSize: 14,
-    color: '#6E6E6E',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  infoBox: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 32,
-  },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6E6E6E',
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#6E6E6E',
-  },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#2C2C2C',
-  },
-  logoutButton: {
-    marginTop: 'auto',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  logoutButtonText: {
-    fontSize: 14,
-    color: '#0064FF',
-  },
-});

@@ -2,6 +2,7 @@
  * NFC 훅
  *
  * NFC 스캔 상태 관리 및 라이프사이클 관리
+ * 최적화: 불필요한 리렌더링 방지를 위해 ref 기반 상태 관리 적용
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
@@ -78,6 +79,9 @@ export function useNFC(options?: UseNFCOptions): UseNFCReturn {
 
   const isScanningRef = useRef(false);
   const isMountedRef = useRef(true);
+  // 현재 상태값을 ref에도 보관하여 refresh 시 변경 여부 비교에 활용
+  const isSupportedRef = useRef(false);
+  const isEnabledRef = useRef(false);
 
   /**
    * NFC 상태 확인 및 초기화
@@ -91,7 +95,11 @@ export function useNFC(options?: UseNFCOptions): UseNFCReturn {
     try {
       const supported = await checkNFCSupport();
       if (!isMountedRef.current) return;
-      setIsSupported(supported);
+      // 값이 변경된 경우에만 상태 업데이트 (불필요한 리렌더링 방지)
+      if (supported !== isSupportedRef.current) {
+        isSupportedRef.current = supported;
+        setIsSupported(supported);
+      }
 
       if (!supported) {
         setStatus('idle');
@@ -102,7 +110,10 @@ export function useNFC(options?: UseNFCOptions): UseNFCReturn {
 
       const enabled = await checkNFCEnabled();
       if (!isMountedRef.current) return;
-      setIsEnabled(enabled);
+      if (enabled !== isEnabledRef.current) {
+        isEnabledRef.current = enabled;
+        setIsEnabled(enabled);
+      }
 
       setStatus('ready');
     } catch (err) {
@@ -117,7 +128,7 @@ export function useNFC(options?: UseNFCOptions): UseNFCReturn {
   }, []);
 
   /**
-   * NFC 상태 새로고침
+   * NFC 상태 새로고침 (변경된 값만 상태 업데이트하여 리렌더링 최소화)
    */
   const refresh = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -125,12 +136,19 @@ export function useNFC(options?: UseNFCOptions): UseNFCReturn {
     try {
       const supported = await checkNFCSupport();
       if (!isMountedRef.current) return;
-      setIsSupported(supported);
+      // 값이 변경된 경우에만 상태 업데이트
+      if (supported !== isSupportedRef.current) {
+        isSupportedRef.current = supported;
+        setIsSupported(supported);
+      }
 
       if (supported) {
         const enabled = await checkNFCEnabled();
         if (!isMountedRef.current) return;
-        setIsEnabled(enabled);
+        if (enabled !== isEnabledRef.current) {
+          isEnabledRef.current = enabled;
+          setIsEnabled(enabled);
+        }
       }
     } catch (err) {
       console.error('[useNFC] 상태 새로고침 실패:', err);

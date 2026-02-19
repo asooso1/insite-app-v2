@@ -5,7 +5,7 @@
  * 홈화면, 작업지시 등 주요 화면 상단에 사용
  */
 import React from 'react';
-import { StyleSheet, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,15 +58,24 @@ export function GradientHeader({
         colors={[...gradientColors]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[
-          styles.gradient,
-          {
-            paddingTop: insets.top,
-            minHeight: height + insets.top,
-            borderBottomLeftRadius: curved ? 32 : 0,
-            borderBottomRightRadius: curved ? 32 : 0,
-          },
-        ]}
+        style={{
+          overflow: 'hidden',
+          paddingTop: insets.top,
+          minHeight: height + insets.top,
+          borderBottomLeftRadius: curved ? 32 : 0,
+          borderBottomRightRadius: curved ? 32 : 0,
+          ...Platform.select({
+            ios: {
+              shadowColor: '#0066CC',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.25,
+              shadowRadius: 16,
+            },
+            android: {
+              elevation: 8,
+            },
+          }),
+        }}
       >
         {/* 메인 헤더 콘텐츠 */}
         <XStack
@@ -122,22 +131,5 @@ export function GradientHeader({
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  gradient: {
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0066CC',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-});
 
 export default GradientHeader;

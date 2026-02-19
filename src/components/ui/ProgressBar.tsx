@@ -105,8 +105,12 @@ export function ProgressBar({
     >
       <Animated.View
         style={[
-          styles.progressFill,
           {
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            overflow: 'hidden',
             height,
             borderRadius: rounded ? height / 2 : 2,
             width: widthInterpolated,
@@ -124,15 +128,5 @@ export function ProgressBar({
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  progressFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-});
 
 export default ProgressBar;

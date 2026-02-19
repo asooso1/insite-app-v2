@@ -1,4 +1,4 @@
-import { Image as RNImage, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image as RNImage, TouchableOpacity } from 'react-native';
 import { XStack, YStack, Text } from 'tamagui';
 import { X } from '@tamagui/lucide-icons';
 import type { ImageInfo } from '../types/image.types';
@@ -49,11 +49,28 @@ function ImagePreviewItem({ image, index, onRemove }: ImagePreviewItemProps) {
   return (
     <YStack position="relative" width={100} height={100}>
       {/* 이미지 */}
-      <RNImage source={{ uri: image.uri }} style={styles.image} resizeMode="cover" />
+      <RNImage
+        source={{ uri: image.uri }}
+        style={{ width: 100, height: 100, borderRadius: 8 }}
+        resizeMode="cover"
+      />
 
       {/* 삭제 버튼 */}
       <TouchableOpacity
-        style={styles.deleteButton}
+        style={{
+          position: 'absolute',
+          top: -8,
+          right: -8,
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          backgroundColor: '#DC2626',
+          borderWidth: 2,
+          borderColor: 'white',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1,
+        }}
         onPress={() => onRemove(image.uri)}
         activeOpacity={0.8}
       >
@@ -61,7 +78,15 @@ function ImagePreviewItem({ image, index, onRemove }: ImagePreviewItemProps) {
       </TouchableOpacity>
 
       {/* 순서 표시 */}
-      <YStack style={styles.indexBadge}>
+      <YStack
+        position="absolute"
+        bottom={4}
+        left={4}
+        backgroundColor="rgba(0, 0, 0, 0.7)"
+        paddingHorizontal={8}
+        paddingVertical={2}
+        borderRadius={4}
+      >
         <Text fontSize="$1" color="$white" fontWeight="600">
           {index + 1}
         </Text>
@@ -69,34 +94,3 @@ function ImagePreviewItem({ image, index, onRemove }: ImagePreviewItemProps) {
     </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  image: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-  },
-  deleteButton: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#DC2626',
-    borderWidth: 2,
-    borderColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  indexBadge: {
-    position: 'absolute',
-    bottom: 4,
-    left: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-});

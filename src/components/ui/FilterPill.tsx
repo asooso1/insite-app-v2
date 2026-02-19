@@ -5,7 +5,7 @@
  * 선택 시 그라디언트 배경, 비선택 시 글래스 효과
  */
 import React from 'react';
-import { StyleSheet, Platform, ViewStyle } from 'react-native';
+import { Platform, ViewStyle } from 'react-native';
 import { XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { gradients } from '@/theme/tokens';
@@ -82,13 +82,12 @@ export function FilterPill({
           colors={[...gradients.primary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[
-            styles.pillGradient,
-            {
-              paddingHorizontal: sizing.paddingH,
-              paddingVertical: sizing.paddingV,
-            },
-          ]}
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: sizing.paddingH,
+            paddingVertical: sizing.paddingV,
+          }}
         >
           <Text fontSize={sizing.fontSize} fontWeight="600" color="$white">
             {label}
@@ -116,12 +115,5 @@ export function FilterPill({
     </XStack>
   );
 }
-
-const styles = StyleSheet.create({
-  pillGradient: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
 
 export default FilterPill;

@@ -203,7 +203,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -412,7 +411,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -611,7 +609,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -811,7 +808,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -1011,7 +1007,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -1211,7 +1206,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -1414,7 +1408,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -1643,7 +1636,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -1843,7 +1835,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -2070,7 +2061,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -2286,7 +2276,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -2487,7 +2476,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -2690,7 +2678,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -2907,7 +2894,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -3123,7 +3109,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -3396,7 +3381,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -3702,7 +3686,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -3930,7 +3913,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -4155,7 +4137,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -4384,7 +4365,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -4612,7 +4592,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -4841,7 +4820,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -5110,7 +5088,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -5377,7 +5354,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -5603,7 +5579,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -5871,7 +5846,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -6071,7 +6045,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -6271,7 +6244,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -6473,7 +6445,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -6673,7 +6644,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -6877,7 +6847,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -7192,7 +7161,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -7408,7 +7376,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -7643,7 +7610,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -7878,7 +7844,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -8141,7 +8106,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -8354,7 +8318,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -8569,7 +8532,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -8800,7 +8762,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -9016,7 +8977,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -9235,7 +9195,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -9435,7 +9394,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -9637,7 +9595,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -9835,7 +9792,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -10038,7 +9994,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -10265,7 +10220,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -10489,7 +10443,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -10740,7 +10693,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -10986,7 +10938,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -11232,7 +11183,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -11478,7 +11428,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -11724,7 +11673,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -11970,7 +11918,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -12187,7 +12134,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -12428,7 +12374,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -12658,7 +12603,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -12885,7 +12829,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -13176,7 +13119,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -13428,7 +13370,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -13646,7 +13587,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -13909,7 +13849,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -14110,7 +14049,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -14311,7 +14249,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -14571,7 +14508,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -14785,7 +14721,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -15010,7 +14945,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -15234,7 +15168,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -15448,7 +15381,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -15671,7 +15603,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -15897,7 +15828,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -16125,7 +16055,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -16351,7 +16280,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -16576,7 +16504,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -16798,7 +16725,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -17022,7 +16948,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -17245,7 +17170,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -17471,7 +17395,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -17761,7 +17684,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -17962,7 +17884,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -18176,7 +18097,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -18389,7 +18309,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -18615,7 +18534,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -18844,7 +18762,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -19141,7 +19058,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -19360,7 +19276,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -19587,7 +19502,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -19804,7 +19718,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -20101,7 +20014,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -20396,7 +20308,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -20628,7 +20539,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -20860,7 +20770,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -21073,7 +20982,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -21288,7 +21196,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -21571,7 +21478,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -21787,7 +21693,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -22025,7 +21930,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -22259,7 +22163,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -22488,7 +22391,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -22781,7 +22683,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -22998,7 +22899,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -23256,7 +23156,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -23521,7 +23420,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -23819,7 +23717,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -24050,7 +23947,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -24284,7 +24180,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true,
@@ -24498,7 +24393,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -24721,7 +24615,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -24933,7 +24826,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -25156,7 +25048,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -25368,7 +25259,6 @@
               "boxSizing": true,
               "mixBlendMode": true,
               "isolation": true,
-              "outline": true,
               "outlineOffset": true,
               "outlineStyle": true,
               "outlineWidth": true
@@ -27042,8 +26932,7 @@
       "shadowOpacity": "shop",
       "top": "t",
       "width": "w",
-      "zIndex": "zi",
-      "outline": "ol"
+      "zIndex": "zi"
     },
     "parsed": true,
     "getNewCSS": "Function",
@@ -28064,8 +27953,7 @@
       "bxs": "boxSizing",
       "bxsh": "boxShadow",
       "ox": "overflowX",
-      "oy": "overflowY",
-      "ol": "outline"
+      "oy": "overflowY"
     }
   }
 }

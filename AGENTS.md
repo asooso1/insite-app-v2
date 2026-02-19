@@ -3,7 +3,7 @@
 ## 프로젝트 개요
 
 - **목표**: 시설관리 모바일 플랫폼 현대화
-- **기간**: 2026-02-10 ~ 2026-07-01 (20주)
+- **기간**: 2026-02-06 ~ 2026-05-09 (약 13주, 원래 20주 대비 단축)
 - **현재 진행률**: [TASK-TRACKER.md](./TASK-TRACKER.md) 참조
 
 ## 기술 스택
@@ -34,29 +34,66 @@
 
 ```
 app/                    # 화면 (Expo Router)
-├── (auth)/            # 인증: login, guest-login, change-password
+├── (auth)/            # 인증: login, guest-login, device-pending
 ├── (main)/
-│   ├── (tabs)/        # 탭: home, my-work, scan, calendar, settings
-│   ├── work/          # 작업지시: 목록, 상세, 생성, 결과
-│   ├── patrol/        # 순찰: 목록, 상세
-│   └── dashboard/     # 대시보드: 운영, 알람
+│   ├── (home)/        # 홈 및 하위 화면
+│   │   ├── index.tsx  # 홈 화면
+│   │   ├── work/      # 작업지시: 목록, 상세, 결과
+│   │   ├── patrol/    # 순찰: 목록, 상세, 스캔
+│   │   ├── dashboard/ # 대시보드: 운영, 알람
+│   │   ├── claim/     # 민원: 목록, 상세, 생성
+│   │   ├── facility/  # 설비: 목록, 상세
+│   │   ├── personal-task/ # 개인 업무: 목록, 생성, 상세
+│   │   └── approval/  # 승인/확인: 목록
+│   ├── (my-work)/     # 내 작업
+│   ├── (scan)/        # QR/NFC 스캔 + 출퇴근
+│   ├── (calendar)/    # 캘린더
+│   └── (settings)/    # 설정
 
 src/
 ├── api/               # API 레이어
 │   ├── client.ts      # Axios 인스턴스 (인터셉터)
 │   ├── generated/     # Orval 자동 생성
-│   └── auth.ts        # 인증 API
+│   │   ├── account/   # 인증 API
+│   │   ├── devices/   # 기기 API
+│   │   ├── complain/  # 민원 API
+│   │   ├── facility/  # 설비 API
+│   │   ├── personal/  # 개인 업무 API
+│   │   ├── tasks/     # 승인/태스크 API
+│   │   └── models/    # 공유 DTO 모델
+│   └── queryPersister.ts  # TanStack Query 영속화
 ├── components/
-│   ├── ui/            # 공용 UI (Button, Card, SeniorCard...)
-│   └── icons/         # AppIcon, TabIcon
+│   ├── ui/            # 공용 UI (Button, Card, GlassCard, CollapsibleGradientHeader...)
+│   ├── icons/         # AppIcon, TabIcon
+│   ├── SplashScreen.tsx
+│   └── VideoIntroScreen.tsx
 ├── features/          # 도메인별 모듈
 │   ├── auth/hooks/    # useLogin, useGuestLogin
 │   ├── work/          # 작업지시 관련
 │   ├── patrol/        # 순찰 관련
-│   └── dashboard/     # 대시보드 관련
+│   ├── dashboard/     # 대시보드 관련
+│   ├── attendance/    # 출퇴근 관련
+│   ├── claim/         # 민원 관련
+│   ├── facility/      # 설비 관련
+│   ├── personal-task/ # 개인 업무 관련
+│   └── approval/      # 승인/확인 관련
 ├── stores/            # Zustand 스토어
 │   ├── auth.store.ts  # 인증 상태
-│   └── ui.store.ts    # UI 상태 (시니어 모드)
+│   ├── ui.store.ts    # UI 상태 (시니어 모드)
+│   ├── attendance.store.ts # 출퇴근 상태
+│   ├── network.store.ts    # 네트워크 상태
+│   └── offlineQueue.store.ts # 오프라인 큐
+├── services/          # 서비스 레이어
+│   ├── nfc.ts         # NFC 서비스
+│   ├── nfcSync.ts     # NFC 오프라인 동기화
+│   ├── syncService.ts # 오프라인 큐 동기화
+│   ├── locationService.ts # GPS 위치 서비스
+│   └── qrScanner.ts   # QR 스캐너 서비스
+├── hooks/             # 커스텀 훅
+│   ├── useNFC.ts      # NFC 훅
+│   ├── useQRScanner.ts # QR 스캐너 훅
+│   ├── usePermission.ts # 권한 훅
+│   └── useNotifications.ts # 알림 훅
 ├── contexts/          # React Context
 │   └── SeniorModeContext.tsx
 ├── theme/             # Tamagui 테마
@@ -64,7 +101,14 @@ src/
 │   ├── tokens.ts
 │   ├── themes.ts
 │   └── seniorMode.ts  # 시니어 스타일 상수
+├── types/             # 공유 타입
+│   └── permission.types.ts
 └── utils/             # 유틸리티
+    ├── notifications.ts
+    ├── deeplink.ts
+    ├── updates.ts
+    ├── lazyLoad.tsx
+    └── scanParser.ts
 ```
 
 ---
@@ -220,14 +264,16 @@ export default function SomeScreen() {
 
 ## 마일스톤
 
-| Milestone | 날짜 | 기준 |
-|-----------|------|------|
-| **M0: POC 완료** | 02-28 | AppGuard + NFC + Dev Client 동작 확인 |
-| **M1: Core 완료** | 03-21 | API/State/UI 인프라 완료 |
-| **M2: Auth + Main 완료** | 04-25 | 인증 + 메인 탭 + 작업지시 화면 완료 |
-| **M3: All Screens 완료** | 05-23 | 순찰 + 대시보드 화면 완료 |
-| **M4: Native 완료** | 06-13 | Push/OTA/성능 최적화 완료 |
-| **M5: Launch** | 07-01 | 스토어 배포 완료 |
+| Milestone | 날짜 | 기준 | 상태 |
+|-----------|------|------|------|
+| **M0: POC 완료** | 02-28 | NFC 검증 완료. AppGuard Contingency 적용 | ⏳ 진행중 |
+| **M1: Core 완료** | 02-08 | API/State/UI 인프라 완료 | ✅ 달성 |
+| **M2: Auth + Main 완료** | 02-10 | 인증 + 메인 탭 + 작업지시 화면 완료 | ✅ 달성 |
+| **M3: All Screens 완료** | 02-12 | 순찰 + 대시보드 + 추가 화면 완료 | ✅ 달성 |
+| **M4: Native + 잔여 태스크** | 03-14 | 프로덕션 빌드 테스트 + 성능 최적화 + StyleSheet 전환 | ⏳ 예정 |
+| **M5: API 연동** | 04-04 | 백엔드 스펙 확정 후 Mock → 실 API 교체 | ⏳ 예정 |
+| **M6: QA** | 04-25 | 기능 테스트 + E2E + 성능 벤치마크 | ⏳ 예정 |
+| **M7: Launch** | 05-09 | 스토어 배포 완료 + 운영 모니터링 | ⏳ 예정 |
 
 ---
 
@@ -242,4 +288,4 @@ v1 앱(InsiteApp/)의 기능 요구사항과 비즈니스 로직만 참조:
 
 ---
 
-_마지막 업데이트: 2026-02-10_
+_마지막 업데이트: 2026-02-19_

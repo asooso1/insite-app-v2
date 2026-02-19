@@ -2,8 +2,9 @@
  * 순찰 NFC 스캔 화면
  *
  * 체크포인트 NFC 태그 스캔 및 검증
+ * 스캔 성공 후 다음 미완료 체크포인트 자동 안내
  */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Alert, Animated, Vibration, Platform } from 'react-native';
 import { YStack, XStack, Text, Spinner } from 'tamagui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,9 +17,23 @@ import {
   showNFCNotSupportedAlert,
   openNFCSettings,
 } from '@/services/nfc';
+import { mockPatrolDetails } from '@/features/patrol/data/mockPatrols';
+import type { CheckpointDTO } from '@/features/patrol/types/patrol.types';
 
 // 스캔 결과 상태
 type ScanResult = 'idle' | 'scanning' | 'success' | 'mismatch' | 'error';
+
+/** 다음 체크포인트 안내 정보 */
+interface NextCheckpointInfo {
+  name: string;
+  floorName: string;
+  zoneName: string;
+  checkpointId: number;
+  /** 완료된 체크포인트 수 */
+  completedCount: number;
+  /** 전체 체크포인트 수 */
+  totalCount: number;
+}
 
 export default function PatrolScanScreen() {
   const router = useRouter();
@@ -28,6 +43,8 @@ export default function PatrolScanScreen() {
     checkpointName?: string;
     zoneName?: string;
     floorName?: string;
+    /** 현재 체크포인트의 순서 인덱스 (전체 체크포인트 목록 기준) */
+    checkpointIndex?: string;
   }>();
   const { isSeniorMode } = useSeniorStyles();
 
@@ -51,13 +68,85 @@ export default function PatrolScanScreen() {
 
   const [scanResult, setScanResult] = useState<ScanResult>('idle');
   const [scannedData, setScannedData] = useState<CheckpointNFCData | null>(null);
+  // 다음 체크포인트 안내 정보 (성공 후 표시)
+  const [nextCheckpointInfo, setNextCheckpointInfo] = useState<NextCheckpointInfo | null>(null);
+  // 모든 체크포인트 완료 여부
+  const [isAllCompleted, setIsAllCompleted] = useState(false);
 
   const isScanning = status === 'scanning';
-  // const patrolId = params.id; // 결과 입력 화면 이동 시 사용 예정
+  const patrolId = params.id;
   const expectedCheckpointId = params.checkpointId;
   const checkpointName = params.checkpointName || '체크포인트';
   const zoneName = params.zoneName || '';
   const floorName = params.floorName || '';
+  const currentCheckpointIndex = params.checkpointIndex !== undefined
+    ? parseInt(params.checkpointIndex, 10)
+    : -1;
+
+  /**
+   * 순찰 상세 데이터에서 전체 체크포인트 목록 추출 (평면화)
+   */
+  const allCheckpoints = useMemo((): Array<CheckpointDTO & { floorName: string; zoneName: string }> => {
+    const patrolIdNum = parseInt(patrolId || '0', 10);
+    const detail = mockPatrolDetails[patrolIdNum];
+    if (!detail) return [];
+
+    const result: Array<CheckpointDTO & { floorName: string; zoneName: string }> = [];
+    for (const floor of detail.floors) {
+      for (const zone of floor.zones) {
+        for (const cp of zone.checkpoints) {
+          result.push({
+            ...cp,
+            floorName: floor.buildingFloorName,
+            zoneName: zone.buildingFloorZoneName,
+          });
+        }
+      }
+    }
+    return result;
+  }, [patrolId]);
+
+  /**
+   * 스캔 성공 시 다음 미완료 체크포인트 계산
+   */
+  const computeNextCheckpoint = useCallback(() => {
+    if (allCheckpoints.length === 0) return;
+
+    // 현재 체크포인트 이후 미완료 체크포인트 탐색
+    const searchStart = currentCheckpointIndex >= 0 ? currentCheckpointIndex + 1 : 0;
+    let nextCp: (CheckpointDTO & { floorName: string; zoneName: string }) | undefined;
+    let nextIndex = -1;
+
+    // 현재 인덱스 이후에서 먼저 탐색
+    for (let i = searchStart; i < allCheckpoints.length; i++) {
+      const cp = allCheckpoints[i];
+      if (cp && cp.status !== 'COMPLETED') {
+        nextCp = cp;
+        nextIndex = i;
+        break;
+      }
+    }
+
+    // 완료된 체크포인트 수 계산 (현재 스캔한 것 포함하여 +1)
+    const completedCount = allCheckpoints.filter((cp) => cp.status === 'COMPLETED').length + 1;
+    const totalCount = allCheckpoints.length;
+
+    if (nextCp !== undefined && nextIndex !== -1) {
+      setNextCheckpointInfo({
+        name: nextCp.name,
+        floorName: nextCp.floorName,
+        zoneName: nextCp.zoneName,
+        checkpointId: nextCp.id,
+        completedCount,
+        totalCount,
+      });
+      setIsAllCompleted(false);
+    } else {
+      // 모든 체크포인트 완료
+      setNextCheckpointInfo(null);
+      setIsAllCompleted(true);
+    }
+  }, [allCheckpoints, currentCheckpointIndex]);
 
   /**
    * NFC 스캔 시작
@@ -76,6 +165,8 @@ export default function PatrolScanScreen() {
     reset();
     setScanResult('scanning');
     setScannedData(null);
+    setNextCheckpointInfo(null);
+    setIsAllCompleted(false);
 
     const tag = await startScan();
 
@@ -92,6 +183,7 @@ export default function PatrolScanScreen() {
             Vibration.vibrate([0, 100, 50, 100]);
           }
           setScanResult('success');
+          computeNextCheckpoint();
         } else {
           // 불일치 - 경고 진동
           if (Platform.OS !== 'web') {
@@ -105,6 +197,7 @@ export default function PatrolScanScreen() {
           Vibration.vibrate([0, 100, 50, 100]);
         }
         setScanResult('success');
+        computeNextCheckpoint();
       }
     } else if (status === 'error') {
       setScanResult('error');
@@ -121,6 +214,7 @@ export default function PatrolScanScreen() {
     expectedCheckpointId,
     validateCheckpoint,
     status,
+    computeNextCheckpoint,
   ]);
 
   /**
@@ -450,6 +544,107 @@ export default function PatrolScanScreen() {
                 </XStack>
               )}
             </YStack>
+          </YStack>
+        )}
+
+        {/* 순찰 완료 메시지 (모든 체크포인트 완료 시) */}
+        {scanResult === 'success' && isAllCompleted && (
+          <YStack
+            marginHorizontal="$4"
+            marginTop="$4"
+            padding="$4"
+            backgroundColor="#E8F5E9"
+            borderRadius={16}
+            borderWidth={1}
+            borderColor="#A5D6A7"
+            alignItems="center"
+            gap="$2"
+          >
+            <AppIcon name="success" size="lg" color="#43A047" />
+            <Text
+              fontSize={isSeniorMode ? 20 : 18}
+              fontWeight="700"
+              color="#2E7D32"
+              textAlign="center"
+            >
+              모든 체크포인트 완료!
+            </Text>
+            <Text
+              fontSize={isSeniorMode ? 16 : 14}
+              color="#388E3C"
+              textAlign="center"
+            >
+              순찰이 완료되었습니다.{'\n'}순찰 완료 요청을 진행해주세요.
+            </Text>
+          </YStack>
+        )}
+
+        {/* 다음 체크포인트 안내 (성공 후, 미완료 체크포인트 있을 때) */}
+        {scanResult === 'success' && nextCheckpointInfo !== null && !isAllCompleted && (
+          <YStack
+            marginHorizontal="$4"
+            marginTop="$4"
+            padding="$4"
+            backgroundColor="$white"
+            borderRadius={16}
+            borderWidth={1}
+            borderColor="$gray200"
+          >
+            {/* 진행률 헤더 */}
+            <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+              <Text fontSize={isSeniorMode ? 14 : 12} color="$gray500" fontWeight="600">
+                다음 체크포인트
+              </Text>
+              <Text fontSize={isSeniorMode ? 14 : 12} color="$primary" fontWeight="600">
+                {nextCheckpointInfo.completedCount}/{nextCheckpointInfo.totalCount} 완료
+              </Text>
+            </XStack>
+
+            {/* 진행률 바 */}
+            <YStack
+              height={6}
+              backgroundColor="$gray200"
+              borderRadius={3}
+              marginBottom="$3"
+            >
+              <YStack
+                height={6}
+                borderRadius={3}
+                backgroundColor="$primary"
+                width={`${Math.round((nextCheckpointInfo.completedCount / nextCheckpointInfo.totalCount) * 100)}%`}
+              />
+            </YStack>
+
+            {/* 다음 체크포인트 정보 */}
+            <XStack gap="$3" alignItems="center">
+              <YStack
+                width={40}
+                height={40}
+                borderRadius={20}
+                backgroundColor="$primaryMuted"
+                justifyContent="center"
+                alignItems="center"
+              >
+                <AppIcon name="nfc" size="sm" color="$primary" />
+              </YStack>
+              <YStack flex={1} gap="$1">
+                <Text
+                  fontSize={isSeniorMode ? 18 : 16}
+                  fontWeight="700"
+                  color="$gray900"
+                >
+                  {nextCheckpointInfo.name}
+                </Text>
+                <XStack gap="$1" alignItems="center">
+                  <AppIcon name="location" size="xs" color="$gray500" />
+                  <Text fontSize={isSeniorMode ? 14 : 12} color="$gray600">
+                    {nextCheckpointInfo.floorName}
+                    {nextCheckpointInfo.floorName && nextCheckpointInfo.zoneName && ' · '}
+                    {nextCheckpointInfo.zoneName}
+                  </Text>
+                </XStack>
+              </YStack>
+            </XStack>
           </YStack>
         )}
 
