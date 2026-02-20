@@ -18,21 +18,25 @@
 ## 기술 스택
 
 ### Core
+
 - Expo SDK 54 + React 19 + React Native 0.81
 - TypeScript 5.6 (Strict Mode)
 - expo-router 4.x (파일 기반 라우팅)
 
 ### UI
+
 - Tamagui (스타일링)
 - @tamagui/lucide-icons (아이콘)
 - expo-blur, expo-linear-gradient (효과)
 
 ### 상태 관리
+
 - Zustand 5.x (전역 상태)
 - TanStack Query 5.x (서버 상태)
 - expo-secure-store (토큰 저장)
 
 ### API
+
 - Axios (HTTP 클라이언트)
 - Orval (OpenAPI -> React Query 훅 자동 생성)
 - Zod (런타임 검증)
@@ -156,8 +160,8 @@ export default function ListScreen() {
       <CollapsibleGradientHeader
         scrollY={scrollY}
         title="화면 제목"
-        expandedHeight={160}    // 검색창 있으면 160, subtitle 있으면 120, 타이틀만 있으면 100
-        collapsedHeight={80}    // 축소 높이 (고정)
+        expandedHeight={160} // 검색창 있으면 160, subtitle 있으면 120, 타이틀만 있으면 100
+        collapsedHeight={80} // 축소 높이 (고정)
         bottomContent={<GlassSearchInput placeholder="검색" />}
       />
 
@@ -165,10 +169,9 @@ export default function ListScreen() {
       <Animated.FlatList
         data={items}
         renderItem={renderItem}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: false,
+        })}
         scrollEventThrottle={16}
         // ...
       />
@@ -178,6 +181,7 @@ export default function ListScreen() {
 ```
 
 **주의사항:**
+
 - FlatList → Animated.FlatList, ScrollView → Animated.ScrollView 사용
 - onScroll에 Animated.event 연결 필수
 - scrollEventThrottle={16} 설정 필수
@@ -192,6 +196,7 @@ export default function ListScreen() {
 ## API 패턴
 
 ### Orval 사용
+
 ```typescript
 // specs/insite-api.yaml에 OpenAPI 스펙 정의
 // npm run api:generate로 훅 자동 생성
@@ -201,6 +206,7 @@ const { data, isLoading } = useGetWorkOrderList();
 ```
 
 ### 커스텀 훅 래핑
+
 ```typescript
 // src/features/work/hooks/useWorkOrders.ts
 export function useWorkOrders() {
@@ -246,13 +252,15 @@ export default function SomeScreen() {
 ## 환경 설정
 
 ### API 엔드포인트
-| 환경 | Main API |
-|------|----------|
-| Development | 121.133.17.22:8083 |
-| Staging | stage.hdc-insite.com:8083 |
-| Production | www.hdc-insite.com:8083 |
+
+| 환경        | Main API                  |
+| ----------- | ------------------------- |
+| Development | 121.133.17.22:8083        |
+| Staging     | stage.hdc-insite.com:8083 |
+| Production  | www.hdc-insite.com:8083   |
 
 ### EAS Build 프로파일
+
 - `development`: 개발용 (Dev Client)
 - `staging`: 내부 테스트용
 - `production`: 스토어 배포용
@@ -273,22 +281,23 @@ export default function SomeScreen() {
 
 ## 마일스톤
 
-| Milestone | 날짜 | 기준 | 상태 |
-|-----------|------|------|------|
-| **M0: POC 완료** | 02-28 | NFC 검증 완료. AppGuard Contingency 적용 | ⏳ 진행중 |
-| **M1: Core 완료** | 02-08 | API/State/UI 인프라 완료 | ✅ 달성 |
-| **M2: Auth + Main 완료** | 02-10 | 인증 + 메인 탭 + 작업지시 화면 완료 | ✅ 달성 |
-| **M3: All Screens 완료** | 02-12 | 순찰 + 대시보드 + 추가 화면 완료 | ✅ 달성 |
-| **M4: Native + 잔여 태스크** | 03-14 | 프로덕션 빌드 테스트 + 성능 최적화 + StyleSheet 전환 | ⏳ 예정 |
-| **M5: API 연동** | 04-04 | 백엔드 스펙 확정 후 Mock → 실 API 교체 | ⏳ 예정 |
-| **M6: QA** | 04-25 | 기능 테스트 + E2E + 성능 벤치마크 | ⏳ 예정 |
-| **M7: Launch** | 05-09 | 스토어 배포 완료 + 운영 모니터링 | ⏳ 예정 |
+| Milestone                    | 날짜  | 기준                                                 | 상태      |
+| ---------------------------- | ----- | ---------------------------------------------------- | --------- |
+| **M0: POC 완료**             | 02-28 | NFC 검증 완료. AppGuard Contingency 적용             | ⏳ 진행중 |
+| **M1: Core 완료**            | 02-08 | API/State/UI 인프라 완료                             | ✅ 달성   |
+| **M2: Auth + Main 완료**     | 02-10 | 인증 + 메인 탭 + 작업지시 화면 완료                  | ✅ 달성   |
+| **M3: All Screens 완료**     | 02-12 | 순찰 + 대시보드 + 추가 화면 완료                     | ✅ 달성   |
+| **M4: Native + 잔여 태스크** | 03-14 | 프로덕션 빌드 테스트 + 성능 최적화 + StyleSheet 전환 | ⏳ 예정   |
+| **M5: API 연동**             | 04-04 | 백엔드 스펙 확정 후 Mock → 실 API 교체               | ⏳ 예정   |
+| **M6: QA**                   | 04-25 | 기능 테스트 + E2E + 성능 벤치마크                    | ⏳ 예정   |
+| **M7: Launch**               | 05-09 | 스토어 배포 완료 + 운영 모니터링                     | ⏳ 예정   |
 
 ---
 
 ## v1 앱 참조
 
 v1 앱(InsiteApp/)의 기능 요구사항과 비즈니스 로직만 참조:
+
 - 기능 스펙 및 화면 구성
 - API 엔드포인트 및 데이터 스키마
 - 디자인 가이드라인 (색상, 폰트 등)

@@ -43,3 +43,6 @@ yarn-error.*
 # Credentials
 credentials.json
 credentials/
+
+.omc/
+.omx/
