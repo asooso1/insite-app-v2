@@ -14,28 +14,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TextField } from '@/components/ui/TextField';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-// import { Button } from '@/components/ui/Button';
 import { gradients } from '@/theme/tokens';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
-
-/**
- * Mock 현재 사용자 정보 (실제로는 auth store에서 가져옴)
- */
-const MOCK_CURRENT_USER = {
-  id: 101,
-  name: '김철수',
-  companyName: 'HDC아이콘트롤스',
-  role: '시설관리사',
-  buildingUserGroupName: '시설관리팀',
-};
-
-/**
- * Mock 확인자 정보
- */
-const MOCK_CONFIRM_USER = {
-  id: 201,
-  name: '이영희',
-};
+import { useCreatePersonalTask } from '@/features/personal-task/hooks';
+import { useAuthStore } from '@/stores/auth.store';
 
 /**
  * 일상업무 등록 화면
@@ -44,6 +26,14 @@ export default function CreatePersonalTaskScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isSeniorMode, card: cardStyles, fontSize } = useSeniorStyles();
+
+  // 현재 사용자 정보
+  const currentUser = useAuthStore((s) => s.user);
+  const selectedBuilding = useAuthStore((s) => s.user?.selectedBuildingAccountDTO);
+  const buildingId = Number(selectedBuilding?.buildingId) || 1;
+
+  // API mutation
+  const createMutation = useCreatePersonalTask();
 
   // 폼 상태
   const [title, setTitle] = useState('');
@@ -58,7 +48,7 @@ export default function CreatePersonalTaskScreen() {
   const [facilityName, setFacilityName] = useState('');
 
   // 확인자 상태
-  const [confirmInfo, setConfirmInfo] = useState(MOCK_CONFIRM_USER);
+  const [confirmInfo, setConfirmInfo] = useState<{ id: number; name: string }>({ id: 0, name: '' });
 
   // 이미지 상태
   const [images, setImages] = useState<string[]>([]);
@@ -73,8 +63,8 @@ export default function CreatePersonalTaskScreen() {
 
   // 버튼 활성화 여부
   const isFormValid = useMemo(() => {
-    return title.trim() && description.trim() && confirmInfo.id;
-  }, [title, description, confirmInfo.id]);
+    return title.trim() && description.trim();
+  }, [title, description]);
 
   /**
    * 위치 선택 초기화
@@ -115,12 +105,7 @@ export default function CreatePersonalTaskScreen() {
       setDescriptionError('');
     }
 
-    if (!confirmInfo.id) {
-      setConfirmError('승인자를 선택해주세요.');
-      isValid = false;
-    } else {
-      setConfirmError('');
-    }
+    setConfirmError('');
 
     return isValid;
   };
@@ -239,13 +224,26 @@ export default function CreatePersonalTaskScreen() {
       {
         text: '등록',
         onPress: () => {
-          // TODO: API 호출
-          Alert.alert('알림', '일상업무가 등록되었습니다.', [
+          createMutation.mutate(
             {
-              text: '확인',
-              onPress: () => router.back(),
+              buildingId,
+              taskName: title.trim(),
+              description: description.trim(),
+              taskDate: new Date().toISOString().split('T')[0] ?? '',
+              accountId: Number(currentUser?.id) || 0,
+              location: location || undefined,
             },
-          ]);
+            {
+              onSuccess: () => {
+                Alert.alert('알림', '일상업무가 등록되었습니다.', [
+                  { text: '확인', onPress: () => router.back() },
+                ]);
+              },
+              onError: () => {
+                Alert.alert('오류', '일상업무 등록에 실패했습니다.');
+              },
+            }
+          );
         },
       },
     ]);
@@ -392,9 +390,9 @@ export default function CreatePersonalTaskScreen() {
                   <InfoRow label="구분" value="일상업무" />
                   <InfoRow
                     label="담당그룹"
-                    value={MOCK_CURRENT_USER.buildingUserGroupName || '-'}
+                    value={selectedBuilding?.buildingName || '-'}
                   />
-                  <InfoRow label="담당자" value={MOCK_CURRENT_USER.name} />
+                  <InfoRow label="담당자" value={currentUser?.name || '-'} />
                 </YStack>
               )}
             </GlassCard>

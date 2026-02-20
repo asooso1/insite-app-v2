@@ -9,7 +9,6 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { RefreshControl, View, Pressable, Animated } from 'react-native';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import { PersonalTaskCard } from '@/features/personal-task/components/PersonalTaskCard';
 import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
@@ -18,9 +17,12 @@ import { FilterPill } from '@/components/ui/FilterPill';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Select } from '@/components/ui/Select';
 import type { PersonalTaskDTO, TeamInfo } from '@/features/personal-task/types';
-import { mockPersonalTasks, mockTeams } from '@/features/personal-task/utils/mockData';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { SeniorCardListItem, SeniorStatusBadge } from '@/components/ui/SeniorCard';
+import { usePersonalTasksInfinite } from '@/features/personal-task/hooks';
+import { useAuthStore } from '@/stores/auth.store';
+import type { PersonalWorkOrderDTO } from '@/api/generated/models';
+import { useTabBarHeight } from '@/hooks/useTabBarHeight';
 
 /**
  * 상태 필터 타입
@@ -62,9 +64,13 @@ function parseDate(dateStr: string): Date {
  */
 export default function PersonalTaskListScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { isSeniorMode } = useSeniorStyles();
+  const { contentPaddingBottom } = useTabBarHeight();
+
+  // 빌딩 ID (auth store에서 가져옴)
+  const selectedBuilding = useAuthStore((s) => s.user?.selectedBuildingAccountDTO);
+  const buildingId = Number(selectedBuilding?.buildingId) || 1;
 
   // 스크롤 애니메이션
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -74,7 +80,6 @@ export default function PersonalTaskListScreen() {
   const [selectedStatus, setSelectedStatus] = useState<PersonalTaskStatusFilter | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<TeamInfo>({ id: '', name: '전체 팀' });
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // 디바운스된 검색어 (300ms)
   const debouncedSearch = useDebounce(searchText, 300);
@@ -104,73 +109,72 @@ export default function PersonalTaskListScreen() {
     setSelectedDate(formatDate(new Date()));
   }, []);
 
-  // Mock 데이터 필터링 (실제로는 API 사용)
-  const tasks = useMemo(() => {
-    let filtered = [...mockPersonalTasks];
+  // 실제 API 호출 (무한 스크롤)
+  const {
+    data: apiData,
+    isLoading,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+  } = usePersonalTasksInfinite({
+    date: selectedDate,
+    teamId: selectedTeam.id ? Number(selectedTeam.id) : undefined,
+    size: 20,
+    buildingId,
+  });
 
-    // 검색 필터
-    if (debouncedSearch) {
-      const searchLower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.title.toLowerCase().includes(searchLower) ||
-          item.content?.toLowerCase().includes(searchLower) ||
-          item.assigneeName?.toLowerCase().includes(searchLower) ||
-          item.teamName?.toLowerCase().includes(searchLower)
-      );
-    }
+  // API 응답 → PersonalTaskDTO 변환 및 클라이언트 필터링
+  const tasks = useMemo<PersonalTaskDTO[]>(() => {
+    const allItems: PersonalWorkOrderDTO[] =
+      apiData?.pages.flatMap((page) => page.data?.content ?? []) ?? [];
 
-    // 상태 필터
-    if (selectedStatus) {
-      filtered = filtered.filter((item) => item.status === selectedStatus);
-    }
-
-    // 팀 필터
-    if (selectedTeam.id) {
-      filtered = filtered.filter((item) => item.teamName === selectedTeam.name);
-    }
-
-    // 날짜 필터 (scheduleStartDate 기준)
-    filtered = filtered.filter((item) => item.scheduleStartDate === selectedDate);
-
-    // 날짜 역순 정렬
-    filtered.sort((a, b) => {
-      const dateA = new Date(a.createdAt || '');
-      const dateB = new Date(b.createdAt || '');
-      return dateB.getTime() - dateA.getTime();
-    });
-
-    return filtered;
-  }, [debouncedSearch, selectedStatus, selectedTeam, selectedDate]);
+    return allItems
+      .map((item) => ({
+        id: item.id,
+        title: item.taskName,
+        status: item.state === 'CONFIRMED' ? ('CONFIRMED' as const) : ('UNCONFIRMED' as const),
+        scheduleStartDate: item.taskDate,
+        assigneeName: item.accountName,
+        teamName: item.teamName,
+        buildingName: item.buildingName,
+      }))
+      .filter((item) => {
+        // 상태 필터 (클라이언트 사이드)
+        if (selectedStatus && item.status !== selectedStatus) return false;
+        // 검색 필터 (클라이언트 사이드)
+        if (debouncedSearch) {
+          const searchLower = debouncedSearch.toLowerCase();
+          return (
+            item.title.toLowerCase().includes(searchLower) ||
+            item.assigneeName?.toLowerCase().includes(searchLower) ||
+            item.teamName?.toLowerCase().includes(searchLower)
+          );
+        }
+        return true;
+      });
+  }, [apiData, selectedStatus, debouncedSearch]);
 
   // 일상업무 상세로 이동
   const handleTaskPress = useCallback(
     (task: PersonalTaskDTO) => {
-      router.push(`/personal-task/${task.id}`);
+      router.push(`/(main)/(home)/personal-task/${task.id}`);
     },
     [router]
   );
 
   // Pull to Refresh
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    // TODO: 실제 refetch 호출
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setIsRefreshing(false);
-  }, []);
+    await refetch();
+  }, [refetch]);
 
-  // 상태별 카운트 (현재 필터 기준)
+  // 상태별 카운트 (현재 표시 데이터 기준)
   const statusCounts = useMemo(() => {
-    let dateFiltered = mockPersonalTasks.filter((task) => task.scheduleStartDate === selectedDate);
-    if (selectedTeam.id) {
-      dateFiltered = dateFiltered.filter((task) => task.teamName === selectedTeam.name);
-    }
-    const counts: Record<string, number> = { all: dateFiltered.length };
-    dateFiltered.forEach((task) => {
+    const counts: Record<string, number> = { all: tasks.length };
+    tasks.forEach((task) => {
       counts[task.status] = (counts[task.status] || 0) + 1;
     });
     return counts;
-  }, [selectedDate, selectedTeam]);
+  }, [tasks]);
 
   // 상태 매핑 헬퍼
   const getStatusBadgeProps = (status: string) => {
@@ -228,7 +232,7 @@ export default function PersonalTaskListScreen() {
           }
           onAction={
             !debouncedSearch && !selectedStatus && !selectedTeam.id
-              ? () => router.push('/personal-task/create')
+              ? () => router.push('/(main)/(home)/personal-task/create')
               : undefined
           }
         />
@@ -313,11 +317,10 @@ export default function PersonalTaskListScreen() {
           justifyContent="flex-end"
         >
           <Select
-            options={mockTeams.map((team) => ({ label: team.name, value: team.id.toString() }))}
+            options={[{ label: '전체 팀', value: '' }]}
             value={selectedTeam.id.toString()}
             onChange={(value: string) => {
-              const team = mockTeams.find((t) => t.id.toString() === value);
-              if (team) setSelectedTeam(team);
+              setSelectedTeam({ id: value, name: value ? value : '전체 팀' });
             }}
             placeholder="팀 선택"
             size={isSeniorMode ? 'lg' : 'md'}
@@ -366,8 +369,7 @@ export default function PersonalTaskListScreen() {
               onPress={() => {
                 setSearchText('');
                 setSelectedStatus(null);
-                const firstTeam = mockTeams[0];
-                if (firstTeam) setSelectedTeam(firstTeam);
+                setSelectedTeam({ id: '', name: '전체 팀' });
               }}
             >
               필터 초기화
@@ -407,7 +409,7 @@ export default function PersonalTaskListScreen() {
             borderWidth={1}
             borderColor="$glassWhite30"
             pressStyle={{ opacity: 0.8, scale: 0.97 }}
-            onPress={() => router.push('/personal-task/create')}
+            onPress={() => router.push('/(main)/(home)/personal-task/create')}
           >
             <Text fontSize={13} fontWeight="700" color="$white">
               + 등록
@@ -436,15 +438,19 @@ export default function PersonalTaskListScreen() {
         scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing}
+            refreshing={isLoading}
             onRefresh={handleRefresh}
             tintColor={theme.accent?.val}
             colors={[theme.accent?.val || '#FF6B00']}
             progressViewOffset={-20}
           />
         }
+        onEndReached={() => {
+          if (hasNextPage) fetchNextPage();
+        }}
+        onEndReachedThreshold={0.3}
         contentContainerStyle={{
-          paddingBottom: insets.bottom + 20,
+          paddingBottom: contentPaddingBottom,
           flexGrow: 1,
         }}
         showsVerticalScrollIndicator={false}

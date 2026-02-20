@@ -8,3 +8,4 @@ export {
   useApprovalCount,
   useApprovalSelection,
 } from './useApproval';
+export { useApprovalTasks } from './useApprovalTasks';

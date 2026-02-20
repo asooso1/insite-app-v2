@@ -85,12 +85,7 @@ export function GlassSearchInput({
 
       {/* 클리어 버튼 */}
       {showClear && value.length > 0 && (
-        <XStack
-          padding="$1"
-          pressStyle={{ opacity: 0.6 }}
-          onPress={handleClear}
-          cursor="pointer"
-        >
+        <XStack padding="$1" pressStyle={{ opacity: 0.6 }} onPress={handleClear} cursor="pointer">
           <AppIcon name="close" size="sm" color="$gray400" />
         </XStack>
       )}

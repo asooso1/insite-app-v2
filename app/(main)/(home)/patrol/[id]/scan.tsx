@@ -17,7 +17,9 @@ import {
   showNFCNotSupportedAlert,
   openNFCSettings,
 } from '@/services/nfc';
-import { mockPatrolDetails } from '@/features/patrol/data/mockPatrols';
+import { usePatrolDetail } from '@/features/patrol/hooks/usePatrolDetail';
+import { usePatrolItems } from '@/features/patrol/hooks/usePatrolItems';
+import { useSavePatrolResult } from '@/api/generated/patrol/patrol';
 import type { CheckpointDTO } from '@/features/patrol/types/patrol.types';
 
 // 스캔 결과 상태
@@ -45,6 +47,8 @@ export default function PatrolScanScreen() {
     floorName?: string;
     /** 현재 체크포인트의 순서 인덱스 (전체 체크포인트 목록 기준) */
     checkpointIndex?: string;
+    /** 구역 ID (buildingFloorZoneId) */
+    buildingFloorZoneId?: string;
   }>();
   const { isSeniorMode } = useSeniorStyles();
 
@@ -75,6 +79,7 @@ export default function PatrolScanScreen() {
 
   const isScanning = status === 'scanning';
   const patrolId = params.id;
+  const nfcRoundId = parseInt(patrolId || '0', 10);
   const expectedCheckpointId = params.checkpointId;
   const checkpointName = params.checkpointName || '체크포인트';
   const zoneName = params.zoneName || '';
@@ -82,17 +87,34 @@ export default function PatrolScanScreen() {
   const currentCheckpointIndex = params.checkpointIndex !== undefined
     ? parseInt(params.checkpointIndex, 10)
     : -1;
+  const buildingFloorZoneId = params.buildingFloorZoneId
+    ? parseInt(params.buildingFloorZoneId, 10)
+    : 0;
+
+  // API: 순찰 상세 + 층/구역 데이터 조회 (다음 체크포인트 안내용)
+  const { data: patrolDetail } = usePatrolDetail({
+    nfcRoundId,
+    enabled: nfcRoundId > 0,
+  });
+
+  // API: 현재 구역의 점검 항목 조회 (스캔 성공 시 결과 저장용)
+  const { items: patrolItems } = usePatrolItems({
+    nfcRoundId,
+    buildingFloorZoneId,
+    enabled: nfcRoundId > 0 && buildingFloorZoneId > 0,
+  });
+
+  // API: 순찰 결과 저장 mutation
+  const { mutate: savePatrolResult, isPending: isSaving } = useSavePatrolResult();
 
   /**
    * 순찰 상세 데이터에서 전체 체크포인트 목록 추출 (평면화)
    */
   const allCheckpoints = useMemo((): Array<CheckpointDTO & { floorName: string; zoneName: string }> => {
-    const patrolIdNum = parseInt(patrolId || '0', 10);
-    const detail = mockPatrolDetails[patrolIdNum];
-    if (!detail) return [];
+    if (!patrolDetail) return [];
 
     const result: Array<CheckpointDTO & { floorName: string; zoneName: string }> = [];
-    for (const floor of detail.floors) {
+    for (const floor of patrolDetail.floors) {
       for (const zone of floor.zones) {
         for (const cp of zone.checkpoints) {
           result.push({
@@ -104,7 +126,7 @@ export default function PatrolScanScreen() {
       }
     }
     return result;
-  }, [patrolId]);
+  }, [patrolDetail]);
 
   /**
    * 스캔 성공 시 다음 미완료 체크포인트 계산
@@ -226,26 +248,42 @@ export default function PatrolScanScreen() {
   }, [cancelScan]);
 
   /**
-   * 스캔 성공 후 결과 입력 화면으로 이동
+   * 스캔 성공 후 결과 저장 및 이전 화면으로 이동
    */
   const handleProceedToResult = useCallback(() => {
     if (!scannedData) return;
 
-    Alert.alert(
-      '스캔 완료',
-      `체크포인트: ${checkpointName}\n태그 ID: ${scannedData.tagId}`,
-      [
-        { text: '다시 스캔', onPress: () => setScanResult('idle') },
+    // 점검 항목이 없으면 기본 결과 생성, 있으면 각 항목에 NONE(양호) 기본값 사용
+    const items = patrolItems ?? [];
+    const resultsPayload = items.map((item) => ({
+      nfcRoundItemId: item.nfcRoundItemId,
+      actionType: 'NONE',
+    }));
+
+    if (nfcRoundId > 0 && buildingFloorZoneId > 0) {
+      savePatrolResult(
         {
-          text: '결과 입력',
-          onPress: () => {
-            // 이전 화면으로 돌아가고 완료 상태 전달
-            router.back();
+          data: {
+            nfcRoundId,
+            buildingFloorZoneId,
+            results: JSON.stringify(resultsPayload),
           },
         },
-      ]
-    );
-  }, [scannedData, checkpointName, router]);
+        {
+          onSuccess: () => {
+            router.back();
+          },
+          onError: () => {
+            // 저장 실패 시에도 뒤로 이동 (오프라인 등 예외 상황 대응)
+            Alert.alert('저장 오류', '결과 저장에 실패했습니다. 다시 시도해주세요.');
+          },
+        }
+      );
+    } else {
+      // nfcRoundId 또는 buildingFloorZoneId가 없는 경우 그냥 뒤로 이동
+      router.back();
+    }
+  }, [scannedData, patrolItems, nfcRoundId, buildingFloorZoneId, savePatrolResult, router]);
 
   /**
    * 불일치 시 재시도
@@ -686,16 +724,20 @@ export default function PatrolScanScreen() {
             <>
               <YStack
                 height={isSeniorMode ? 64 : 56}
-                backgroundColor="#43A047"
+                backgroundColor={isSaving ? '$gray400' : '#43A047'}
                 borderRadius={12}
                 justifyContent="center"
                 alignItems="center"
-                pressStyle={{ opacity: 0.9, scale: 0.99 }}
-                onPress={handleProceedToResult}
+                pressStyle={isSaving ? undefined : { opacity: 0.9, scale: 0.99 }}
+                onPress={isSaving ? undefined : handleProceedToResult}
               >
-                <Text fontSize={isSeniorMode ? 20 : 18} fontWeight="600" color="$white">
-                  결과 입력
-                </Text>
+                {isSaving ? (
+                  <Spinner size="small" color="$white" />
+                ) : (
+                  <Text fontSize={isSeniorMode ? 20 : 18} fontWeight="600" color="$white">
+                    결과 입력
+                  </Text>
+                )}
               </YStack>
               <YStack
                 height={isSeniorMode ? 64 : 56}

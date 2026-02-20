@@ -11,11 +11,18 @@ import { useUIStore } from '@/stores/ui.store';
 import { SplashScreen as AppSplashScreen } from '@/components/SplashScreen';
 import { VideoIntroScreen } from '@/components/VideoIntroScreen';
 import { SeniorModeProvider } from '@/contexts/SeniorModeContext';
+import { ToastProvider, useToast } from '@/components/ui/Toast';
 import { useNotifications } from '@/hooks/useNotifications';
 import config from '@/theme/tamagui.config';
 import type { ThemeName } from '@/theme/themes';
 import { durations } from '@/theme/tokens';
 import { asyncStoragePersister } from '@/api/queryPersister';
+import axios from 'axios';
+import { registerGlobalToast } from '@/api/globalToast';
+import { handleApiError } from '@/api/errorHandler';
+import { setupOnlineManager } from '@/api/onlineManager';
+import { useNetworkStore } from '@/stores/network.store';
+import { startAutoSync } from '@/services/syncService';
 
 // 앱이 로드되는 동안 네이티브 스플래시 화면 유지
 SplashScreen.preventAutoHideAsync();
@@ -34,6 +41,15 @@ const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 60 * 24, // 24시간: 가비지 컬렉션 시간 (오프라인 지원)
       retry: 2,
       refetchOnWindowFocus: false,
+    },
+    mutations: {
+      onError: (error) => {
+        // Axios 에러는 client.ts 인터셉터에서 handleApiError가 이미 처리.
+        // 여기서는 비-Axios 에러(네트워크 무관 로직 에러 등)만 처리한다.
+        if (!axios.isAxiosError(error)) {
+          handleApiError(error);
+        }
+      },
     },
   },
 });
@@ -55,6 +71,25 @@ function useCurrentTheme(): ThemeName {
     return 'seniorLight';
   }
   return 'light';
+}
+
+/**
+ * 글로벌 Toast 브릿지
+ *
+ * ToastProvider 내부에서 useToast를 사용하여
+ * globalToast 모듈에 Toast 함수를 등록한다.
+ * Axios 인터셉터 등 React 외부에서 Toast를 호출할 수 있게 된다.
+ */
+function GlobalToastBridge() {
+  const toast = useToast();
+
+  useEffect(() => {
+    registerGlobalToast((message, variant) => {
+      toast.show(message, { variant });
+    });
+  }, [toast]);
+
+  return null;
 }
 
 export default function RootLayout() {
@@ -82,6 +117,9 @@ export default function RootLayout() {
    * 1. Zustand persist middleware가 자동으로 인증 상태 복원 (hydrate)
    * 2. 토큰 유효성 검증 (checkAuth)
    * 3. 알림 초기화 (useNotifications 훅이 자동 처리)
+   * 4. 네트워크 모니터링 시작
+   * 5. TanStack Query 온라인 매니저 연동
+   * 6. 오프라인 큐 자동 동기화 시작
    */
   const initializeApp = useCallback(async () => {
     try {
@@ -92,6 +130,19 @@ export default function RootLayout() {
       console.error('[RootLayout] 앱 초기화 오류:', error);
     }
   }, [checkAuth]);
+
+  // 네트워크 모니터링 + 온라인 매니저 + 오프라인 큐 자동 동기화
+  useEffect(() => {
+    const stopNetworkMonitoring = useNetworkStore.getState().startMonitoring();
+    const stopOnlineManager = setupOnlineManager();
+    const stopAutoSync = startAutoSync();
+
+    return () => {
+      stopNetworkMonitoring();
+      stopOnlineManager();
+      stopAutoSync();
+    };
+  }, []);
 
   /**
    * 3D 인트로 완료 후 메인 앱 표시
@@ -173,18 +224,21 @@ export default function RootLayout() {
             client={queryClient}
             persistOptions={{ persister: asyncStoragePersister }}
           >
-            <StatusBar style="auto" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'slide_from_right',
-                animationDuration: durations.screenTransition,
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(main)" />
-            </Stack>
+            <ToastProvider>
+              <GlobalToastBridge />
+              <StatusBar style="auto" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                  animationDuration: durations.screenTransition,
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(main)" />
+              </Stack>
+            </ToastProvider>
           </PersistQueryClientProvider>
         </SeniorModeProvider>
       </Theme>

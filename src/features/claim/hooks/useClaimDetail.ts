@@ -3,14 +3,50 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getComplainDetail, getGetComplainDetailQueryKey } from '@/api/generated/complain/complain';
-import { mockClaims } from '../utils/mockData';
-import type { ClaimDTO } from '../types';
+import type { ComplainDetailDTO } from '@/api/generated/models';
+import type { ClaimDTO, ClaimState, ClaimAttachment } from '../types';
 
 interface UseClaimDetailOptions {
   claimId: number;
   enabled?: boolean;
-  /** Mock 데이터 사용 여부 (개발용) */
-  useMock?: boolean;
+}
+
+/**
+ * API ComplainDetailDTO → 로컬 ClaimDTO 변환
+ */
+function mapApiToClaimDTO(api: ComplainDetailDTO): ClaimDTO {
+  // 상태 매핑: API(ISSUE/PROCESSING/COMPLETE/CANCEL) → 로컬(RECEIVED/PROCESSING/COMPLETED/REJECTED)
+  const stateMap: Record<string, ClaimState> = {
+    WRITE: 'RECEIVED',
+    ISSUE: 'RECEIVED',
+    PROCESSING: 'PROCESSING',
+    REQ_COMPLETE: 'PROCESSING',
+    COMPLETE: 'COMPLETED',
+    CANCEL: 'REJECTED',
+  };
+
+  const attachments: ClaimAttachment[] = (api.attachments || []).map((a) => ({
+    id: a.id ?? 0,
+    fileName: a.fileName ?? '',
+    fileUrl: a.fileUrl ?? '',
+    fileSize: a.fileSize,
+  }));
+
+  return {
+    id: api.id,
+    title: api.title,
+    content: api.description ?? '',
+    state: stateMap[api.state] ?? 'RECEIVED',
+    stateName: api.stateName,
+    receivedDate: api.writeDate ?? '',
+    completedDate: api.completedDate,
+    buildingName: api.buildingName,
+    location: api.location,
+    phoneNumber: api.reporterPhone,
+    receiverName: api.reporterName,
+    processorName: api.managerName,
+    attachments,
+  };
 }
 
 /**
@@ -23,20 +59,17 @@ interface UseClaimDetailOptions {
  * });
  * ```
  */
-export function useClaimDetail({ claimId, enabled = true, useMock = true }: UseClaimDetailOptions) {
+export function useClaimDetail({ claimId, enabled = true }: UseClaimDetailOptions) {
   const queryClient = useQueryClient();
 
-  // API 조회 (실제 사용 시)
+  // API 조회
   const apiQuery = useQuery({
     queryKey: getGetComplainDetailQueryKey(claimId),
     queryFn: () => getComplainDetail(claimId),
-    enabled: !useMock && enabled && !!claimId,
+    enabled: enabled && !!claimId,
   });
 
-  // Mock 데이터에서 조회
-  const mockClaim = useMock ? mockClaims.find((c) => c.id === claimId) : null;
-
-  // 상태 업데이트 Mutation
+  // 상태 업데이트 Mutation (TODO: 실제 상태변경 API 연결 시 구현)
   const updateStatusMutation = useMutation({
     mutationFn: async ({
       status,
@@ -50,7 +83,6 @@ export function useClaimDetail({ claimId, enabled = true, useMock = true }: UseC
       return { status, processResult };
     },
     onSuccess: () => {
-      // 캐시 무효화
       queryClient.invalidateQueries({
         queryKey: getGetComplainDetailQueryKey(claimId),
       });
@@ -65,27 +97,12 @@ export function useClaimDetail({ claimId, enabled = true, useMock = true }: UseC
       await new Promise((resolve) => setTimeout(resolve, 500));
       return { workOrderId: Date.now() };
     },
-    onSuccess: () => {
-      // 성공 시 처리 (작업지시 상세로 이동 등)
-    },
   });
 
-  if (useMock) {
-    return {
-      claim: mockClaim || null,
-      isLoading: false,
-      isError: !mockClaim,
-      error: mockClaim ? null : new Error('고객불편을 찾을 수 없습니다.'),
-      refetch: async () => {},
-      updateStatus: updateStatusMutation.mutate,
-      isUpdatingStatus: updateStatusMutation.isPending,
-      createWorkOrder: createWorkOrderMutation.mutate,
-      isCreatingWorkOrder: createWorkOrderMutation.isPending,
-    };
-  }
+  const rawData = apiQuery.data?.data;
 
   return {
-    claim: apiQuery.data?.data as unknown as ClaimDTO | null,
+    claim: rawData ? mapApiToClaimDTO(rawData) : null,
     isLoading: apiQuery.isLoading,
     isError: apiQuery.isError,
     error: apiQuery.error,

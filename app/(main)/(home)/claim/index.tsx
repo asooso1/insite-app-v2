@@ -10,7 +10,6 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { RefreshControl, View, Pressable, Animated } from 'react-native';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ClaimCard } from '@/features/claim/components/ClaimCard';
 import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
@@ -18,10 +17,11 @@ import { GlassSearchInput } from '@/components/ui/GlassSearchInput';
 import { FilterPill } from '@/components/ui/FilterPill';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { ClaimDTO, ClaimState, SearchOption } from '@/features/claim/types';
-import { mockClaims } from '@/features/claim/utils/mockData';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { SeniorCardListItem, SeniorStatusBadge } from '@/components/ui/SeniorCard';
-import { PERIOD_FILTER_OPTIONS, getPeriodDates, type PeriodFilter } from '@/features/claim/hooks';
+import { PERIOD_FILTER_OPTIONS, getPeriodDates, type PeriodFilter, useClaims } from '@/features/claim/hooks';
+import { useAuthStore } from '@/stores/auth.store';
+import { useTabBarHeight } from '@/hooks/useTabBarHeight';
 
 /**
  * 필터 옵션
@@ -46,9 +46,13 @@ const SEARCH_OPTIONS: { option: SearchOption; label: string }[] = [
  */
 export default function ClaimListScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { isSeniorMode } = useSeniorStyles();
+  const { contentPaddingBottom } = useTabBarHeight();
+
+  // 빌딩 ID (auth store에서 가져옴)
+  const selectedBuilding = useAuthStore((s) => s.user?.selectedBuildingAccountDTO);
+  const buildingId = Number(selectedBuilding?.buildingId) || 1;
 
   // 스크롤 애니메이션
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -58,69 +62,54 @@ export default function ClaimListScreen() {
   const [selectedState, setSelectedState] = useState<ClaimState | null>(null);
   const [searchOption, setSearchOption] = useState<SearchOption>('ALL');
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('3day');
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // 디바운스된 검색어 (300ms)
   const debouncedSearch = useDebounce(searchText, 300);
 
-  // Mock 데이터 필터링 (실제로는 API 사용)
+  // 실제 API 호출
+  const { claims: apiClaims, isLoading, refetch, stateCounts } = useClaims({
+    buildingId,
+    state: selectedState,
+    searchKeyword: debouncedSearch,
+    searchOption,
+    period: selectedPeriod,
+  });
+
+  // 클라이언트 사이드 검색 필터 (searchOption 기반 추가 필터링)
   const claims = useMemo(() => {
-    let filtered = [...mockClaims];
-
-    // 검색 필터
-    if (debouncedSearch) {
-      const searchLower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter((item) => {
-        switch (searchOption) {
-          case 'TITLE':
-            return item.title.toLowerCase().includes(searchLower);
-          case 'CONTENT':
-            return item.content.toLowerCase().includes(searchLower);
-          case 'PHONE':
-            return item.phoneNumber?.includes(searchLower);
-          case 'ALL':
-          default:
-            return (
-              item.title.toLowerCase().includes(searchLower) ||
-              item.content.toLowerCase().includes(searchLower) ||
-              item.phoneNumber?.includes(searchLower)
-            );
-        }
-      });
-    }
-
-    // 상태 필터
-    if (selectedState) {
-      filtered = filtered.filter((item) => item.state === selectedState);
-    }
-
-    return filtered;
-  }, [debouncedSearch, selectedState, searchOption]);
+    if (!debouncedSearch) return apiClaims;
+    const searchLower = debouncedSearch.toLowerCase();
+    return apiClaims.filter((item) => {
+      switch (searchOption) {
+        case 'TITLE':
+          return item.title.toLowerCase().includes(searchLower);
+        case 'CONTENT':
+          return item.content.toLowerCase().includes(searchLower);
+        case 'PHONE':
+          return item.phoneNumber?.includes(searchLower);
+        case 'ALL':
+        default:
+          return (
+            item.title.toLowerCase().includes(searchLower) ||
+            item.content.toLowerCase().includes(searchLower) ||
+            item.phoneNumber?.includes(searchLower)
+          );
+      }
+    });
+  }, [apiClaims, debouncedSearch, searchOption]);
 
   // 고객불편 상세로 이동
   const handleClaimPress = useCallback(
     (claim: ClaimDTO) => {
-      router.push(`/claim/${claim.id}`);
+      router.push(`/(main)/(home)/claim/${claim.id}`);
     },
     [router]
   );
 
   // Pull to Refresh
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    // TODO: 실제 refetch 호출
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setIsRefreshing(false);
-  }, []);
-
-  // 상태별 카운트
-  const stateCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: mockClaims.length };
-    mockClaims.forEach((claim) => {
-      counts[claim.state] = (counts[claim.state] || 0) + 1;
-    });
-    return counts;
-  }, []);
+    await refetch();
+  }, [refetch]);
 
   // 기간 필터 날짜 문자열
   const periodDateString = useMemo(() => {
@@ -188,7 +177,9 @@ export default function ClaimListScreen() {
           }
           actionLabel={!debouncedSearch && !selectedState ? '고객불편 등록' : undefined}
           onAction={
-            !debouncedSearch && !selectedState ? () => router.push('/claim/create') : undefined
+            !debouncedSearch && !selectedState
+              ? () => router.push('/(main)/(home)/claim/create')
+              : undefined
           }
         />
       </YStack>
@@ -344,7 +335,7 @@ export default function ClaimListScreen() {
             borderWidth={1}
             borderColor="$glassWhite30"
             pressStyle={{ opacity: 0.8, scale: 0.97 }}
-            onPress={() => router.push('/claim/create')}
+            onPress={() => router.push('/(main)/(home)/claim/create')}
           >
             <Text fontSize={13} fontWeight="700" color="$white">
               + 등록
@@ -373,7 +364,7 @@ export default function ClaimListScreen() {
         scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing}
+            refreshing={isLoading}
             onRefresh={handleRefresh}
             tintColor={theme.accent?.val}
             colors={[theme.accent?.val || '#FF6B00']}
@@ -381,7 +372,7 @@ export default function ClaimListScreen() {
           />
         }
         contentContainerStyle={{
-          paddingBottom: insets.bottom + 20,
+          paddingBottom: contentPaddingBottom,
           flexGrow: 1,
         }}
         showsVerticalScrollIndicator={false}

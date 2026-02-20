@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
 import { config } from '@/constants/config';
 import { isTokenExpired } from '@/utils/jwt';
+import { handleApiError } from './errorHandler';
 
 // Create axios instance
 export const apiClient = axios.create({
@@ -145,7 +146,8 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Handle other errors
+    // Handle other errors - 중앙 에러 핸들러로 처리
+    handleApiError(error);
     return Promise.reject(error);
   }
 );

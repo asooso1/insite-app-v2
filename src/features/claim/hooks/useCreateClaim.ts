@@ -11,8 +11,6 @@ interface UseCreateClaimOptions {
   onSuccess?: (claimId: number) => void;
   /** 실패 시 콜백 */
   onError?: (error: Error) => void;
-  /** Mock 모드 (개발용) */
-  useMock?: boolean;
 }
 
 /**
@@ -31,17 +29,11 @@ interface UseCreateClaimOptions {
  * });
  * ```
  */
-export function useCreateClaim({ onSuccess, onError, useMock = true }: UseCreateClaimOptions = {}) {
+export function useCreateClaim({ onSuccess, onError }: UseCreateClaimOptions = {}) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (data: CreateClaimRequest) => {
-      if (useMock) {
-        // Mock 처리
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        return { id: Date.now() };
-      }
-
       // 실제 API 호출을 위한 데이터 변환
       const apiData: AddComplainRequest = {
         title: data.title,

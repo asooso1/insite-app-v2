@@ -24,11 +24,13 @@ import type {
 import type {
   ErrorResponse,
   GetPatrolItemsParams,
+  GetPatrolListParams,
   GetPatrolResultParams,
   GetPatrolTargetsParams,
   NotPossiblePatrolResultsResponse,
   PatrolDetailResponse,
   PatrolItemsResponse,
+  PatrolListResponse,
   PatrolResultResponse,
   PatrolTargetsResponse,
   SavePatrolResultRequest,
@@ -37,6 +39,118 @@ import type {
 } from '.././models';
 
 import { customInstance } from '../../client';
+
+/**
+ * 순찰점검 목록을 페이징하여 조회합니다
+ * @summary 순찰점검 목록 조회
+ */
+export const getPatrolList = (params: GetPatrolListParams, signal?: AbortSignal) => {
+  return customInstance<PatrolListResponse>({
+    url: `/m/api/nfc-round`,
+    method: 'GET',
+    params,
+    signal,
+  });
+};
+
+export const getGetPatrolListQueryKey = (params?: GetPatrolListParams) => {
+  return [`/m/api/nfc-round`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetPatrolListQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatrolList>>,
+  TError = ErrorResponse,
+>(
+  params: GetPatrolListParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPatrolList>>, TError, TData>>;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPatrolListQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPatrolList>>> = ({ signal }) =>
+    getPatrolList(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatrolList>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetPatrolListQueryResult = NonNullable<Awaited<ReturnType<typeof getPatrolList>>>;
+export type GetPatrolListQueryError = ErrorResponse;
+
+export function useGetPatrolList<
+  TData = Awaited<ReturnType<typeof getPatrolList>>,
+  TError = ErrorResponse,
+>(
+  params: GetPatrolListParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPatrolList>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPatrolList>>,
+          TError,
+          Awaited<ReturnType<typeof getPatrolList>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetPatrolList<
+  TData = Awaited<ReturnType<typeof getPatrolList>>,
+  TError = ErrorResponse,
+>(
+  params: GetPatrolListParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPatrolList>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPatrolList>>,
+          TError,
+          Awaited<ReturnType<typeof getPatrolList>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetPatrolList<
+  TData = Awaited<ReturnType<typeof getPatrolList>>,
+  TError = ErrorResponse,
+>(
+  params: GetPatrolListParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPatrolList>>, TError, TData>>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary 순찰점검 목록 조회
+ */
+
+export function useGetPatrolList<
+  TData = Awaited<ReturnType<typeof getPatrolList>>,
+  TError = ErrorResponse,
+>(
+  params: GetPatrolListParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getPatrolList>>, TError, TData>>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetPatrolListQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * 특정 순찰점검의 상세 정보를 조회합니다

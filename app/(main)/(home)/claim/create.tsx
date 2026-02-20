@@ -26,6 +26,7 @@ import { CLAIM_TEMPLATES, type ClaimTemplateType } from '@/features/claim/types'
 import { useCreateClaim } from '@/features/claim/hooks';
 import { gradients } from '@/theme/tokens';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
+import { useAuthStore } from '@/stores/auth.store';
 
 /**
  * 고객불편 등록 화면
@@ -34,6 +35,10 @@ export default function CreateClaimScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isSeniorMode, card: cardStyles, fontSize: seniorFontSize } = useSeniorStyles();
+
+  // 빌딩 ID (auth store에서 가져옴)
+  const selectedBuilding = useAuthStore((s) => s.user?.selectedBuildingAccountDTO);
+  const buildingId = Number(selectedBuilding?.buildingId) || 1;
 
   // 폼 상태
   const [selectedTemplate, setSelectedTemplate] = useState<ClaimTemplateType | null>(null);
@@ -92,6 +97,7 @@ export default function CreateClaimScreen() {
     createClaim({
       title: title.trim(),
       content: content.trim(),
+      buildingId,
       floor,
       zone,
       location,

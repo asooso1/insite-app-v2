@@ -5,17 +5,19 @@
  * 순찰 경로, 체크포인트 목록, 완료 상태 표시
  * 시니어 모드 지원: 확대된 텍스트, 큰 프로그레스 링, 고대비 색상
  */
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 
+import { Alert } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { ProgressRing, FloorAccordion } from '@/features/patrol/components';
-import { mockPatrolDetails } from '@/features/patrol/data/mockPatrols';
+import { usePatrolDetail } from '@/features/patrol/hooks/usePatrolDetail';
 import type { CheckpointDTO } from '@/features/patrol/types/patrol.types';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 
@@ -25,22 +27,26 @@ export default function PatrolDetailScreen() {
   const insets = useSafeAreaInsets();
   const { isSeniorMode, card: cardStyles } = useSeniorStyles();
 
-  // Mock 데이터 가져오기
-  const patrolDetail = useMemo(() => {
-    const patrolId = parseInt(id || '0', 10);
-    return mockPatrolDetails[patrolId];
-  }, [id]);
+  const nfcRoundId = parseInt(id || '0', 10);
+
+  // API: 순찰 상세 + 층/구역 데이터 조회
+  const { data: patrolDetail, isLoading, isError, requestComplete } =
+    usePatrolDetail({ nfcRoundId, enabled: nfcRoundId > 0 });
 
   // 체크포인트 클릭 핸들러
-  const handleCheckpointPress = (checkpoint: CheckpointDTO) => {
-    // TODO: 다음 태스크에서 점검 입력 화면으로 이동
-    console.log('체크포인트 선택:', checkpoint.name);
+  const handleCheckpointPress = (_checkpoint: CheckpointDTO) => {
+    router.push(`/(main)/(home)/patrol/${id}/scan` as never);
   };
 
   // 순찰 완료 요청 핸들러
   const handleCompletePatrol = () => {
-    // TODO: 순찰 완료 로직 구현
-    console.log('순찰 완료 요청');
+    Alert.alert('순찰 완료', '순찰 완료를 요청하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '완료 요청',
+        onPress: () => requestComplete(nfcRoundId),
+      },
+    ]);
   };
 
   // 뒤로가기 핸들러
@@ -48,7 +54,12 @@ export default function PatrolDetailScreen() {
     router.back();
   };
 
-  if (!patrolDetail) {
+  // 로딩 상태
+  if (isLoading) {
+    return <LoadingOverlay visible message="순찰 정보를 불러오는 중..." />;
+  }
+
+  if (!patrolDetail || isError) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <Stack.Screen options={{ headerShown: false }} />

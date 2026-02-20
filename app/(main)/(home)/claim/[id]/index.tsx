@@ -55,10 +55,9 @@ export default function ClaimDetailScreen() {
   const claimId = parseInt(id || '0', 10);
   const { isSeniorMode, card: cardStyles, fontSize } = useSeniorStyles();
 
-  // Hook 사용 (Mock 모드)
+  // API 연동
   const { claim, updateStatus, isUpdatingStatus, isCreatingWorkOrder } = useClaimDetail({
     claimId,
-    useMock: true,
   });
 
   /**

@@ -14,11 +14,50 @@ import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHe
 import { GlassSearchInput } from '@/components/ui/GlassSearchInput';
 import { FilterPill } from '@/components/ui/FilterPill';
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { WorkOrderDTO } from '@/api/generated/models';
-import { mockWorkOrders } from '@/features/work/utils/mockData';
+import type { TaskDTO, WorkOrderDTO } from '@/api/generated/models';
+import { GetTaskListType } from '@/api/generated/models/getTaskListType';
+import { TaskDTOType } from '@/api/generated/models/taskDTOType';
+import { useGetTaskList } from '@/api/generated/tasks/tasks';
+import { useAuthStore } from '@/stores/auth.store';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { SeniorCardListItem, SeniorStatusBadge } from '@/components/ui/SeniorCard';
 import { useTabBarHeight } from '@/hooks/useTabBarHeight';
+
+/**
+ * TaskDTO → WorkOrderDTO 호환 매핑
+ * WorkOrderCard 재사용을 위한 어댑터
+ */
+function taskToWorkOrder(task: TaskDTO): WorkOrderDTO {
+  return {
+    id: task.id,
+    name: task.name,
+    state: task.state as WorkOrderDTO['state'],
+    stateName: task.stateName ?? '',
+    buildingName: task.buildingName,
+    writerName: task.managerName,
+    planStartDate: task.planStartDate,
+    planEndDate: task.planEndDate,
+    firstClassName: task.typeName,
+  };
+}
+
+/**
+ * TaskDTO type에 따른 상세 경로 반환
+ */
+function getTaskDetailRoute(task: TaskDTO): string {
+  switch (task.type) {
+    case TaskDTOType.WORK_ORDER:
+      return `/(main)/(home)/work/${task.id}`;
+    case TaskDTOType.PATROL:
+      return `/(main)/(home)/patrol/${task.id}`;
+    case TaskDTOType.PERSONAL:
+      return `/(main)/(home)/personal-task/${task.id}`;
+    case TaskDTOType.COMPLAIN:
+      return `/(main)/(home)/claim/${task.id}`;
+    default:
+      return `/(main)/(home)/work/${task.id}`;
+  }
+}
 
 /**
  * 상태 필터 타입
@@ -62,9 +101,26 @@ export default function MyWorkScreen() {
   // 디바운스된 검색어 (300ms)
   const debouncedSearch = useDebounce(searchText, 300);
 
-  // Mock 데이터 필터링 (실제로는 API 사용 - 내 작업만 필터링)
-  const workOrders = useMemo(() => {
-    let filtered = [...mockWorkOrders];
+  // buildingId from auth store
+  const user = useAuthStore((s) => s.user);
+  const buildingId = useMemo(() => {
+    const bid =
+      user?.selectedBuildingAccountDTO?.buildingId ??
+      user?.buildingAccountDTO?.[0]?.buildingId;
+    return bid ? Number(bid) : 0;
+  }, [user]);
+
+  // API: 내 업무 목록 조회
+  const { data: taskListData, refetch } = useGetTaskList(
+    { type: GetTaskListType.own, buildingId, page: 0, size: 100 },
+    { query: { enabled: buildingId > 0 } },
+  );
+
+  const allTasks = useMemo(() => taskListData?.data?.content ?? [], [taskListData]);
+
+  // 클라이언트 필터링 (API에 state/keyword 필터 없음)
+  const filteredTasks = useMemo(() => {
+    let filtered = allTasks;
 
     // 검색 필터
     if (debouncedSearch) {
@@ -73,7 +129,7 @@ export default function MyWorkScreen() {
         (item) =>
           item.name.toLowerCase().includes(searchLower) ||
           item.buildingName?.toLowerCase().includes(searchLower) ||
-          item.writerName?.toLowerCase().includes(searchLower)
+          item.managerName?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -83,32 +139,41 @@ export default function MyWorkScreen() {
     }
 
     return filtered;
-  }, [debouncedSearch, selectedState]);
+  }, [allTasks, debouncedSearch, selectedState]);
 
-  // 작업지시 상세로 이동 (절대 경로 사용)
-  const handleWorkOrderPress = useCallback(
-    (workOrder: WorkOrderDTO) => {
-      router.push(`/(main)/(home)/work/${workOrder.id}`);
+  // 작업 상세로 이동 (타입별 라우팅)
+  const handleTaskPress = useCallback(
+    (task: TaskDTO) => {
+      router.push(getTaskDetailRoute(task) as never);
     },
-    [router]
+    [router],
+  );
+
+  // WorkOrderCard용 핸들러 (WorkOrderDTO → TaskDTO 매핑)
+  const handleWorkOrderCardPress = useCallback(
+    (workOrder: WorkOrderDTO) => {
+      const task = allTasks.find((t) => t.id === workOrder.id);
+      if (task) handleTaskPress(task);
+    },
+    [allTasks, handleTaskPress],
   );
 
   // Pull to Refresh
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    // TODO: 실제 refetch 호출
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await refetch();
     setIsRefreshing(false);
-  }, []);
+  }, [refetch]);
 
   // 상태별 카운트
   const stateCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: mockWorkOrders.length };
-    mockWorkOrders.forEach((wo) => {
-      counts[wo.state || 'WRITE'] = (counts[wo.state || 'WRITE'] || 0) + 1;
+    const counts: Record<string, number> = { all: allTasks.length };
+    allTasks.forEach((task) => {
+      const state = task.state || 'WRITE';
+      counts[state] = (counts[state] || 0) + 1;
     });
     return counts;
-  }, []);
+  }, [allTasks]);
 
   // 상태 매핑 헬퍼
   const getStatusBadgeProps = (state: string | undefined) => {
@@ -128,35 +193,37 @@ export default function MyWorkScreen() {
 
   // 렌더링 함수
   const renderItem = useCallback(
-    ({ item }: { item: WorkOrderDTO }) => {
+    ({ item }: { item: TaskDTO }) => {
       if (isSeniorMode) {
         // 시니어 모드: 리스트 아이템 형태
         const statusProps = getStatusBadgeProps(item.state);
-        const subtitle = [item.buildingName, item.writerName].filter(Boolean).join(' · ');
+        const subtitle = [item.typeName, item.buildingName, item.managerName]
+          .filter(Boolean)
+          .join(' · ');
         return (
           <View style={{ marginBottom: 12, paddingHorizontal: 16 }}>
             <SeniorCardListItem
               title={item.name || '제목 없음'}
               subtitle={subtitle || '상세 정보 없음'}
               right={<SeniorStatusBadge {...statusProps} />}
-              onPress={() => handleWorkOrderPress(item)}
+              onPress={() => handleTaskPress(item)}
             />
           </View>
         );
       }
 
-      // 일반 모드: 기존 카드
+      // 일반 모드: WorkOrderCard 재사용 (TaskDTO → WorkOrderDTO 매핑)
+      const workOrderCompat = taskToWorkOrder(item);
       return (
         <View>
           <WorkOrderCard
-            workOrder={item}
-            onPress={handleWorkOrderPress}
-            progress={item.state === 'PROCESSING' ? Math.floor(Math.random() * 80) + 20 : undefined}
+            workOrder={workOrderCompat}
+            onPress={handleWorkOrderCardPress}
           />
         </View>
       );
     },
-    [handleWorkOrderPress, isSeniorMode]
+    [handleTaskPress, handleWorkOrderCardPress, isSeniorMode],
   );
 
   const renderEmpty = useCallback(() => {
@@ -209,7 +276,7 @@ export default function MyWorkScreen() {
           alignItems="center"
         >
           <Text fontSize={13} color="$gray500">
-            총 {workOrders.length}건
+            총 {filteredTasks.length}건
           </Text>
           {(debouncedSearch || selectedState) && (
             <Text
@@ -227,7 +294,7 @@ export default function MyWorkScreen() {
         </XStack>
       </YStack>
     );
-  }, [selectedState, stateCounts, workOrders.length, debouncedSearch]);
+  }, [selectedState, stateCounts, filteredTasks.length, debouncedSearch]);
 
   return (
     <YStack flex={1} backgroundColor="$gray50">
@@ -248,9 +315,9 @@ export default function MyWorkScreen() {
 
       {/* 작업 목록 */}
       <Animated.FlatList
-        data={workOrders}
+        data={filteredTasks}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id?.toString() ?? ''}
+        keyExtractor={(item) => `${item.type}-${item.id}`}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {

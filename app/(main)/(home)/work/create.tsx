@@ -10,11 +10,16 @@ import { YStack, XStack, Text, Separator } from 'tamagui';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { format } from 'date-fns';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Select } from '@/components/ui/Select';
-import { useCreateWorkOrder } from '@/features/work/hooks/useCreateWorkOrder';
+import {
+  useCreateWorkOrder,
+  getGetWorkOrderListQueryKey,
+} from '@/api/generated/work-order/work-order';
+import { useQueryClient } from '@tanstack/react-query';
 
 /**
  * 작업지시 생성 폼 스키마
@@ -92,7 +97,17 @@ const mockAccounts = [
  * 작업지시 생성 화면
  */
 export default function WorkCreateScreen() {
-  const { mutate: createWorkOrder, isPending } = useCreateWorkOrder();
+  const queryClient = useQueryClient();
+  const createWorkOrderMutation = useCreateWorkOrder({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: getGetWorkOrderListQueryKey(),
+        });
+      },
+    },
+  });
+  const isPending = createWorkOrderMutation.isPending;
   const [selectedFirstClass, setSelectedFirstClass] = useState<number | null>(null);
 
   const {
@@ -129,11 +144,26 @@ export default function WorkCreateScreen() {
 
   // 폼 제출
   const onSubmit = (data: WorkOrderFormData) => {
-    createWorkOrder(data, {
-      onSuccess: () => {
-        router.back();
+    createWorkOrderMutation.mutate(
+      {
+        data: {
+          name: data.name,
+          description: data.description,
+          firstClassId: data.firstClassId,
+          secondClassId: data.secondClassId,
+          planStartDate: format(data.planStartDate, 'yyyy-MM-dd'),
+          planEndDate: format(data.planEndDate, 'yyyy-MM-dd'),
+          buildingId: data.buildingId,
+          chargeAccountIds: data.chargeAccountIds,
+          approveAccountIds: data.approveAccountIds,
+        },
       },
-    });
+      {
+        onSuccess: () => {
+          router.back();
+        },
+      },
+    );
   };
 
   return (

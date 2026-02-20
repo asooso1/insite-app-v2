@@ -53,9 +53,10 @@ export default function WorkResultScreen() {
     workOrderId,
   });
 
-  // 작업 결과 훅
+  // 작업 결과 훅 (상세 API에서 가져온 items 전달)
   const { checklistItems, submitResult, uploadImages, isSubmitting } = useWorkResult({
     workOrderId,
+    items: workOrderResponse?.data?.workOrderDTO?.items,
   });
 
   // 체크리스트 결과 상태

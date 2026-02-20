@@ -8,7 +8,6 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { RefreshControl, View, Animated } from 'react-native';
 import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import { WorkOrderCard } from '@/features/work/components/WorkOrderCard';
 import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
@@ -16,9 +15,11 @@ import { GlassSearchInput } from '@/components/ui/GlassSearchInput';
 import { FilterPill } from '@/components/ui/FilterPill';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { WorkOrderDTO } from '@/api/generated/models';
-import { mockWorkOrders } from '@/features/work/utils/mockData';
+import { useGetWorkOrderList } from '@/api/generated/work-order/work-order';
+import { useAuthStore } from '@/stores/auth.store';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { SeniorCardListItem, SeniorStatusBadge } from '@/components/ui/SeniorCard';
+import { useTabBarHeight } from '@/hooks/useTabBarHeight';
 
 /**
  * 상태 필터 타입
@@ -47,9 +48,9 @@ const FILTER_OPTIONS: { state: WorkOrderStateFilter | null; label: string }[] = 
  */
 export default function WorkListScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { isSeniorMode } = useSeniorStyles();
+  const { contentPaddingBottom } = useTabBarHeight();
 
   // 스크롤 애니메이션
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -62,53 +63,61 @@ export default function WorkListScreen() {
   // 디바운스된 검색어 (300ms)
   const debouncedSearch = useDebounce(searchText, 300);
 
-  // Mock 데이터 필터링 (실제로는 API 사용)
+  // buildingId from auth store
+  const user = useAuthStore((s) => s.user);
+  const buildingId = useMemo(() => {
+    const bid =
+      user?.selectedBuildingAccountDTO?.buildingId ??
+      user?.buildingAccountDTO?.[0]?.buildingId;
+    return bid ? Number(bid) : 0;
+  }, [user]);
+
+  // API: 작업지시 목록 조회 (서버 keyword 검색, 클라이언트 state 필터)
+  const { data: workOrderListData, refetch } = useGetWorkOrderList(
+    {
+      buildingId,
+      searchKeyword: debouncedSearch || undefined,
+      page: 0,
+      size: 100,
+    },
+    { query: { enabled: buildingId > 0 } },
+  );
+
+  const allWorkOrders = useMemo(
+    () => workOrderListData?.data?.content ?? [],
+    [workOrderListData],
+  );
+
+  // 클라이언트 상태 필터링
   const workOrders = useMemo(() => {
-    let filtered = [...mockWorkOrders];
-
-    // 검색 필터
-    if (debouncedSearch) {
-      const searchLower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.name.toLowerCase().includes(searchLower) ||
-          item.buildingName?.toLowerCase().includes(searchLower) ||
-          item.writerName?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // 상태 필터
-    if (selectedState) {
-      filtered = filtered.filter((item) => item.state === selectedState);
-    }
-
-    return filtered;
-  }, [debouncedSearch, selectedState]);
+    if (!selectedState) return allWorkOrders;
+    return allWorkOrders.filter((item) => item.state === selectedState);
+  }, [allWorkOrders, selectedState]);
 
   // 작업지시 상세로 이동
   const handleWorkOrderPress = useCallback(
     (workOrder: WorkOrderDTO) => {
-      router.push(`/work/${workOrder.id}`);
+      router.push(`/(main)/(home)/work/${workOrder.id}` as never);
     },
-    [router]
+    [router],
   );
 
   // Pull to Refresh
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    // TODO: 실제 refetch 호출
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await refetch();
     setIsRefreshing(false);
-  }, []);
+  }, [refetch]);
 
   // 상태별 카운트
   const stateCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: mockWorkOrders.length };
-    mockWorkOrders.forEach((wo) => {
-      counts[wo.state || 'WRITE'] = (counts[wo.state || 'WRITE'] || 0) + 1;
+    const counts: Record<string, number> = { all: allWorkOrders.length };
+    allWorkOrders.forEach((wo) => {
+      const state = wo.state || 'WRITE';
+      counts[state] = (counts[state] || 0) + 1;
     });
     return counts;
-  }, []);
+  }, [allWorkOrders]);
 
   // 상태 매핑 헬퍼
   const getStatusBadgeProps = (state: string | undefined) => {
@@ -151,7 +160,7 @@ export default function WorkListScreen() {
           <WorkOrderCard
             workOrder={item}
             onPress={handleWorkOrderPress}
-            progress={item.state === 'PROCESSING' ? Math.floor(Math.random() * 80) + 20 : undefined}
+            progress={undefined}
           />
         </View>
       );
@@ -285,7 +294,7 @@ export default function WorkListScreen() {
           />
         }
         contentContainerStyle={{
-          paddingBottom: insets.bottom + 20,
+          paddingBottom: contentPaddingBottom,
           flexGrow: 1,
         }}
         showsVerticalScrollIndicator={false}

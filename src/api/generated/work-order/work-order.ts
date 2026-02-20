@@ -26,10 +26,12 @@ import type {
   CreateWorkOrderResponse,
   ErrorResponse,
   GetWorkOrderListParams,
+  GetWorkOrderStatePerCountParams,
   SuccessResponse,
   WorkOrderDetailResponse,
   WorkOrderListResponse,
   WorkOrderResultRequest,
+  WorkOrderStatePerCountResponse,
 } from '.././models';
 
 import { customInstance } from '../../client';
@@ -138,6 +140,134 @@ export function useGetWorkOrderList<
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetWorkOrderListQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * 날짜 기준 작업지시 상태별 건수를 조회합니다. 홈 화면 오늘의 업무 현황에 사용.
+ * @summary 작업지시 상태별 건수 조회
+ */
+export const getWorkOrderStatePerCount = (
+  params: GetWorkOrderStatePerCountParams,
+  signal?: AbortSignal
+) => {
+  return customInstance<WorkOrderStatePerCountResponse>({
+    url: `/m/open/workOrder/workOrderStatePerCount`,
+    method: 'GET',
+    params,
+    signal,
+  });
+};
+
+export const getGetWorkOrderStatePerCountQueryKey = (params?: GetWorkOrderStatePerCountParams) => {
+  return [`/m/open/workOrder/workOrderStatePerCount`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetWorkOrderStatePerCountQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWorkOrderStatePerCount>>,
+  TError = ErrorResponse,
+>(
+  params: GetWorkOrderStatePerCountParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getWorkOrderStatePerCount>>, TError, TData>
+    >;
+  }
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetWorkOrderStatePerCountQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkOrderStatePerCount>>> = ({
+    signal,
+  }) => getWorkOrderStatePerCount(params, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWorkOrderStatePerCount>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetWorkOrderStatePerCountQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWorkOrderStatePerCount>>
+>;
+export type GetWorkOrderStatePerCountQueryError = ErrorResponse;
+
+export function useGetWorkOrderStatePerCount<
+  TData = Awaited<ReturnType<typeof getWorkOrderStatePerCount>>,
+  TError = ErrorResponse,
+>(
+  params: GetWorkOrderStatePerCountParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getWorkOrderStatePerCount>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkOrderStatePerCount>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkOrderStatePerCount>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetWorkOrderStatePerCount<
+  TData = Awaited<ReturnType<typeof getWorkOrderStatePerCount>>,
+  TError = ErrorResponse,
+>(
+  params: GetWorkOrderStatePerCountParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getWorkOrderStatePerCount>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkOrderStatePerCount>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkOrderStatePerCount>>
+        >,
+        'initialData'
+      >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetWorkOrderStatePerCount<
+  TData = Awaited<ReturnType<typeof getWorkOrderStatePerCount>>,
+  TError = ErrorResponse,
+>(
+  params: GetWorkOrderStatePerCountParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getWorkOrderStatePerCount>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary 작업지시 상태별 건수 조회
+ */
+
+export function useGetWorkOrderStatePerCount<
+  TData = Awaited<ReturnType<typeof getWorkOrderStatePerCount>>,
+  TError = ErrorResponse,
+>(
+  params: GetWorkOrderStatePerCountParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getWorkOrderStatePerCount>>, TError, TData>
+    >;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetWorkOrderStatePerCountQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

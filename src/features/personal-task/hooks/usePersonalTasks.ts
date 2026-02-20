@@ -29,6 +29,8 @@ import {
 interface UsePersonalTasksParams {
   /** 조회 날짜 (YYYY-MM-DD) */
   date: string;
+  /** 빌딩 ID */
+  buildingId?: number;
   /** 팀 ID 필터 (선택) */
   teamId?: number;
   /** 검색어 (선택) */
@@ -52,14 +54,12 @@ interface UsePersonalTasksParams {
  */
 export function usePersonalTasksInfinite({
   date,
+  buildingId = 1,
   teamId,
   searchKeyword,
   size = 10,
   enabled = true,
 }: UsePersonalTasksParams) {
-  // 빌딩 ID는 auth store에서 가져옴 (실제 구현시)
-  // const buildingId = useAuthStore((state) => state.user?.siteId);
-  const buildingId = 1; // Mock: 실제로는 auth store에서 가져옴
 
   return useInfiniteQuery<PersonalWorkOrderListResponse>({
     queryKey: [
@@ -174,8 +174,8 @@ export function useConfirmPersonalTask() {
         queryKey: ['/m/api/personal/work-order'],
       });
       // 상세 캐시 무효화 (확인된 건들)
-      if ('workOrderIds' in variables && Array.isArray(variables.workOrderIds)) {
-        variables.workOrderIds.forEach((id: number) => {
+      if ('ids' in variables && Array.isArray(variables.ids)) {
+        variables.ids.forEach((id: number) => {
           queryClient.invalidateQueries({
             queryKey: getGetPersonalWorkOrderDetailQueryKey(id),
           });

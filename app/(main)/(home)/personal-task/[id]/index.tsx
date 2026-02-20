@@ -24,10 +24,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Button } from '@/components/ui/Button';
-import { getMockPersonalTaskDetail } from '@/features/personal-task/utils/mockData';
-import type { PersonalTaskDetailDTO, ImageInfo } from '@/features/personal-task/types';
+import type { ImageInfo } from '@/features/personal-task/types';
 import { gradients } from '@/theme/tokens';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
+import { usePersonalTaskDetail, useConfirmPersonalTask } from '@/features/personal-task/hooks';
+import { useAuthStore } from '@/stores/auth.store';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -56,14 +57,6 @@ const STATUS_NAMES: Record<string, string> = {
   CONFIRMED: '확인완료',
 };
 
-/**
- * Mock 현재 사용자 정보 (실제로는 auth store에서 가져옴)
- */
-const MOCK_CURRENT_USER = {
-  id: 201, // 확인자 ID와 동일하게 설정하여 승인 버튼 표시
-  roleId: 1, // 1: 관리자, 3: 팀장, 9: 그룹장, 19: 일반
-  name: '이영희',
-};
 
 /**
  * 일상업무 상세 화면
@@ -75,10 +68,15 @@ export default function PersonalTaskDetailScreen() {
   const taskId = parseInt(id || '0', 10);
   const { isSeniorMode, card: cardStyles } = useSeniorStyles();
 
-  // Mock 데이터에서 찾기 (실제로는 API 사용)
-  const task = useMemo<PersonalTaskDetailDTO | undefined>(() => {
-    return getMockPersonalTaskDetail(taskId);
-  }, [taskId]);
+  // 현재 사용자 정보 (권한 체크용)
+  const currentUser = useAuthStore((s) => s.user);
+
+  // 실제 API 조회
+  const { data: apiData, isLoading } = usePersonalTaskDetail({ id: taskId });
+  const confirmMutation = useConfirmPersonalTask();
+
+  // API 응답 데이터
+  const taskDetail = apiData?.data;
 
   // 이미지 모달 상태
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -92,13 +90,19 @@ export default function PersonalTaskDetailScreen() {
       {
         text: '확인',
         onPress: () => {
-          // TODO: API 호출
-          Alert.alert('알림', '확인 처리되었습니다.', [
+          confirmMutation.mutate(
+            { ids: [taskId] },
             {
-              text: '확인',
-              onPress: () => router.back(),
-            },
-          ]);
+              onSuccess: () => {
+                Alert.alert('알림', '확인 처리되었습니다.', [
+                  { text: '확인', onPress: () => router.back() },
+                ]);
+              },
+              onError: () => {
+                Alert.alert('오류', '확인 처리에 실패했습니다.');
+              },
+            }
+          );
         },
       },
     ]);
@@ -108,35 +112,46 @@ export default function PersonalTaskDetailScreen() {
    * 수정 화면으로 이동
    */
   const handleEdit = () => {
-    // TODO: 수정 화면으로 이동
     Alert.alert('알림', '수정 화면은 준비 중입니다.');
   };
 
   /**
-   * 권한 체크: 수정 가능 여부 (작성자 본인만)
+   * 권한 체크: 수정 가능 여부 (PENDING 상태이고 본인 작성)
    */
   const canEdit = useMemo(() => {
-    if (!task || task.status === 'CONFIRMED') return false;
-    return MOCK_CURRENT_USER.id === task.writerInfo?.id;
-  }, [task]);
+    if (!taskDetail || taskDetail.state === 'CONFIRMED') return false;
+    return false; // 수정 화면 미구현
+  }, [taskDetail]);
 
   /**
-   * 권한 체크: 확인(승인) 가능 여부 (확인자 또는 관리자)
+   * 권한 체크: 확인(승인) 가능 여부 (관리자 또는 팀장)
    */
   const canConfirm = useMemo(() => {
-    if (!task || task.status === 'CONFIRMED') return false;
-    // 확인자 본인이거나 관리자 권한
-    return MOCK_CURRENT_USER.id === task.confirmInfo?.id || MOCK_CURRENT_USER.roleId === 1;
-  }, [task]);
+    if (!taskDetail || taskDetail.state === 'CONFIRMED') return false;
+    // 관리자(roleId=1) 또는 팀장(roleId=3) 권한
+    return currentUser?.roleId === 1 || currentUser?.roleId === 3;
+  }, [taskDetail, currentUser]);
 
-  const statusGradient = task ? getStatusGradient(task.status) : STATUS_GRADIENTS.UNCONFIRMED;
-  const statusName = task ? task.statusName || STATUS_NAMES[task.status] : STATUS_NAMES.UNCONFIRMED;
+  // 로딩 상태
+  if (isLoading) {
+    return (
+      <YStack flex={1} backgroundColor="$gray50" justifyContent="center" alignItems="center">
+        <Stack.Screen options={{ headerShown: false }} />
+        <Text color="$gray500">불러오는 중...</Text>
+      </YStack>
+    );
+  }
+
+  // API 상태 → UI 상태 매핑
+  const taskStatus = taskDetail?.state === 'CONFIRMED' ? 'CONFIRMED' : 'UNCONFIRMED';
+  const statusGradient = getStatusGradient(taskStatus);
+  const statusName = STATUS_NAMES[taskStatus] ?? STATUS_NAMES.UNCONFIRMED;
 
   /**
    * 하단 액션 버튼 렌더링
    */
   const renderActionButtons = useMemo(() => {
-    if (!task || task.status === 'CONFIRMED') return null;
+    if (!taskDetail || taskDetail.state === 'CONFIRMED') return null;
 
     const hasActions = canEdit || canConfirm;
     if (!hasActions) return null;
@@ -158,16 +173,17 @@ export default function PersonalTaskDetailScreen() {
             <GradientActionButton
               label="승인하기"
               onPress={handleConfirm}
+              loading={confirmMutation.isPending}
               gradient={gradients.success}
             />
           </YStack>
         )}
       </XStack>
     );
-  }, [task, canEdit, canConfirm]);
+  }, [taskDetail, canEdit, canConfirm, confirmMutation.isPending]);
 
   // 데이터 없음
-  if (!task) {
+  if (!taskDetail) {
     return (
       <YStack flex={1} backgroundColor="$gray50">
         <Stack.Screen options={{ headerShown: false }} />
@@ -245,14 +261,11 @@ export default function PersonalTaskDetailScreen() {
               letterSpacing={-0.5}
               numberOfLines={2}
             >
-              {task.title}
+              {taskDetail.taskName}
             </Text>
-            {task.scheduleStartDate && (
+            {taskDetail.taskDate && (
               <Text fontSize={14} color="rgba(255, 255, 255, 0.8)" marginTop="$2">
-                일정: {task.scheduleStartDate}
-                {task.scheduleEndDate && task.scheduleEndDate !== task.scheduleStartDate
-                  ? ` ~ ${task.scheduleEndDate}`
-                  : ''}
+                일정: {taskDetail.taskDate}
               </Text>
             )}
           </YStack>
@@ -291,31 +304,10 @@ export default function PersonalTaskDetailScreen() {
             <GlassCard floating intensity="heavy">
               <SectionHeader title="업무 대상 정보" size="sm" showAccent />
               <YStack gap="$3" marginTop="$2">
-                <InfoRow
-                  label="대상 건물"
-                  value={
-                    task.baseArea && task.buildingName
-                      ? `${task.baseArea} > ${task.buildingName}`
-                      : task.buildingName || '-'
-                  }
-                />
-                <InfoRow label="담당팀" value={task.teamName} />
-                <InfoRow
-                  label="등록자"
-                  value={
-                    task.writerInfo
-                      ? `${task.writerInfo.name}(${task.writerInfo.companyName || ''} | ${task.writerInfo.role || ''})`
-                      : task.writerName
-                  }
-                />
-                <InfoRow
-                  label="확인자"
-                  value={
-                    task.confirmInfo
-                      ? `${task.confirmInfo.confirmAccountName}(${task.confirmInfo.companyName || ''} | ${task.confirmInfo.role || ''})`
-                      : task.confirmedByName
-                  }
-                />
+                <InfoRow label="대상 건물" value={taskDetail.buildingName} />
+                <InfoRow label="담당팀" value={taskDetail.teamName} />
+                <InfoRow label="담당자" value={taskDetail.accountName} />
+                <InfoRow label="확인자" value={taskDetail.confirmedBy} />
               </YStack>
             </GlassCard>
           </YStack>
@@ -332,18 +324,19 @@ export default function PersonalTaskDetailScreen() {
             <GlassCard intensity="medium">
               <SectionHeader title="업무 정보" size="sm" showAccent />
               <YStack gap="$3" marginTop="$2">
-                <InfoRow label="업무 구분" value={task.type || '일상업무'} />
-                <InfoRow label="업무 내용" value={task.description || task.content} multiline />
-                <InfoRow label="위치 정보" value={task.location} />
-                <InfoRow label="등록일" value={task.writerInfo?.writeDate || task.createdAt} />
-                <InfoRow label="설비명" value={task.facilityName} />
+                <InfoRow label="업무 구분" value="일상업무" />
+                <InfoRow label="업무 내용" value={taskDetail.description} multiline />
+                <InfoRow label="위치 정보" value={taskDetail.location} />
+                <InfoRow label="시작 시간" value={taskDetail.startTime} />
+                <InfoRow label="종료 시간" value={taskDetail.endTime} />
+                <InfoRow label="작업 결과" value={taskDetail.result} />
               </YStack>
             </GlassCard>
           </YStack>
         </View>
 
         {/* 확인 정보 섹션 (확인완료 상태일 때만) */}
-        {task.status === 'CONFIRMED' && task.confirmedAt && (
+        {taskDetail.state === 'CONFIRMED' && taskDetail.confirmedTime && (
           <View>
             <YStack
               marginBottom={16}
@@ -354,15 +347,15 @@ export default function PersonalTaskDetailScreen() {
               <GlassCard intensity="light">
                 <SectionHeader title="확인 정보" size="sm" showAccent />
                 <YStack gap="$3" marginTop="$2">
-                  <InfoRow label="확인자" value={task.confirmedByName} highlight />
-                  <InfoRow label="확인일시" value={task.confirmedAt} highlight />
+                  <InfoRow label="확인자" value={taskDetail.confirmedBy} highlight />
+                  <InfoRow label="확인일시" value={taskDetail.confirmedTime} highlight />
                 </YStack>
               </GlassCard>
             </YStack>
           </View>
         )}
 
-        {/* 이미지 섹션 */}
+        {/* 첨부파일 섹션 */}
         <View>
           <YStack
             marginBottom={16}
@@ -371,11 +364,15 @@ export default function PersonalTaskDetailScreen() {
             borderRadius={16}
           >
             <GlassCard intensity="light">
-              <SectionHeader title="이미지" size="sm" showAccent />
+              <SectionHeader title="첨부파일" size="sm" showAccent />
               <ImageGallery
-                images={task.images || []}
+                images={(taskDetail.attachments ?? []).map((a) => ({
+                  id: a.id,
+                  imageUrl: a.fileUrl ?? '',
+                  fileName: a.fileName,
+                }))}
                 onImagePress={setSelectedImage}
-                emptyText="이미지가 없습니다"
+                emptyText="첨부파일이 없습니다"
               />
             </GlassCard>
           </YStack>

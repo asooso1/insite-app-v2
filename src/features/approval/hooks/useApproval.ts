@@ -8,7 +8,12 @@
  */
 import { useMemo, useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useGetTaskList, useBulkConfirmTasks, useGetTaskCount } from '@/api/generated/tasks/tasks';
+import {
+  useGetTaskList,
+  useBulkConfirmTasks,
+  useGetTaskCount,
+  getGetTaskCountQueryKey,
+} from '@/api/generated/tasks/tasks';
 import type {
   GetTaskListParams,
   TaskDTO,
@@ -185,10 +190,13 @@ export function useBulkApprove() {
 
       const result = await mutation.mutateAsync({ data: request });
 
-      // 성공 시 목록 쿼리 무효화
+      // 성공 시 목록 및 건수 쿼리 무효화
       if (result.code === 'success') {
         await queryClient.invalidateQueries({
           queryKey: ['/m/api/tasks'],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: getGetTaskCountQueryKey(),
         });
       }
 

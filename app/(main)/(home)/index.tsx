@@ -40,6 +40,7 @@ import { startAutoSync } from '@/services/syncService';
 import { useTabBarHeight } from '@/hooks/useTabBarHeight';
 import { usePermission } from '@/hooks/usePermission';
 import type { Permission } from '@/types/permission.types';
+import { useHomeData } from '@/features/home/hooks/useHomeData';
 
 /**
  * 홈 화면
@@ -52,6 +53,14 @@ export default function HomeScreen() {
   const seniorStyles = useSeniorStyles();
   const { isSeniorMode } = seniorStyles;
   const { hasPermission, canShowQrAttendance } = usePermission();
+
+  // 홈 화면 API 데이터
+  const {
+    todayStats,
+    inProgressWork,
+    todayPatrol,
+    refetchAll,
+  } = useHomeData();
 
   // 출퇴근 기능
   const {
@@ -89,34 +98,12 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // 출퇴근 상태 새로고침
-    await refreshAttendanceStatus();
-    // TODO: 실제 데이터 갱신
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await Promise.all([
+      refreshAttendanceStatus(),
+      refetchAll(),
+    ]);
     setRefreshing(false);
-  }, [refreshAttendanceStatus]);
-
-  // Mock 데이터 (실제로는 API에서 가져옴)
-  const todayStats = {
-    work: 5,
-    patrol: 2,
-    alarm: 1,
-    completed: 3,
-  };
-
-  const inProgressWork = {
-    id: 1,
-    title: '공조기 정기점검',
-    location: 'A동 3층',
-    progress: 80,
-  };
-
-  const todayPatrol = {
-    id: 1,
-    title: 'A동 정기순찰',
-    floorsTotal: 5,
-    floorsCompleted: 2,
-  };
+  }, [refreshAttendanceStatus, refetchAll]);
 
   // 권한 기반 빠른 실행 메뉴 정의
   const allQuickActions: Array<{
@@ -126,14 +113,62 @@ export default function HomeScreen() {
     route: string;
     permission: Permission;
   }> = [
-    { icon: 'work', label: '작업지시', description: '작업 목록 보기', route: '/(main)/(home)/work', permission: 'workOrder' },
-    { icon: 'patrol', label: '순찰점검', description: '순찰 목록 보기', route: '/(main)/(home)/patrol', permission: 'patrol' },
-    { icon: 'document', label: '일상업무', description: '일상업무 현황', route: '/(main)/(home)/personal-task', permission: 'personalTask' },
-    { icon: 'notice', label: '고객불편', description: '고객불편 접수', route: '/(main)/(home)/claim', permission: 'claim' },
-    { icon: 'settings', label: '설비정보', description: '설비 조회', route: '/(main)/(home)/facility', permission: 'facility' },
-    { icon: 'success', label: '승인/확인', description: '업무 승인', route: '/(main)/(home)/approval', permission: 'approval' },
-    { icon: 'dashboard', label: '대시보드', description: '통계 보기', route: '/(main)/(home)/dashboard', permission: 'dashboard' },
-    { icon: 'warning', label: '경보현황', description: '경보 확인', route: '/(main)/(home)/dashboard/alarm', permission: 'dashboardAlarm' },
+    {
+      icon: 'work',
+      label: '작업지시',
+      description: '작업 목록 보기',
+      route: '/(main)/(home)/work',
+      permission: 'workOrder',
+    },
+    {
+      icon: 'patrol',
+      label: '순찰점검',
+      description: '순찰 목록 보기',
+      route: '/(main)/(home)/patrol',
+      permission: 'patrol',
+    },
+    {
+      icon: 'document',
+      label: '일상업무',
+      description: '일상업무 현황',
+      route: '/(main)/(home)/personal-task',
+      permission: 'personalTask',
+    },
+    {
+      icon: 'notice',
+      label: '고객불편',
+      description: '고객불편 접수',
+      route: '/(main)/(home)/claim',
+      permission: 'claim',
+    },
+    {
+      icon: 'settings',
+      label: '설비정보',
+      description: '설비 조회',
+      route: '/(main)/(home)/facility',
+      permission: 'facility',
+    },
+    {
+      icon: 'success',
+      label: '승인/확인',
+      description: '업무 승인',
+      route: '/(main)/(home)/approval',
+      permission: 'approval',
+    },
+    {
+      icon: 'dashboard',
+      label: '대시보드',
+      description: '통계 보기',
+      route: '/(main)/(home)/dashboard',
+      permission: 'dashboard',
+    },
+    {
+      icon: 'warning',
+      label: '경보현황',
+      description: '경보 확인',
+      route: '/(main)/(home)/dashboard/alarm',
+      permission: 'dashboardAlarm',
+    },
   ];
 
   // 권한에 따라 필터링된 메뉴
@@ -198,11 +233,7 @@ export default function HomeScreen() {
 
         {/* 오늘의 요약 (Glass Card) */}
         <View>
-          <GlassCard
-            marginHorizontal={LAYOUT.CARD_SPACING}
-            floating
-            intensity="heavy"
-          >
+          <GlassCard marginHorizontal={LAYOUT.CARD_SPACING} floating intensity="heavy">
             <Text fontSize={15} fontWeight="700" color="$gray900" marginBottom="$4">
               오늘의 업무 현황
             </Text>
@@ -222,14 +253,14 @@ export default function HomeScreen() {
                 onPress={() => router.push('/(main)/(home)/patrol')}
               />
               <QuickStatCard
-                icon="warning"
-                value={todayStats.alarm}
-                label="알람"
+                icon="success"
+                value={todayStats.approval}
+                label="승인대기"
                 variant="warning"
-                onPress={() => router.push('/(main)/(home)/dashboard/alarm')}
+                onPress={() => router.push('/(main)/(home)/approval')}
               />
               <QuickStatCard
-                icon="success"
+                icon="document"
                 value={todayStats.completed}
                 label="완료"
                 variant="success"
@@ -251,52 +282,58 @@ export default function HomeScreen() {
               // 시니어 모드: 2열 그리드로 더 큰 버튼
               <YStack gap="$4">
                 {/* 2개씩 그룹핑하여 행으로 표시 */}
-                {Array.from({ length: Math.ceil(filteredQuickActions.length / 2) }, (_, rowIndex) => (
-                  <XStack key={rowIndex} gap="$4">
-                    {filteredQuickActions.slice(rowIndex * 2, rowIndex * 2 + 2).map((action) => (
-                      <SeniorQuickActionButton
-                        key={action.label}
-                        icon={action.icon}
-                        label={action.label}
-                        description={action.description || ''}
-                        onPress={() => router.push(action.route as never)}
-                      />
-                    ))}
-                    {/* 홀수개일 때 빈 공간 채우기 */}
-                    {rowIndex === Math.ceil(filteredQuickActions.length / 2) - 1 &&
-                      filteredQuickActions.length % 2 === 1 && <View style={{ flex: 1 }} />}
-                  </XStack>
-                ))}
+                {Array.from(
+                  { length: Math.ceil(filteredQuickActions.length / 2) },
+                  (_, rowIndex) => (
+                    <XStack key={rowIndex} gap="$4">
+                      {filteredQuickActions.slice(rowIndex * 2, rowIndex * 2 + 2).map((action) => (
+                        <SeniorQuickActionButton
+                          key={action.label}
+                          icon={action.icon}
+                          label={action.label}
+                          description={action.description || ''}
+                          onPress={() => router.push(action.route as never)}
+                        />
+                      ))}
+                      {/* 홀수개일 때 빈 공간 채우기 */}
+                      {rowIndex === Math.ceil(filteredQuickActions.length / 2) - 1 &&
+                        filteredQuickActions.length % 2 === 1 && <View style={{ flex: 1 }} />}
+                    </XStack>
+                  )
+                )}
               </YStack>
             ) : (
               // 일반 모드: 4열 그리드
               <YStack gap="$3">
                 {/* 4개씩 그룹핑하여 행으로 표시 */}
-                {Array.from({ length: Math.ceil(filteredQuickActions.length / 4) }, (_, rowIndex) => (
-                  <XStack key={rowIndex} gap="$3">
-                    {filteredQuickActions.slice(rowIndex * 4, rowIndex * 4 + 4).map((action) => (
-                      <QuickActionButton
-                        key={action.label}
-                        icon={action.icon}
-                        label={action.label}
-                        onPress={() => router.push(action.route as never)}
-                      />
-                    ))}
-                    {/* 빈 공간 채우기 */}
-                    {Array.from({
-                      length: Math.max(0, 4 - (filteredQuickActions.length - rowIndex * 4)),
-                    }).map((_, idx) => (
-                      <View key={`empty-${idx}`} style={{ flex: 1 }} />
-                    ))}
-                  </XStack>
-                ))}
+                {Array.from(
+                  { length: Math.ceil(filteredQuickActions.length / 4) },
+                  (_, rowIndex) => (
+                    <XStack key={rowIndex} gap="$3">
+                      {filteredQuickActions.slice(rowIndex * 4, rowIndex * 4 + 4).map((action) => (
+                        <QuickActionButton
+                          key={action.label}
+                          icon={action.icon}
+                          label={action.label}
+                          onPress={() => router.push(action.route as never)}
+                        />
+                      ))}
+                      {/* 빈 공간 채우기 */}
+                      {Array.from({
+                        length: Math.max(0, 4 - (filteredQuickActions.length - rowIndex * 4)),
+                      }).map((_, idx) => (
+                        <View key={`empty-${idx}`} style={{ flex: 1 }} />
+                      ))}
+                    </XStack>
+                  )
+                )}
               </YStack>
             )}
           </YStack>
         </View>
 
-        {/* 진행 중인 작업 - 작업권한 있는 사용자만 표시 */}
-        {hasPermission('workOrder') && (
+        {/* 진행 중인 작업 - 작업권한 + 데이터 있을 때만 표시 */}
+        {hasPermission('workOrder') && inProgressWork && (
           <View>
             <YStack paddingHorizontal="$5" marginTop="$6">
               <SectionHeader
@@ -310,23 +347,23 @@ export default function HomeScreen() {
                 <SeniorWorkInProgressCard
                   title={inProgressWork.title}
                   location={inProgressWork.location}
-                  progress={inProgressWork.progress}
-                  onPress={() => router.push(`/work/${inProgressWork.id}`)}
+                  progress={50}
+                  onPress={() => router.push(`/(main)/(home)/work/${inProgressWork.id}`)}
                 />
               ) : (
                 <WorkInProgressCard
                   title={inProgressWork.title}
                   location={inProgressWork.location}
-                  progress={inProgressWork.progress}
-                  onPress={() => router.push(`/work/${inProgressWork.id}`)}
+                  progress={50}
+                  onPress={() => router.push(`/(main)/(home)/work/${inProgressWork.id}`)}
                 />
               )}
             </YStack>
           </View>
         )}
 
-        {/* 오늘의 순찰 - 순찰권한 있는 사용자만 표시 */}
-        {hasPermission('patrol') && (
+        {/* 오늘의 순찰 - 순찰권한 + 데이터 있을 때만 표시 */}
+        {hasPermission('patrol') && todayPatrol && (
           <View>
             <YStack paddingHorizontal="$5" marginTop="$6">
               <SectionHeader
@@ -337,18 +374,16 @@ export default function HomeScreen() {
                 fontSize={isSeniorMode ? seniorStyles.fontSize.large : undefined}
               />
               {isSeniorMode ? (
-                <SeniorPatrolStatusCard
+                <SeniorPatrolCard
                   title={todayPatrol.title}
-                  floorsTotal={todayPatrol.floorsTotal}
-                  floorsCompleted={todayPatrol.floorsCompleted}
-                  onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
+                  building={todayPatrol.building}
+                  onPress={() => router.push(`/(main)/(home)/patrol/${todayPatrol.id}`)}
                 />
               ) : (
-                <PatrolStatusCard
+                <PatrolCard
                   title={todayPatrol.title}
-                  floorsTotal={todayPatrol.floorsTotal}
-                  floorsCompleted={todayPatrol.floorsCompleted}
-                  onPress={() => router.push(`/patrol/${todayPatrol.id}`)}
+                  building={todayPatrol.building}
+                  onPress={() => router.push(`/(main)/(home)/patrol/${todayPatrol.id}`)}
                 />
               )}
             </YStack>
@@ -496,18 +531,16 @@ function WorkInProgressCard({ title, location, progress, onPress }: WorkInProgre
 }
 
 /**
- * 순찰 상태 카드
+ * 순찰 카드 (API 연동)
  */
-interface PatrolStatusCardProps {
+interface PatrolCardProps {
   title: string;
-  floorsTotal: number;
-  floorsCompleted: number;
+  building?: string;
   onPress: () => void;
 }
 
-function PatrolStatusCard({ title, floorsTotal, floorsCompleted, onPress }: PatrolStatusCardProps) {
+function PatrolCard({ title, building, onPress }: PatrolCardProps) {
   const theme = useTheme();
-  const progress = Math.round((floorsCompleted / floorsTotal) * 100);
 
   return (
     <YStack
@@ -537,9 +570,11 @@ function PatrolStatusCard({ title, floorsTotal, floorsCompleted, onPress }: Patr
             <Text fontSize={16} fontWeight="700" color="$gray900" letterSpacing={-0.3}>
               {title}
             </Text>
-            <Text fontSize={13} color="$gray500">
-              {floorsTotal}층 중 {floorsCompleted}층 완료
-            </Text>
+            {building && (
+              <Text fontSize={13} color="$gray500">
+                {building}
+              </Text>
+            )}
           </YStack>
         </XStack>
 
@@ -550,10 +585,6 @@ function PatrolStatusCard({ title, floorsTotal, floorsCompleted, onPress }: Patr
           </Text>
         </XStack>
       </XStack>
-
-      <YStack marginTop="$3">
-        <ProgressBar progress={progress} variant="primary" height={6} animated />
-      </YStack>
     </YStack>
   );
 }
@@ -793,17 +824,15 @@ function SeniorWorkInProgressCard({ title, location, progress, onPress }: WorkIn
 }
 
 /**
- * 시니어 모드 순찰 상태 카드
+ * 시니어 모드 순찰 카드 (API 연동)
  */
-function SeniorPatrolStatusCard({
+function SeniorPatrolCard({
   title,
-  floorsTotal,
-  floorsCompleted,
+  building,
   onPress,
-}: PatrolStatusCardProps) {
+}: PatrolCardProps) {
   const seniorStyles = useSeniorStyles();
   const [isPressed, setIsPressed] = React.useState(false);
-  const progress = Math.round((floorsCompleted / floorsTotal) * 100);
 
   const containerStyle: ViewStyle = {
     backgroundColor: seniorStyles.colors.cardBackground,
@@ -850,23 +879,22 @@ function SeniorPatrolStatusCard({
             >
               {title}
             </Text>
-            <Text
-              style={
-                {
-                  fontSize: seniorStyles.fontSize.medium,
-                  color: seniorStyles.colors.textSecondary,
-                } as TextStyle
-              }
-            >
-              {floorsTotal}층 중 {floorsCompleted}층 완료
-            </Text>
+            {building && (
+              <Text
+                style={
+                  {
+                    fontSize: seniorStyles.fontSize.medium,
+                    color: seniorStyles.colors.textSecondary,
+                  } as TextStyle
+                }
+              >
+                {building}
+              </Text>
+            )}
           </View>
         </View>
         <SeniorStatusBadge status="inProgress" label="진행중" />
       </View>
-
-      {/* 진행률 바 */}
-      <ProgressBar progress={progress} variant="primary" height={10} animated />
     </Pressable>
   );
 }

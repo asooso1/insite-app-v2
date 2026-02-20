@@ -1,17 +1,17 @@
 /**
  * 고객불편 목록 조회 Hook
  *
- * API 훅과 Mock 데이터 간 전환 가능
+ * 실제 API 연동
  */
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import type {
   ComplainListResponse,
+  ComplainDTO as ApiComplainDTO,
   GetComplainListParams,
   GetComplainListState,
 } from '@/api/generated/models';
 import { getComplainList, getGetComplainListQueryKey } from '@/api/generated/complain/complain';
-import { mockClaims } from '../utils/mockData';
 import type { ClaimDTO, ClaimState, SearchOption } from '../types';
 
 /**
@@ -28,6 +28,35 @@ function mapClaimStateToApiState(state: ClaimState | null): GetComplainListState
   };
 
   return stateMap[state];
+}
+
+/**
+ * API ComplainDTO → 로컬 ClaimDTO 변환
+ */
+function mapApiComplainToClaimDTO(api: ApiComplainDTO): ClaimDTO {
+  const stateMap: Record<string, ClaimState> = {
+    WRITE: 'RECEIVED',
+    ISSUE: 'RECEIVED',
+    PROCESSING: 'PROCESSING',
+    REQ_COMPLETE: 'PROCESSING',
+    COMPLETE: 'COMPLETED',
+    CANCEL: 'REJECTED',
+  };
+
+  return {
+    id: api.id,
+    title: api.title,
+    content: api.description ?? '',
+    state: stateMap[api.state] ?? 'RECEIVED',
+    stateName: api.stateName,
+    receivedDate: api.writeDate ?? '',
+    completedDate: api.completedDate,
+    buildingName: api.buildingName,
+    location: api.location,
+    phoneNumber: api.reporterPhone,
+    receiverName: api.reporterName,
+    processorName: api.managerName,
+  };
 }
 
 /**
@@ -89,12 +118,10 @@ interface UseClaimsOptions {
   period?: PeriodFilter;
   page?: number;
   size?: number;
-  /** Mock 데이터 사용 여부 (개발용) */
-  useMock?: boolean;
 }
 
 /**
- * 고객불편 목록 조회 Hook
+ * 고객불편 목록 조회 Hook (실제 API 연동)
  *
  * @example
  * ```tsx
@@ -109,16 +136,14 @@ export function useClaims({
   buildingId = 1,
   state = null,
   searchKeyword = '',
-  searchOption = 'ALL',
+  searchOption: _searchOption = 'ALL',
   period = '3day',
   page = 0,
   size = 20,
-  useMock = true,
 }: UseClaimsOptions = {}) {
   const { from: termDateFrom, to: termDateTo } = getPeriodDates(period);
-
-  // API 조회 (실제 사용 시)
   const apiState = mapClaimStateToApiState(state);
+
   const apiQuery = useQuery({
     queryKey: [
       ...getGetComplainListQueryKey({ buildingId }),
@@ -136,72 +161,27 @@ export function useClaims({
       };
       return getComplainList(params);
     },
-    enabled: !useMock && !!buildingId,
+    enabled: !!buildingId,
   });
 
-  // Mock 데이터 필터링
-  const filteredMockData = useMemo(() => {
-    if (!useMock) return [];
+  // API 응답 → 로컬 ClaimDTO 변환
+  const claims = useMemo<ClaimDTO[]>(() => {
+    const content = apiQuery.data?.data?.content;
+    if (!content) return [];
+    return content.map(mapApiComplainToClaimDTO);
+  }, [apiQuery.data]);
 
-    let filtered = [...mockClaims];
-
-    // 상태 필터
-    if (state) {
-      filtered = filtered.filter((claim) => claim.state === state);
-    }
-
-    // 검색 필터
-    if (searchKeyword) {
-      const keyword = searchKeyword.toLowerCase();
-      filtered = filtered.filter((claim) => {
-        switch (searchOption) {
-          case 'TITLE':
-            return claim.title.toLowerCase().includes(keyword);
-          case 'CONTENT':
-            return claim.content.toLowerCase().includes(keyword);
-          case 'PHONE':
-            return claim.phoneNumber?.includes(keyword);
-          case 'ALL':
-          default:
-            return (
-              claim.title.toLowerCase().includes(keyword) ||
-              claim.content.toLowerCase().includes(keyword) ||
-              claim.phoneNumber?.includes(keyword)
-            );
-        }
-      });
-    }
-
-    // 기간 필터 (Mock 데이터에서는 간단히 처리)
-    // 실제로는 receivedDate 기준으로 필터링 필요
-
-    return filtered;
-  }, [useMock, state, searchKeyword, searchOption]);
-
-  // 상태별 카운트
+  // 상태별 카운트 (API 데이터 기반)
   const stateCounts = useMemo(() => {
-    const source = useMock ? mockClaims : [];
-    const counts: Record<string, number> = { all: source.length };
-    source.forEach((claim) => {
+    const counts: Record<string, number> = { all: claims.length };
+    claims.forEach((claim) => {
       counts[claim.state] = (counts[claim.state] || 0) + 1;
     });
     return counts;
-  }, [useMock]);
-
-  if (useMock) {
-    return {
-      claims: filteredMockData,
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: async () => {},
-      stateCounts,
-      totalCount: filteredMockData.length,
-    };
-  }
+  }, [claims]);
 
   return {
-    claims: (apiQuery.data?.data?.content as unknown as ClaimDTO[]) || [],
+    claims,
     isLoading: apiQuery.isLoading,
     isError: apiQuery.isError,
     error: apiQuery.error,
@@ -220,7 +200,7 @@ export function useClaimsInfinite({
   searchKeyword = '',
   period = '3day',
   size = 20,
-}: Omit<UseClaimsOptions, 'page' | 'useMock'>) {
+}: Omit<UseClaimsOptions, 'page'>) {
   const { from: termDateFrom, to: termDateTo } = getPeriodDates(period);
   const apiState = mapClaimStateToApiState(state);
 

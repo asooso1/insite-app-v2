@@ -6,37 +6,107 @@
  * Lucide Icons 사용
  * 시니어 모드 지원: 확대된 리스트 아이템, 고대비 배지, 테두리 강조
  */
-import React, { useState, useMemo, useRef } from 'react';
-import { StyleSheet, View, Animated } from 'react-native';
-import { YStack, XStack, Text } from 'tamagui';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
+import { StyleSheet, View, Animated, RefreshControl } from 'react-native';
+import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { useRouter } from 'expo-router';
 
 import { GlassFilterBar, PatrolCardEnhanced } from '@/features/patrol/components';
-import { mockPatrols } from '@/features/patrol/data/mockPatrols';
 import type { PatrolDTO, PatrolFilterOption } from '@/features/patrol/types/patrol.types';
+import type { PatrolDetailDTO as ApiPatrolDetailDTO } from '@/api/generated/models';
+import { useGetPatrolList } from '@/api/generated/patrol/patrol';
+import { useAuthStore } from '@/stores/auth.store';
 import { AppIcon, type IconName } from '@/components/icons';
 import { useSeniorStyles } from '@/contexts/SeniorModeContext';
 import { SeniorCardListItem, SeniorStatusBadge } from '@/components/ui/SeniorCard';
 import { CollapsibleGradientHeader } from '@/components/ui/CollapsibleGradientHeader';
+import { useTabBarHeight } from '@/hooks/useTabBarHeight';
+
+/**
+ * API PatrolDetailDTO → 커스텀 PatrolDTO 매핑
+ */
+function apiPatrolToDTO(apiPatrol: ApiPatrolDetailDTO): PatrolDTO {
+  const stateMap: Record<string, PatrolDTO['state']> = {
+    ISSUE: 'ISSUE',
+    PROCESSING: 'PROCESSING',
+    COMPLETE: 'COMPLETED',
+    REQ_COMPLETE: 'PROCESSING',
+    WRITE: 'ISSUE',
+  };
+  const stateNameMap: Record<string, string> = {
+    ISSUE: '미실시',
+    PROCESSING: '진행중',
+    COMPLETED: '완료',
+  };
+
+  const mappedState = stateMap[apiPatrol.state] ?? 'ISSUE';
+  const today = new Date().toISOString().split('T')[0] ?? '';
+  const startDate = apiPatrol.startDate?.split('T')[0] ?? today;
+
+  return {
+    id: apiPatrol.nfcRoundId,
+    name: apiPatrol.roundName ?? '순찰점검',
+    state: mappedState,
+    stateName: stateNameMap[mappedState] ?? '미실시',
+    buildingName: apiPatrol.buildingName,
+    floorCount: 0,
+    completedFloors: 0,
+    totalCheckpoints: 0,
+    completedCheckpoints: 0,
+    scheduledDate: startDate || today,
+    isToday: startDate === today,
+  };
+}
 
 /**
  * 순찰점검 목록 화면
  */
 export default function PatrolListScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const [selectedFilter, setSelectedFilter] = useState<PatrolFilterOption>('ALL');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { isSeniorMode, fontSize } = useSeniorStyles();
+  const { contentPaddingBottom } = useTabBarHeight();
 
   // 스크롤 애니메이션
   const scrollY = useRef(new Animated.Value(0)).current;
 
+  // buildingId from auth store
+  const user = useAuthStore((s) => s.user);
+  const buildingId = useMemo(() => {
+    const bid =
+      user?.selectedBuildingAccountDTO?.buildingId ??
+      user?.buildingAccountDTO?.[0]?.buildingId;
+    return bid ? Number(bid) : 0;
+  }, [user]);
+
+  // API: 순찰 목록 조회
+  const { data: patrolListData, refetch } = useGetPatrolList(
+    { buildingId, page: 0, size: 100 },
+    { query: { enabled: buildingId > 0 } },
+  );
+
+  // API → PatrolDTO 매핑
+  const allPatrols = useMemo(
+    () => (patrolListData?.data?.content ?? []).map(apiPatrolToDTO),
+    [patrolListData],
+  );
+
+  // Pull to Refresh
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  }, [refetch]);
+
   // 필터 옵션 (카운트 포함)
   const filterOptions = useMemo(() => {
     const counts = {
-      ALL: mockPatrols.length,
-      ISSUE: mockPatrols.filter((p) => p.state === 'ISSUE').length,
-      PROCESSING: mockPatrols.filter((p) => p.state === 'PROCESSING').length,
-      COMPLETED: mockPatrols.filter((p) => p.state === 'COMPLETED').length,
+      ALL: allPatrols.length,
+      ISSUE: allPatrols.filter((p) => p.state === 'ISSUE').length,
+      PROCESSING: allPatrols.filter((p) => p.state === 'PROCESSING').length,
+      COMPLETED: allPatrols.filter((p) => p.state === 'COMPLETED').length,
     };
     return [
       { value: 'ALL' as PatrolFilterOption, label: '전체', count: counts.ALL },
@@ -44,15 +114,15 @@ export default function PatrolListScreen() {
       { value: 'PROCESSING' as PatrolFilterOption, label: '진행중', count: counts.PROCESSING },
       { value: 'COMPLETED' as PatrolFilterOption, label: '완료', count: counts.COMPLETED },
     ];
-  }, []);
+  }, [allPatrols]);
 
   // 필터링된 순찰 목록
   const filteredPatrols = useMemo(() => {
     if (selectedFilter === 'ALL') {
-      return mockPatrols;
+      return allPatrols;
     }
-    return mockPatrols.filter((patrol) => patrol.state === selectedFilter);
-  }, [selectedFilter]);
+    return allPatrols.filter((patrol) => patrol.state === selectedFilter);
+  }, [allPatrols, selectedFilter]);
 
   // 오늘의 순찰과 기타 순찰 분리
   const todayPatrols = useMemo(
@@ -67,7 +137,7 @@ export default function PatrolListScreen() {
 
   // 순찰 카드 클릭 핸들러
   const handlePatrolPress = (patrol: PatrolDTO) => {
-    router.push(`/patrol/${patrol.id}`);
+    router.push(`/(main)/(home)/patrol/${patrol.id}` as never);
   };
 
   // 상태 매핑 헬퍼
@@ -192,7 +262,7 @@ export default function PatrolListScreen() {
   );
 
   // 오늘의 순찰 카운트
-  const todayCount = mockPatrols.filter((p) => p.isToday).length;
+  const todayCount = allPatrols.filter((p) => p.isToday).length;
 
   return (
     <View style={styles.container}>
@@ -223,9 +293,17 @@ export default function PatrolListScreen() {
           useNativeDriver: false,
         })}
         scrollEventThrottle={16}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ paddingBottom: contentPaddingBottom, flexGrow: 1 }}
         ListEmptyComponent={renderEmpty}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.primary.val}
+            colors={[theme.primary.val]}
+          />
+        }
       />
     </View>
   );
@@ -235,9 +313,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-  },
-  listContent: {
-    paddingBottom: 24,
-    flexGrow: 1,
   },
 });

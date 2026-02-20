@@ -119,4 +119,3 @@ export function VideoIntroScreen({ onComplete }: VideoIntroScreenProps) {
     </YStack>
   );
 }
-
